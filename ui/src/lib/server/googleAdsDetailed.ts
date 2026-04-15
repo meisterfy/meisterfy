@@ -40,9 +40,9 @@ export async function getDetailedCampaign(customerId?: string, campaignId?: stri
         }
 
         const campaigns = await customer.query(`
-            SELECT 
-                campaign.id, 
-                campaign.name, 
+            SELECT
+                campaign.id,
+                campaign.name,
                 campaign.status,
                 campaign.bidding_strategy_type,
                 metrics.impressions,
@@ -50,10 +50,12 @@ export async function getDetailedCampaign(customerId?: string, campaignId?: stri
                 metrics.cost_micros,
                 metrics.conversions,
                 metrics.conversions_value,
+                metrics.conversions_value_per_cost,
                 metrics.cost_per_conversion,
                 metrics.ctr,
-                metrics.interaction_rate
-            FROM campaign 
+                metrics.interaction_rate,
+                metrics.search_impression_share
+            FROM campaign
             WHERE campaign.id = ${campaignId}${dateFilter}
         `);
 
