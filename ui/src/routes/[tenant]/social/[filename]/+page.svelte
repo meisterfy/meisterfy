@@ -52,7 +52,7 @@
 		});
 		
 		saving = false;
-		window.location.href = `/clients/${data.client_id}`;
+		window.location.href = `/${data.client_id}/social`;
 	}
 
 	async function deletePost() {
@@ -61,7 +61,7 @@
 				method: 'DELETE'
 			});
 			if (res.ok) {
-				window.location.href = `/clients/${data.client_id}`;
+				window.location.href = `/${data.client_id}/social`;
 			} else {
 				alert('Failed to delete post');
 			}
@@ -71,7 +71,7 @@
 
 <div class="h-14 flex items-center px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm z-10 sticky top-0">
 	<div class="flex items-center gap-4">
-		<a href="/clients/{data.client_id}" class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-300">
+		<a href="/{data.client_id}/social" class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-300">
 			<ArrowLeft class="w-5 h-5" />
 		</a>
 		<h2 class="font-semibold text-lg flex items-center gap-2">

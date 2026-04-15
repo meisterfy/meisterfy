@@ -211,27 +211,27 @@
 								{/if}
 							</div>
 						{/if}
-						<a href="/clients/{data.client.id}/{post.filename}" class="hover:text-indigo-600 block transition-colors">
+						<a href="/{data.client.id}/social/{post.filename}" class="hover:text-indigo-600 block transition-colors">
 							<h4 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 leading-snug">{post.title}</h4>
 						</a>
 						<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 mb-4">{post.content}</p>
-						
+
 						<div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-700/50">
 							<label class="cursor-pointer text-xs flex items-center gap-1.5 text-slate-500 hover:text-indigo-600">
 								<ImageIcon class="w-3.5 h-3.5" /> Attach Media
 								<input type="file" multiple class="hidden" accept="image/*,video/*" onchange={(e) => handleQuickUpload(e, post.id, post.filename)} />
 							</label>
-							
+
 							<div class="flex items-center gap-1 -mr-1">
-								<button 
+								<button
 									onclick={() => deletePost(post.id, post.filename)}
 									title="Delete Post"
 									class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
 								>
 									<Trash2 class="w-4 h-4" />
 								</button>
-								<a 
-									href="/clients/{data.client.id}/{post.filename}"
+								<a
+									href="/{data.client.id}/social/{post.filename}"
 									title="Edit Post"
 									class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors"
 								>
@@ -286,12 +286,12 @@
 								{/if}
 							</div>
 						{/if}
-						<a href="/clients/{data.client.id}/{post.filename}" class="hover:text-indigo-600 block transition-colors">
+						<a href="/{data.client.id}/social/{post.filename}" class="hover:text-indigo-600 block transition-colors">
 							<h4 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 leading-snug">{post.title}</h4>
 						</a>
-						
+
 						<div class="flex justify-between items-center pt-4 mt-2 border-t border-slate-100 dark:border-slate-700/50">
-							<button 
+							<button
 								onclick={() => updateStatus(post.id, post.filename, 'draft')}
 								class="text-xs text-slate-400 hover:text-slate-700"
 							>
@@ -299,15 +299,15 @@
 							</button>
 
 							<div class="flex items-center gap-1 -mr-1">
-								<button 
+								<button
 									onclick={() => deletePost(post.id, post.filename)}
 									title="Delete Post"
 									class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
 								>
 									<Trash2 class="w-4 h-4" />
 								</button>
-								<a 
-									href="/clients/{data.client.id}/{post.filename}"
+								<a
+									href="/{data.client.id}/social/{post.filename}"
 									title="Edit Post"
 									class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors"
 								>
