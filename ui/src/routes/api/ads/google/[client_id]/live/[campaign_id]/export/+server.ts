@@ -3,10 +3,18 @@ import { getClients } from '$lib/server/db';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
+function isValidSegment(s: string): boolean {
+    return /^[a-z0-9][a-z0-9-_.]*$/i.test(s);
+}
+
 export const POST: RequestHandler = async ({ params, url }) => {
+    if (!isValidSegment(params.client_id) || !isValidSegment(params.campaign_id)) {
+        error(400, 'Invalid parameters');
+    }
+
     const clients = await getClients();
     const client = clients.find(c => c.id === params.client_id);
-    
+
     if (!client) {
         error(404, 'Client not found');
     }

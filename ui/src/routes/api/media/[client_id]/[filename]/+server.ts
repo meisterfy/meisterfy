@@ -15,8 +15,17 @@ const mimeTypes: Record<string, string> = {
 	'.webm': 'video/webm'
 };
 
+function isValidSegment(s: string): boolean {
+	return s === path.basename(s) && /^[a-z0-9][a-z0-9-_.]*$/i.test(s);
+}
+
 export const GET: RequestHandler = async ({ params }) => {
 	const { client_id, filename } = params;
+
+	if (!isValidSegment(client_id) || !isValidSegment(filename)) {
+		throw error(400, 'Invalid parameters');
+	}
+
 	const filePath = path.join(CLIENTS_DIR, client_id, 'posts', filename);
 
 	try {

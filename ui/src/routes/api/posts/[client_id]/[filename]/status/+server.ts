@@ -5,9 +5,17 @@ import type { RequestHandler } from './$types';
 
 const CLIENTS_DIR = path.resolve('../clients');
 
+function isValidSegment(s: string): boolean {
+	return s === path.basename(s) && /^[a-z0-9][a-z0-9-_.]*$/i.test(s);
+}
+
 export const POST: RequestHandler = async ({ params, request }) => {
 	const { status } = await request.json();
 	const { client_id, filename } = params;
+
+	if (!isValidSegment(client_id) || !isValidSegment(filename)) {
+		return json({ error: 'Invalid parameters' }, { status: 400 });
+	}
 
 	const filePath = path.join(CLIENTS_DIR, client_id, 'posts', filename);
 
