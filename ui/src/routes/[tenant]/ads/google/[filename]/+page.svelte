@@ -6,10 +6,23 @@
 	
 	let campaign = $state(data.campaign);
 	let saving = $state(false);
+	let saveError = $state('');
 
 	async function saveCampaign() {
-		// In a real app, this would send a POST request to update the JSON file.
-		alert('Save function not yet implemented. This requires an API endpoint.');
+		saving = true;
+		saveError = '';
+		const res = await fetch(`/api/ads/google/${data.tenant}/${data.campaign.filename}/status`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ status: campaign.status })
+		});
+		saving = false;
+		if (res.ok) {
+			window.location.href = `/${data.tenant}/ads/google`;
+		} else {
+			const err = await res.json();
+			saveError = err.error || 'Failed to save';
+		}
 	}
 </script>
 
@@ -24,12 +37,15 @@
 		</h2>
 	</div>
 	<div class="ml-auto flex items-center gap-3">
-		<button 
+		{#if saveError}
+			<span class="text-sm text-red-600 dark:text-red-400">{saveError}</span>
+		{/if}
+		<button
 			onclick={saveCampaign}
 			disabled={saving}
 			class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md font-medium text-sm transition-colors disabled:opacity-50"
 		>
-			<Save class="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}
+			<Save class="w-4 h-4" /> {saving ? 'Saving...' : 'Save Status'}
 		</button>
 	</div>
 </div>
