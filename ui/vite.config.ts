@@ -11,7 +11,7 @@ export default defineConfig({
 		alias: { $db: path.resolve('../lib/db') }
 	},
 	ssr: {
-		external: ['better-sqlite3'],
+		external: ['better-sqlite3', 'bun:sqlite'],
 	},
 	test: {
 		expect: { requireAssertions: true },
