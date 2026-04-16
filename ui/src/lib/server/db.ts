@@ -3,6 +3,12 @@ import path from 'node:path';
 
 const CLIENTS_DIR = path.resolve('../clients');
 
+function draftFirst<T extends { id: string; status: string }>(a: T, b: T): number {
+  if (a.status === 'draft' && b.status !== 'draft') return -1;
+  if (a.status !== 'draft' && b.status === 'draft') return 1;
+  return b.id.localeCompare(a.id);
+}
+
 export interface Brand {
   name: string;
   niche: string;
@@ -22,7 +28,7 @@ export interface PostWithMeta extends Post {
   client_id: string;
   filename: string;
   media_files: string[];
-  workflow: any;
+  workflow: Record<string, unknown>;
 }
 
 export async function getClients(): Promise<{ id: string; brand: Brand }[]> {
@@ -80,12 +86,7 @@ export async function getClientPosts(clientId: string): Promise<PostWithMeta[]> 
       }
     }
     
-    // Sort drafts first, then by id descending
-    return posts.sort((a, b) => {
-      if (a.status === 'draft' && b.status !== 'draft') return -1;
-      if (a.status !== 'draft' && b.status === 'draft') return 1;
-      return b.id.localeCompare(a.id);
-    });
+    return posts.sort(draftFirst);
   } catch (e) {
     return [];
   }
@@ -114,7 +115,7 @@ export interface GoogleAdCampaign {
 export interface GoogleAdCampaignWithMeta extends GoogleAdCampaign {
   client_id: string;
   filename: string;
-  workflow: any;
+  workflow: Record<string, unknown>;
 }
 
 export async function getClientGoogleAds(clientId: string): Promise<GoogleAdCampaignWithMeta[]> {
@@ -139,11 +140,7 @@ export async function getClientGoogleAds(clientId: string): Promise<GoogleAdCamp
       }
     }
     
-    return campaigns.sort((a, b) => {
-      if (a.status === 'draft' && b.status !== 'draft') return -1;
-      if (a.status !== 'draft' && b.status === 'draft') return 1;
-      return b.id.localeCompare(a.id);
-    });
+    return campaigns.sort(draftFirst);
   } catch (e) {
     return [];
   }
