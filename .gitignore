@@ -17,6 +17,17 @@ ui/build/
 
 # Database — contains operational data, never commit
 /db/*.db
+/db/*.db-shm
+/db/*.db-wal
+
+# Claude Code runtime files
+.claude/scheduled_tasks.lock
+
+# Dev logs
+ui/dev_log.txt
+
+# npm lockfile (project uses bun.lock)
+ui/package-lock.json
 
 # Debug and test artifacts
 ui/err*.html
