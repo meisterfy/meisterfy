@@ -16,7 +16,7 @@
 		importError = '';
 		if (!jsonInput.trim()) { importError = 'JSON cannot be empty'; return; }
 
-		let parsed: any;
+		let parsed: { result?: { id?: string; platform?: string } };
 		try { parsed = JSON.parse(jsonInput); }
 		catch { importError = 'Invalid JSON format'; return; }
 

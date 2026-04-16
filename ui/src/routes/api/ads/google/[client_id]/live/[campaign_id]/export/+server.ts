@@ -1,4 +1,5 @@
 import { getDetailedCampaign } from '$lib/server/googleAdsDetailed';
+import type { CampaignAdGroup } from '$lib/server/googleAdsDetailed';
 import { getClients } from '$lib/server/db';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -46,7 +47,7 @@ export const POST: RequestHandler = async ({ params, url }) => {
 - **ROAS:** ${campaign.metrics.roas}
 
 ## Ad Groups Performance
-${campaign.adGroups.map((ag: any) => `
+${campaign.adGroups.map((ag: CampaignAdGroup) => `
 ### ${ag.name} (${ag.status})
 - Impressions: ${ag.metrics.impressions}
 - Clicks: ${ag.metrics.clicks}

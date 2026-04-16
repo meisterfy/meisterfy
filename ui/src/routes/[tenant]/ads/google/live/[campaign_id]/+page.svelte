@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { HistoryEntry } from '$lib/server/googleAdsDetailed';
 	import { ArrowLeft, Download, Search, Target, DollarSign, Activity, ActivityIcon, Play, Pause, BarChart2, MousePointerClick, Percent, Calendar, Loader2 } from 'lucide-svelte';
 	import { Chart, registerables } from 'chart.js';
 	import { goto } from '$app/navigation';
@@ -22,9 +23,9 @@
 				chartInstance.destroy();
 			}
 			
-			const labels = data.campaign.history.map((h: any) => h.date);
-			const clicks = data.campaign.history.map((h: any) => h.clicks);
-			const impressions = data.campaign.history.map((h: any) => h.impressions);
+			const labels      = data.campaign.history.map((h: HistoryEntry) => h.date);
+			const clicks      = data.campaign.history.map((h: HistoryEntry) => h.clicks);
+			const impressions = data.campaign.history.map((h: HistoryEntry) => h.impressions);
 
 			chartInstance = new Chart(chartCanvas, {
 				type: 'line',

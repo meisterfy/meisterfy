@@ -187,11 +187,11 @@
 			<div class="p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center gap-2">
 				<FileEdit class="w-4 h-4 text-amber-600" />
 				<h3 class="font-bold text-slate-700 dark:text-slate-300">Drafts</h3>
-				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p: any) => p.status === 'draft').length}</span>
+				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p) => p.status === 'draft').length}</span>
 			</div>
 			
 			<div class="flex-1 overflow-y-auto p-4 space-y-4">
-				{#each data.posts.filter((p: any) => p.status === 'draft') as post}
+				{#each data.posts.filter((p) => p.status === 'draft') as post}
 					<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
 						<div class="flex items-start justify-between mb-2">
 							<span class="text-xs font-mono text-slate-400">{post.id.split('_')[0]}</span>
@@ -256,11 +256,11 @@
 			<div class="p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center gap-2">
 				<CheckCircle class="w-4 h-4 text-emerald-600" />
 				<h3 class="font-bold text-slate-700 dark:text-slate-300">Approved</h3>
-				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p: any) => p.status === 'approved').length}</span>
+				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p) => p.status === 'approved').length}</span>
 			</div>
 			
 			<div class="flex-1 overflow-y-auto p-4 space-y-4">
-				{#each data.posts.filter((p: any) => p.status === 'approved') as post}
+				{#each data.posts.filter((p) => p.status === 'approved') as post}
 					<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-emerald-200 dark:border-emerald-900/50">
 						<div class="flex items-start justify-between mb-2">
 							<span class="text-xs font-mono text-slate-400">{post.id.split('_')[0]}</span>

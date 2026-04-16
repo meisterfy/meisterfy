@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { Share2, Search, Monitor, Settings, Menu, X, FileText } from 'lucide-svelte';
+	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
 
-	let { data, children } = $props<{ data: LayoutData, children: any }>();
+	let { data, children } = $props<{ data: LayoutData; children: Snippet }>();
 
 	let currentPath = $derived($page.url.pathname);
 	let isMobileMenuOpen = $state(false);
