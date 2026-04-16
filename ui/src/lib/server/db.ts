@@ -9,10 +9,19 @@ function draftFirst<T extends { id: string; status: string }>(a: T, b: T): numbe
   return b.id.localeCompare(a.id);
 }
 
+export interface AdsMonitoring {
+  target_cpa_brl: number;
+  no_conversion_alert_days: number;
+  max_cpa_multiplier: number;
+  min_daily_impressions: number;
+  budget_underpace_threshold: number;
+}
+
 export interface Brand {
   name: string;
   niche: string;
   google_ads_id?: string;
+  ads_monitoring?: Partial<AdsMonitoring>;
 }
 
 export interface Post {

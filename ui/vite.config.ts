@@ -2,9 +2,14 @@ import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
+import path from 'node:path';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	envDir: path.resolve('../'),  // load .env from project root, not ui/
+	resolve: {
+		alias: { $db: path.resolve('../lib/db') }
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
