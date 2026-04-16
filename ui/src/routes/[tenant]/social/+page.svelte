@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { FileEdit, CheckCircle, Image as ImageIcon, Send, Trash2, MoreVertical, FileJson, X, Plus } from 'lucide-svelte';
+	import { FileEdit, FileJson, X, Plus, LayoutGrid, LayoutList, Columns, MoreVertical } from 'lucide-svelte';
+	import KanbanView from '$lib/components/social/KanbanView.svelte';
+	import CardsView from '$lib/components/social/CardsView.svelte';
+	import ListView from '$lib/components/social/ListView.svelte';
+	import { browser } from '$app/environment';
 
 	let { data } = $props<{ data: PageData }>();
 
@@ -15,6 +19,26 @@
 	let newContent = $state('');
 	let newHashtags = $state('');
 	let isCreating = $state(false);
+
+	// Layout State
+	let layoutMode = $state('kanban'); // 'kanban' | 'cards' | 'lista'
+
+	// Load layout from localStorage on client side
+	$effect(() => {
+		if (browser) {
+			const saved = localStorage.getItem('socialLayoutMode');
+			if (saved && ['kanban', 'cards', 'lista'].includes(saved)) {
+				layoutMode = saved;
+			}
+		}
+	});
+
+	// Save layout to localStorage whenever it changes
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem('socialLayoutMode', layoutMode);
+		}
+	});
 
 	async function createPostViaForm() {
 		if (!newTitle.trim() || !newContent.trim()) {
@@ -146,7 +170,27 @@
 		<h2 class="font-semibold text-lg">Social Media</h2>
 	</div>
 
-	<div class="ml-auto relative flex items-center gap-2">
+	<div class="ml-auto flex items-center gap-4">
+		<!-- Layout Selector -->
+		<div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+			{#each [
+				{ mode: 'kanban', icon: Columns,    label: 'Kanban' },
+				{ mode: 'cards',  icon: LayoutGrid, label: 'Cards'  },
+				{ mode: 'lista',  icon: LayoutList, label: 'Lista'  },
+			] as opt (opt.mode)}
+				{@const active = layoutMode === opt.mode}
+				<button
+					onclick={() => layoutMode = opt.mode}
+					title={opt.label}
+					class="flex items-center px-2 py-1.5 rounded-md transition-all {active
+						? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+						: 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}"
+				>
+					<svelte:component this={opt.icon} class="w-4 h-4" />
+				</button>
+			{/each}
+		</div>
+
 		<button 
 			onclick={() => { isFormModalOpen = true; }} 
 			class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium text-sm transition-colors shadow-sm"
@@ -180,150 +224,13 @@
 </div>
 
 <div class="flex-1 overflow-x-auto p-6 h-[calc(100vh-3.5rem)]">
-	<div class="flex gap-6 h-full w-max min-w-full">
-		
-		<!-- Drafts Column -->
-		<div class="w-80 flex flex-col h-full bg-slate-100/50 dark:bg-slate-900/50 rounded-xl">
-			<div class="p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center gap-2">
-				<FileEdit class="w-4 h-4 text-amber-600" />
-				<h3 class="font-bold text-slate-700 dark:text-slate-300">Drafts</h3>
-				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p) => p.status === 'draft').length}</span>
-			</div>
-			
-			<div class="flex-1 overflow-y-auto p-4 space-y-4">
-				{#each data.posts.filter((p) => p.status === 'draft') as post}
-					<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-						<div class="flex items-start justify-between mb-2">
-							<span class="text-xs font-mono text-slate-400">{post.id.split('_')[0]}</span>
-							<span class="text-[10px] uppercase tracking-wider font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded">{post.media_type}</span>
-						</div>
-						{#if post.media_files?.length > 0}
-							<div class="mb-3 rounded overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 relative">
-								{#if post.media_files[0].match(/\.(mp4|webm)$/i)}
-									<video src="/api/media/{data.client.id}/{post.media_files[0]}" class="w-full h-full object-cover" muted loop playsinline></video>
-								{:else}
-									<img src="/api/media/{data.client.id}/{post.media_files[0]}" alt="Thumbnail" class="w-full h-full object-cover" />
-								{/if}
-								{#if post.media_files.length > 1}
-									<div class="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm shadow-sm pointer-events-none">
-										1/{post.media_files.length}
-									</div>
-								{/if}
-							</div>
-						{/if}
-						<a href="/{data.client.id}/social/{post.filename}" class="hover:text-indigo-600 block transition-colors">
-							<h4 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 leading-snug">{post.title}</h4>
-						</a>
-						<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-3 mb-4">{post.content}</p>
-
-						<div class="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-700/50">
-							<label class="cursor-pointer text-xs flex items-center gap-1.5 text-slate-500 hover:text-indigo-600">
-								<ImageIcon class="w-3.5 h-3.5" /> Attach Media
-								<input type="file" multiple class="hidden" accept="image/*,video/*" onchange={(e) => handleQuickUpload(e, post.id, post.filename)} />
-							</label>
-
-							<div class="flex items-center gap-1 -mr-1">
-								<button
-									onclick={() => deletePost(post.id, post.filename)}
-									title="Delete Post"
-									class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-								>
-									<Trash2 class="w-4 h-4" />
-								</button>
-								<a
-									href="/{data.client.id}/social/{post.filename}"
-									title="Edit Post"
-									class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors"
-								>
-									<FileEdit class="w-4 h-4" />
-								</a>
-								<button 
-									onclick={() => updateStatus(post.id, post.filename, 'approved')}
-									title="Approve Post"
-									class="p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded transition-colors"
-								>
-									<CheckCircle class="w-4 h-4" />
-								</button>
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-		<!-- Approved Column -->
-		<div class="w-80 flex flex-col h-full bg-slate-100/50 dark:bg-slate-900/50 rounded-xl">
-			<div class="p-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center gap-2">
-				<CheckCircle class="w-4 h-4 text-emerald-600" />
-				<h3 class="font-bold text-slate-700 dark:text-slate-300">Approved</h3>
-				<span class="ml-auto bg-slate-200 dark:bg-slate-800 text-xs py-0.5 px-2 rounded-full font-medium">{data.posts.filter((p) => p.status === 'approved').length}</span>
-			</div>
-			
-			<div class="flex-1 overflow-y-auto p-4 space-y-4">
-				{#each data.posts.filter((p) => p.status === 'approved') as post}
-					<div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-emerald-200 dark:border-emerald-900/50">
-						<div class="flex items-start justify-between mb-2">
-							<span class="text-xs font-mono text-slate-400">{post.id.split('_')[0]}</span>
-							{#if post.media_files?.length > 0}
-								<span class="text-xs flex items-center gap-1 text-emerald-600 font-medium">
-									<ImageIcon class="w-3 h-3" /> Ready
-								</span>
-							{:else}
-								<span class="text-xs text-amber-500 font-medium bg-amber-50 px-1.5 py-0.5 rounded">Missing Media</span>
-							{/if}
-						</div>
-						{#if post.media_files?.length > 0}
-							<div class="mb-3 rounded overflow-hidden aspect-video bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 relative">
-								{#if post.media_files[0].match(/\.(mp4|webm)$/i)}
-									<video src="/api/media/{data.client.id}/{post.media_files[0]}" class="w-full h-full object-cover" muted loop playsinline></video>
-								{:else}
-									<img src="/api/media/{data.client.id}/{post.media_files[0]}" alt="Thumbnail" class="w-full h-full object-cover" />
-								{/if}
-								{#if post.media_files.length > 1}
-									<div class="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm shadow-sm pointer-events-none">
-										1/{post.media_files.length}
-									</div>
-								{/if}
-							</div>
-						{/if}
-						<a href="/{data.client.id}/social/{post.filename}" class="hover:text-indigo-600 block transition-colors">
-							<h4 class="font-semibold text-slate-900 dark:text-slate-100 mb-2 leading-snug">{post.title}</h4>
-						</a>
-
-						<div class="flex justify-between items-center pt-4 mt-2 border-t border-slate-100 dark:border-slate-700/50">
-							<button
-								onclick={() => updateStatus(post.id, post.filename, 'draft')}
-								class="text-xs text-slate-400 hover:text-slate-700"
-							>
-								Back to draft
-							</button>
-
-							<div class="flex items-center gap-1 -mr-1">
-								<button
-									onclick={() => deletePost(post.id, post.filename)}
-									title="Delete Post"
-									class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-								>
-									<Trash2 class="w-4 h-4" />
-								</button>
-								<a
-									href="/{data.client.id}/social/{post.filename}"
-									title="Edit Post"
-									class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors"
-								>
-									<FileEdit class="w-4 h-4" />
-								</a>
-								<button class="text-xs flex items-center gap-1 bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-md font-medium shadow-sm transition-colors ml-1">
-									Publish <Send class="w-3 h-3 ml-0.5" />
-								</button>
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-
-	</div>
+	{#if layoutMode === 'kanban'}
+		<KanbanView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
+	{:else if layoutMode === 'cards'}
+		<CardsView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
+	{:else if layoutMode === 'lista'}
+		<ListView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
+	{/if}
 </div>
 
 {#if isFormModalOpen}

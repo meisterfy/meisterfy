@@ -13,5 +13,5 @@
     "lib": "$lib",
     "hooks": "$lib/hooks"
   },
-  "iconLibrary": "lucide-svelte"
+  "iconLibrary": "lucide"
 }
