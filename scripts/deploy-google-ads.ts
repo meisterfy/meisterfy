@@ -1,9 +1,6 @@
-import { GoogleAdsApi, enums, toMicros } from 'google-ads-api';
+import { enums, toMicros, getCustomer } from './lib/ads.ts';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 interface AdGroup {
     name: string;
@@ -89,29 +86,7 @@ async function main() {
         process.exit(1);
     }
 
-    const clientId_env = process.env.GOOGLE_ADS_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET;
-    const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
-    const refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN;
-    const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
-    const cleanCustomerId = customerId.replace(/-/g, '');
-
-    if (!clientId_env || !clientSecret || !developerToken || !refreshToken) {
-        console.error('Missing Google Ads credentials in .env');
-        process.exit(1);
-    }
-
-    const ads = new GoogleAdsApi({
-        client_id: clientId_env,
-        client_secret: clientSecret,
-        developer_token: developerToken,
-    });
-
-    const customer = ads.Customer({
-        customer_id: cleanCustomerId,
-        login_customer_id: loginCustomerId,
-        refresh_token: refreshToken,
-    });
+    const customer = getCustomer(customerId);
 
     console.log(`\nDeploying "${campaign.id}" to customer ${cleanCustomerId}...`);
     console.log(`Budget: ${campaign.budget_suggestion} | Ad Groups: ${campaign.ad_groups.length} | URL: ${finalUrl}\n`);
