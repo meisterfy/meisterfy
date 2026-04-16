@@ -13,10 +13,6 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 const GRAPH_API_VERSION = 'v22.0';
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
