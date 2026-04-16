@@ -1,4 +1,5 @@
 import { GoogleAdsApi } from 'google-ads-api';
+import { env } from '$env/dynamic/private';
 
 export interface LiveCampaign {
     id: string;
@@ -24,19 +25,29 @@ function mapStatus(raw: number | string): string {
 export async function getLiveCampaigns(customerId?: string): Promise<LiveCampaign[]> {
     if (!customerId) return [];
 
-    const clientId     = process.env.GOOGLE_ADS_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET;
-    const developerToken  = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
-    const refreshToken    = process.env.GOOGLE_ADS_REFRESH_TOKEN;
-    const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
+    const clientId        = env.GOOGLE_ADS_CLIENT_ID;
+    const clientSecret    = env.GOOGLE_ADS_CLIENT_SECRET;
+    const developerToken  = env.GOOGLE_ADS_DEVELOPER_TOKEN;
+    const refreshToken    = env.GOOGLE_ADS_REFRESH_TOKEN;
+    const loginCustomerId = env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
 
     if (!clientId || !clientSecret || !developerToken || !refreshToken) {
-        console.warn('Google Ads credentials are missing in .env');
+        const missing = [
+            !clientId        && 'GOOGLE_ADS_CLIENT_ID',
+            !clientSecret    && 'GOOGLE_ADS_CLIENT_SECRET',
+            !developerToken  && 'GOOGLE_ADS_DEVELOPER_TOKEN',
+            !refreshToken    && 'GOOGLE_ADS_REFRESH_TOKEN',
+        ].filter(Boolean);
+        console.error(`[Google Ads] Missing env vars: ${missing.join(', ')}`);
         return [];
     }
 
     try {
-        const client = new GoogleAdsApi({ client_id: clientId, client_secret: clientSecret, developer_token: developerToken });
+        const client = new GoogleAdsApi({
+            client_id: clientId,
+            client_secret: clientSecret,
+            developer_token: developerToken,
+        });
 
         const customer = client.Customer({
             customer_id: customerId.replace(/-/g, ''),
@@ -64,8 +75,8 @@ export async function getLiveCampaigns(customerId?: string): Promise<LiveCampaig
                 ? (Number(row.metrics.cost_micros) / 1_000_000).toFixed(2)
                 : '0.00',
         }));
-    } catch (error) {
-        console.error('Failed to fetch live campaigns from Google Ads:', error);
+    } catch (err) {
+        console.error('[Google Ads] API error:', err);
         return [];
     }
 }

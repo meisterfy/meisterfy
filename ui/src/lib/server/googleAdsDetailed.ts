@@ -1,4 +1,5 @@
 import { GoogleAdsApi } from 'google-ads-api';
+import { env } from '$env/dynamic/private';
 
 export interface AdGroupMetrics {
     impressions: string;
@@ -113,11 +114,11 @@ export async function getDetailedCampaign(
         throw new Error(`Missing IDs. customerId=${customerId}, campaignId=${campaignId}`);
     }
 
-    const clientId       = process.env.GOOGLE_ADS_CLIENT_ID;
-    const clientSecret   = process.env.GOOGLE_ADS_CLIENT_SECRET;
-    const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
-    const refreshToken   = process.env.GOOGLE_ADS_REFRESH_TOKEN;
-    const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
+    const clientId        = env.GOOGLE_ADS_CLIENT_ID;
+    const clientSecret    = env.GOOGLE_ADS_CLIENT_SECRET;
+    const developerToken  = env.GOOGLE_ADS_DEVELOPER_TOKEN;
+    const refreshToken    = env.GOOGLE_ADS_REFRESH_TOKEN;
+    const loginCustomerId = env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
 
     if (!clientId || !clientSecret || !developerToken || !refreshToken) {
         throw new Error(

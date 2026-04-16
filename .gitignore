@@ -15,6 +15,9 @@ ui/build/
 # Client data — contains sensitive business information and media files (local-only)
 /clients/
 
+# Database — contains operational data, never commit
+/db/*.db
+
 # Debug and test artifacts
 ui/err*.html
 ui/test-*.ts

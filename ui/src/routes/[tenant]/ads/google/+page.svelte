@@ -175,6 +175,16 @@
 								</td>
 							</tr>
 						{/each}
+					{:catch apiError}
+						<tr>
+							<td colspan="5" class="px-6 py-8 text-center">
+								<div class="flex items-center justify-center gap-2 text-red-500">
+									<AlertCircle class="w-4 h-4" />
+									<span class="text-sm font-medium">Google Ads API error:</span>
+									<span class="text-sm font-mono text-red-400">{apiError?.message ?? 'unknown error'}</span>
+								</div>
+							</td>
+						</tr>
 					{/await}
 
 					{#each data.campaigns as campaign (campaign.id)}
