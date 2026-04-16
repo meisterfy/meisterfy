@@ -10,6 +10,9 @@ export default defineConfig({
 	resolve: {
 		alias: { $db: path.resolve('../lib/db') }
 	},
+	ssr: {
+		external: ['better-sqlite3'],
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [
