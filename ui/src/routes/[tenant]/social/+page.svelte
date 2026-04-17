@@ -1,344 +1,215 @@
 <script lang="ts">
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import { FileEdit, FileJson, X, Plus, LayoutGrid, LayoutList, Columns, MoreVertical } from 'lucide-svelte';
-	import KanbanView from '$lib/components/social/KanbanView.svelte';
-	import CardsView from '$lib/components/social/CardsView.svelte';
-	import ListView from '$lib/components/social/ListView.svelte';
-	import { browser } from '$app/environment';
+	import type { PostWithMeta, PostPlatform } from '$lib/server/db';
 
 	let { data } = $props<{ data: PageData }>();
 
-	let isMenuOpen = $state(false);
-	let isModalOpen = $state(false);
-	let isFormModalOpen = $state(false);
-	let jsonInput = $state('');
-	let importError = $state('');
-	let isImporting = $state(false);
+	// ── Calendar state ────────────────────────────────────────────────────────
+	const today = new Date();
+	let viewYear  = $state(today.getFullYear());
+	let viewMonth = $state(today.getMonth()); // 0-indexed
 
-	let newTitle = $state('');
-	let newContent = $state('');
-	let newHashtags = $state('');
-	let isCreating = $state(false);
+	const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+	const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-	// Layout State
-	let layoutMode = $state('kanban'); // 'kanban' | 'cards' | 'lista'
+	// Build calendar grid (42 cells = 6 weeks)
+	const calendarCells = $derived.by(() => {
+		const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+		const cells: Array<{ date: string | null; day: number | null }> = [];
 
-	// Load layout from localStorage on client side
-	$effect(() => {
-		if (browser) {
-			const saved = localStorage.getItem('socialLayoutMode');
-			if (saved && ['kanban', 'cards', 'lista'].includes(saved)) {
-				layoutMode = saved;
-			}
+		for (let i = 0; i < firstDay; i++) cells.push({ date: null, day: null });
+		for (let d = 1; d <= daysInMonth; d++) {
+			const mm = String(viewMonth + 1).padStart(2, '0');
+			const dd = String(d).padStart(2, '0');
+			cells.push({ date: `${viewYear}-${mm}-${dd}`, day: d });
 		}
+		while (cells.length % 7 !== 0) cells.push({ date: null, day: null });
+		return cells;
 	});
 
-	// Save layout to localStorage whenever it changes
-	$effect(() => {
-		if (browser) {
-			localStorage.setItem('socialLayoutMode', layoutMode);
+	// Group posts by date
+	const postsByDate = $derived.by(() => {
+		const map = new Map<string, PostWithMeta[]>();
+		for (const p of data.scheduled) {
+			if (!p.scheduled_date) continue;
+			if (!map.has(p.scheduled_date)) map.set(p.scheduled_date, []);
+			map.get(p.scheduled_date)!.push(p);
 		}
+		return map;
 	});
 
-	async function createPostViaForm() {
-		if (!newTitle.trim() || !newContent.trim()) {
-			alert('Title and content are required.');
-			return;
-		}
-
-		isCreating = true;
-		
-		const dateStr = new Date().toISOString().split('T')[0];
-		const slug = newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-		const id = `${dateStr}_${slug || 'post'}`;
-
-		const tags = newHashtags.split(' ').map(t => t.trim()).filter(t => t);
-
-		const payload = {
-			workflow: {},
-			result: {
-				id,
-				status: 'draft',
-				title: newTitle,
-				content: newContent,
-				hashtags: tags,
-				media_type: 'image'
-			}
-		};
-
-		const res = await fetch(`/api/posts/${data.client.id}/import`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(payload)
-		});
-
-		isCreating = false;
-
-		if (res.ok) {
-			isFormModalOpen = false;
-			window.location.reload();
-		} else {
-			alert('Failed to create post');
-		}
+	function prevMonth() {
+		if (viewMonth === 0) { viewMonth = 11; viewYear--; }
+		else viewMonth--;
 	}
 
-	async function importJson() {
-		importError = '';
-		if (!jsonInput.trim()) {
-			importError = 'JSON cannot be empty';
-			return;
-		}
-
-		let parsed;
-		try {
-			parsed = JSON.parse(jsonInput);
-		} catch (e) {
-			importError = 'Invalid JSON format';
-			return;
-		}
-
-		if (!parsed.result || !parsed.result.id) {
-			importError = 'Missing result object or result.id';
-			return;
-		}
-
-		isImporting = true;
-		const res = await fetch(`/api/posts/${data.client.id}/import`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(parsed)
-		});
-
-		isImporting = false;
-
-		if (res.ok) {
-			isModalOpen = false;
-			jsonInput = '';
-			window.location.reload();
-		} else {
-			const err = await res.json();
-			importError = err.error || 'Failed to import JSON';
-		}
+	function nextMonth() {
+		if (viewMonth === 11) { viewMonth = 0; viewYear++; }
+		else viewMonth++;
 	}
 
-	async function updateStatus(postId: string, filename: string, newStatus: string) {
-		await fetch(`/api/posts/${data.client.id}/${filename}/status`, {
-			method: 'POST',
-			body: JSON.stringify({ status: newStatus })
-		});
-		window.location.reload();
-	}
-	
-	async function handleQuickUpload(event: Event, postId: string, filename: string) {
-		const target = event.target as HTMLInputElement;
-		const files = target.files;
-		if (!files || files.length === 0) return;
-
-		const formData = new FormData();
-		for (let i = 0; i < files.length; i++) {
-			formData.append('file', files[i]);
-		}
-
-		const res = await fetch(`/api/posts/${data.client.id}/${filename}/media`, {
-			method: 'POST',
-			body: formData
-		});
-
-		if (res.ok) {
-			window.location.reload();
-		} else {
-			alert('Failed to upload media');
-		}
+	function isToday(date: string | null): boolean {
+		if (!date) return false;
+		return date === today.toISOString().slice(0, 10);
 	}
 
-	async function deletePost(postId: string, filename: string) {
-		if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-			const res = await fetch(`/api/posts/${data.client.id}/${filename}`, {
-				method: 'DELETE'
-			});
-			if (res.ok) {
-				window.location.reload();
-			} else {
-				alert('Failed to delete post');
-			}
-		}
-	}
+	// ── Platform config ───────────────────────────────────────────────────────
+	const PLATFORM: Record<PostPlatform, { label: string; color: string }> = {
+		instagram_feed:    { label: 'IG Feed',    color: 'bg-pink-500' },
+		instagram_stories: { label: 'IG Stories', color: 'bg-purple-500' },
+		instagram_reels:   { label: 'IG Reels',   color: 'bg-rose-500' },
+		linkedin:          { label: 'LinkedIn',   color: 'bg-blue-600' },
+		facebook:          { label: 'Facebook',   color: 'bg-blue-500' },
+	};
+
+	const STATUS_COLOR: Record<string, string> = {
+		scheduled: 'bg-amber-400',
+		published:  'bg-emerald-400',
+	};
+
+	// ── Detail modal ──────────────────────────────────────────────────────────
+	let selectedPost = $state<PostWithMeta | null>(null);
 </script>
 
-<div class="h-14 flex items-center px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm z-10 sticky top-0">
-	<div class="flex items-center gap-2">
-		<h2 class="font-semibold text-lg">Social Media</h2>
-	</div>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
 
-	<div class="ml-auto flex items-center gap-4">
-		<!-- Layout Selector -->
-		<div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
-			{#each [
-				{ mode: 'kanban', icon: Columns,    label: 'Kanban' },
-				{ mode: 'cards',  icon: LayoutGrid, label: 'Cards'  },
-				{ mode: 'lista',  icon: LayoutList, label: 'Lista'  },
-			] as opt (opt.mode)}
-				{@const active = layoutMode === opt.mode}
-				<button
-					onclick={() => layoutMode = opt.mode}
-					title={opt.label}
-					class="flex items-center px-2 py-1.5 rounded-md transition-all {active
-						? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-						: 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}"
-				>
-					<svelte:component this={opt.icon} class="w-4 h-4" />
-				</button>
-			{/each}
-		</div>
-
-		<button 
-			onclick={() => { isFormModalOpen = true; }} 
-			class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md font-medium text-sm transition-colors shadow-sm"
-		>
-			<Plus class="w-4 h-4" /> New
-		</button>
-
-		<div class="relative">
-			<button 
-				onclick={() => isMenuOpen = !isMenuOpen} 
-				class="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+	<!-- Calendar header -->
+	<div class="flex items-center justify-between mb-6">
+		<h2 class="text-xl font-bold text-slate-900 dark:text-white">
+			{MONTHS[viewMonth]} {viewYear}
+		</h2>
+		<div class="flex items-center gap-1">
+			<button
+				onclick={prevMonth}
+				class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
 			>
-				<MoreVertical class="w-5 h-5" />
+				<ChevronLeft class="w-5 h-5" />
 			</button>
-			
-			{#if isMenuOpen}
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div class="fixed inset-0 z-40" onclick={() => isMenuOpen = false}></div>
-				<div class="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-900 rounded-md shadow-lg border border-slate-200 dark:border-slate-800 z-50 py-1">
-					<button 
-						onclick={() => { isModalOpen = true; isMenuOpen = false; }} 
-						class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
-					>
-						<FileJson class="w-4 h-4" /> Add via JSON
-					</button>
-				</div>
-			{/if}
+			<button
+				onclick={() => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); }}
+				class="px-3 py-1.5 text-sm font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+			>
+				Today
+			</button>
+			<button
+				onclick={nextMonth}
+				class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+			>
+				<ChevronRight class="w-5 h-5" />
+			</button>
 		</div>
 	</div>
-</div>
 
-<div class="flex-1 overflow-x-auto p-6 h-[calc(100vh-3.5rem)]">
-	{#if layoutMode === 'kanban'}
-		<KanbanView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
-	{:else if layoutMode === 'cards'}
-		<CardsView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
-	{:else if layoutMode === 'lista'}
-		<ListView posts={data.posts} clientId={data.client.id} onUpdateStatus={updateStatus} onDelete={deletePost} onUpload={handleQuickUpload} />
-	{/if}
-</div>
-
-{#if isFormModalOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-		<div class="absolute inset-0" onclick={() => isFormModalOpen = false}></div>
-		<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl w-full max-w-2xl flex flex-col overflow-hidden relative z-10">
-			<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-				<h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-					<FileEdit class="w-5 h-5 text-indigo-500" /> Create New Post
-				</h3>
-				<button onclick={() => isFormModalOpen = false} class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-					<X class="w-5 h-5" />
-				</button>
+	<!-- Grid header (days of week) -->
+	<div class="grid grid-cols-7 mb-1">
+		{#each DAYS as d}
+			<div class="text-center text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-2">
+				{d}
 			</div>
-			
-			<div class="p-6 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950/50 space-y-4">
-				<div>
-					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
-					<input 
-						type="text" 
-						bind:value={newTitle}
-						class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-						placeholder="Post title..."
-					/>
-				</div>
-				
-				<div>
-					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Post Content</label>
-					<textarea 
-						bind:value={newContent}
-						rows="6"
-						class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
-						placeholder="Write the post content here..."
-					></textarea>
-				</div>
-
-				<div>
-					<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hashtags (space separated)</label>
-					<input 
-						type="text" 
-						bind:value={newHashtags}
-						class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
-						placeholder="#hashtag1 #hashtag2"
-					/>
-				</div>
-			</div>
-			
-			<div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-end gap-3">
-				<button onclick={() => isFormModalOpen = false} class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
-				<button onclick={createPostViaForm} disabled={isCreating} class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2">
-					{#if isCreating}
-						Loading...
-					{:else}
-						<Plus class="w-4 h-4" /> Create Post
-					{/if}
-				</button>
-			</div>
-		</div>
+		{/each}
 	</div>
-{/if}
 
-{#if isModalOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-		<div class="absolute inset-0" onclick={() => isModalOpen = false}></div>
-		<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl w-full max-w-2xl flex flex-col overflow-hidden relative z-10">
-			<div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-				<h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-					<FileJson class="w-5 h-5 text-indigo-500" /> Import Post JSON
-				</h3>
-				<button onclick={() => isModalOpen = false} class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-					<X class="w-5 h-5" />
-				</button>
-			</div>
-			
-			<div class="p-6 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950/50">
-				{#if importError}
-					<div class="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm font-medium border border-red-200 dark:border-red-900/50">
-						{importError}
+	<!-- Calendar grid -->
+	<div class="grid grid-cols-7 border-l border-t border-slate-200 dark:border-slate-800">
+		{#each calendarCells as cell}
+			{@const posts = cell.date ? (postsByDate.get(cell.date) ?? []) : []}
+			<div
+				class="border-r border-b border-slate-200 dark:border-slate-800 min-h-[100px] p-1.5 {cell.date ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-950'}"
+			>
+				{#if cell.day}
+					<!-- Day number -->
+					<div class="flex items-center justify-center mb-1">
+						<span class="text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full {isToday(cell.date) ? 'bg-indigo-500 text-white' : 'text-slate-500 dark:text-slate-400'}">
+							{cell.day}
+						</span>
+					</div>
+
+					<!-- Posts for this day -->
+					<div class="flex flex-col gap-0.5">
+						{#each posts.slice(0, 3) as post (post.id)}
+							<button
+								onclick={() => selectedPost = post}
+								class="w-full text-left rounded px-1.5 py-0.5 flex items-center gap-1.5 hover:opacity-80 transition-opacity group"
+								style="background: {post.status === 'published' ? 'rgb(220 252 231)' : 'rgb(254 243 199)'}"
+							>
+								{#if post.platform && PLATFORM[post.platform]}
+									<span class="w-1.5 h-1.5 rounded-full shrink-0 {PLATFORM[post.platform].color}"></span>
+								{/if}
+								<span class="text-[10px] font-medium truncate text-slate-700 dark:text-slate-700">
+									{post.title}
+								</span>
+							</button>
+						{/each}
+						{#if posts.length > 3}
+							<span class="text-[10px] text-slate-400 pl-1">+{posts.length - 3} more</span>
+						{/if}
 					</div>
 				{/if}
-				<p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Paste the valid JSON payload below. Make sure it matches the <code>result</code> schema.</p>
-				<textarea 
-					bind:value={jsonInput} 
-					class="w-full h-64 font-mono text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200"
-					placeholder={`{
-  "result": {
-    "id": "YYYY-MM-DD_slug-name",
-    "title": "...",
-    "content": "..."
-  }
-}`}
-				></textarea>
 			</div>
-			
-			<div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-end gap-3">
-				<button onclick={() => isModalOpen = false} class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">Cancel</button>
-				<button onclick={importJson} disabled={isImporting} class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2">
-					{#if isImporting}
-						Loading...
-					{:else}
-						<FileJson class="w-4 h-4" /> Import Post
-					{/if}
-				</button>
+		{/each}
+	</div>
+
+	<!-- Legend -->
+	<div class="flex items-center gap-4 mt-4 text-xs text-slate-500">
+		<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-sm bg-amber-100 border border-amber-300"></span> Scheduled</span>
+		<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-sm bg-emerald-100 border border-emerald-300"></span> Published</span>
+		{#each Object.entries(PLATFORM) as [key, val]}
+			<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full {val.color}"></span> {val.label}</span>
+		{/each}
+	</div>
+</div>
+
+<!-- Post detail modal -->
+{#if selectedPost}
+	<div
+		class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+		onclick={() => selectedPost = null}
+		onkeydown={e => e.key === 'Escape' && (selectedPost = null)}
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+	>
+		<div
+			class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 relative"
+			onclick={e => e.stopPropagation()}
+			onkeydown={e => e.stopPropagation()}
+			role="presentation"
+		>
+			<div class="flex items-start justify-between gap-4 mb-4">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+						{selectedPost.platform ? PLATFORM[selectedPost.platform]?.label : '—'}
+						{#if selectedPost.scheduled_date}
+							· {selectedPost.scheduled_date}{selectedPost.scheduled_time ? ' ' + selectedPost.scheduled_time : ''}
+						{/if}
+					</p>
+					<h3 class="text-lg font-bold text-slate-900 dark:text-white">{selectedPost.title}</h3>
+				</div>
+				<span class="text-xs px-2 py-0.5 rounded-full font-bold uppercase {selectedPost.status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+					{selectedPost.status}
+				</span>
 			</div>
+
+			<p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed mb-4">
+				{selectedPost.content}
+			</p>
+
+			{#if selectedPost.hashtags?.length}
+				<p class="text-xs text-indigo-500 dark:text-indigo-400 flex flex-wrap gap-1">
+					{#each selectedPost.hashtags as tag}
+						<span>{tag}</span>
+					{/each}
+				</p>
+			{/if}
+
+			<button
+				onclick={() => selectedPost = null}
+				class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+			>
+				✕
+			</button>
 		</div>
 	</div>
 {/if}

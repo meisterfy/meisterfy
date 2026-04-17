@@ -24,13 +24,19 @@ export interface Brand {
   ads_monitoring?: Partial<AdsMonitoring>;
 }
 
+export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published';
+export type PostPlatform = 'instagram_feed' | 'instagram_stories' | 'instagram_reels' | 'linkedin' | 'facebook';
+
 export interface Post {
   id: string;
-  status: 'draft' | 'approved' | 'published';
+  status: PostStatus;
   title: string;
   content: string;
   hashtags: string[];
   media_type: string;
+  scheduled_date?: string;   // YYYY-MM-DD
+  scheduled_time?: string;   // HH:MM
+  platform?: PostPlatform;
 }
 
 export interface PostWithMeta extends Post {
@@ -99,6 +105,18 @@ export async function getClientPosts(clientId: string): Promise<PostWithMeta[]> 
   } catch (e) {
     return [];
   }
+}
+
+export async function updatePost(
+  clientId: string,
+  filename: string,
+  patch: Partial<Post>
+): Promise<void> {
+  const filePath = path.join(CLIENTS_DIR, clientId, 'posts', filename);
+  const raw = await fs.readFile(filePath, 'utf-8');
+  const parsed = JSON.parse(raw);
+  parsed.result = { ...parsed.result, ...patch };
+  await fs.writeFile(filePath, JSON.stringify(parsed, null, 4), 'utf-8');
 }
 
 export interface GoogleAdGroup {

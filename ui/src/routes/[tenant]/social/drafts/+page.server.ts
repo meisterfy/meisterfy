@@ -9,8 +9,8 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const all = await getClientPosts(params.tenant);
 
-	// Calendar: posts that have a scheduled_date (scheduled or published)
-	const scheduled = all.filter(p => p.scheduled_date);
+	// Drafts: no scheduled_date yet (draft or approved)
+	const drafts = all.filter(p => !p.scheduled_date);
 
-	return { tenant: params.tenant, client, scheduled };
+	return { tenant: params.tenant, client, drafts };
 };
