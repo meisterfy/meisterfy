@@ -31,17 +31,20 @@
 		return map[agent] ?? agent;
 	}
 
-	// Count campaigns from output string like "portico | campaigns: 4 | alerts: 0"
+	// Count campaigns: each appears as "[N] Campaign Name" in output
 	function parseCampaigns(output: string | null): string {
 		if (!output) return '—';
-		const m = output.match(/campaigns:\s*(\d+)/);
-		return m ? m[1] : '—';
+		const matches = output.match(/\[\d+\]/g);
+		return matches ? String(matches.length) : '—';
 	}
 
-	function parseAlerts(output: string | null): string {
+	// Sum conversions across all campaigns from output
+	function parseTotalConversions(output: string | null): string {
 		if (!output) return '—';
-		const m = output.match(/alerts:\s*(\d+)/);
-		return m ? m[1] : '—';
+		const matches = [...output.matchAll(/conv:\s*([\d.]+)/g)];
+		if (!matches.length) return '—';
+		const total = matches.reduce((s, m) => s + parseFloat(m[1]), 0);
+		return total % 1 === 0 ? String(total) : total.toFixed(1);
 	}
 
 	const lastRun = data.lastRun as AgentRunRow | null;
@@ -94,7 +97,7 @@
 					</div>
 					<div class="flex items-center gap-4 mt-2 text-sm text-slate-600 dark:text-slate-400">
 						<span>Campaigns collected: <strong>{parseCampaigns(lastRun.output ?? null)}</strong></span>
-						<span>Alerts generated: <strong>{parseAlerts(lastRun.output ?? null)}</strong></span>
+						<span>Total conversions: <strong>{parseTotalConversions(lastRun.output ?? null)}</strong></span>
 					</div>
 					{#if lastRun.error}
 						<p class="text-xs font-mono text-red-600 dark:text-red-400 mt-2 bg-red-100 dark:bg-red-900/20 rounded px-2 py-1 truncate">{lastRun.error}</p>
@@ -145,7 +148,7 @@
 						<!-- Output summary -->
 						<span class="text-xs text-slate-600 dark:text-slate-400 flex-1 truncate">
 							{#if run.status === 'success'}
-								{parseCampaigns(run.output ?? null)} campaigns · {parseAlerts(run.output ?? null)} alerts
+								{parseCampaigns(run.output ?? null)} campaigns · {parseTotalConversions(run.output ?? null)} conv
 							{:else}
 								<span class="text-red-500">{run.error ?? 'error'}</span>
 							{/if}
