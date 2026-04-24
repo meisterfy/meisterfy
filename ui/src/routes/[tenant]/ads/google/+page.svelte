@@ -178,11 +178,29 @@
 					{:catch apiError}
 						<tr>
 							<td colspan="5" class="px-6 py-8 text-center">
-								<div class="flex items-center justify-center gap-2 text-red-500">
-									<AlertCircle class="w-4 h-4" />
-									<span class="text-sm font-medium">Google Ads API error:</span>
-									<span class="text-sm font-mono text-red-400">{apiError?.message ?? 'unknown error'}</span>
-								</div>
+								{#if apiError?.message === 'invalid_grant'}
+									<div class="flex flex-col items-center gap-3 text-amber-700 dark:text-amber-400">
+										<AlertCircle class="w-6 h-6 text-amber-500" />
+										<p class="text-sm font-medium">Google Ads authentication expired (invalid_grant)</p>
+										<a
+											href="/api/auth/google-ads"
+											target="_blank"
+											rel="noopener"
+											class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+										>
+											Re-authenticate with Google
+										</a>
+										<p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+											After authorizing, restart the dev server for the new token to take effect. Make sure <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">http://127.0.0.1:5173/api/auth/google-ads/callback</code> is in your Google Cloud Console redirect URIs.
+										</p>
+									</div>
+								{:else}
+									<div class="flex items-center justify-center gap-2 text-red-500">
+										<AlertCircle class="w-4 h-4" />
+										<span class="text-sm font-medium">Google Ads API error:</span>
+										<span class="text-sm font-mono text-red-400">{apiError?.message ?? 'unknown error'}</span>
+									</div>
+								{/if}
 							</td>
 						</tr>
 					{/await}
