@@ -13,6 +13,7 @@
 		ChevronDown,
 		Plus,
 		Check,
+		Cog,
 	} from 'lucide-svelte';
 	import { DropdownMenu, Tooltip } from 'bits-ui';
 	import type { Snippet } from 'svelte';
@@ -126,6 +127,13 @@
 								class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-500 outline-none transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
 							>
 								<Plus class="h-4 w-4" /> New Client
+							</DropdownMenu.Item>
+							<DropdownMenu.Separator class="my-1.5 h-px bg-slate-100 dark:bg-slate-800" />
+							<DropdownMenu.Item
+								onclick={() => goto('/settings')}
+								class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-500 outline-none transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+							>
+								<Cog class="h-4 w-4" /> App Settings
 							</DropdownMenu.Item>
 						</DropdownMenu.Content>
 					</DropdownMenu.Portal>
