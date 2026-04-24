@@ -3,7 +3,7 @@ import path from 'node:path';
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-const CLIENTS_DIR = path.resolve('../clients');
+const STORAGE_ROOT = path.resolve(process.cwd(), 'storage/images');
 
 const mimeTypes: Record<string, string> = {
 	'.jpg': 'image/jpeg',
@@ -26,20 +26,20 @@ export const GET: RequestHandler = async ({ params }) => {
 		throw error(400, 'Invalid parameters');
 	}
 
-	const filePath = path.join(CLIENTS_DIR, client_id, 'posts', filename);
+	const filePath = path.join(STORAGE_ROOT, client_id, filename);
 
 	try {
 		const ext = path.extname(filename).toLowerCase();
 		const mimeType = mimeTypes[ext] || 'application/octet-stream';
 		const data = await fs.readFile(filePath);
-		
+
 		return new Response(data, {
 			headers: {
 				'Content-Type': mimeType,
 				'Cache-Control': 'public, max-age=3600'
 			}
 		});
-	} catch (e) {
+	} catch {
 		throw error(404, 'Media not found');
 	}
 };
