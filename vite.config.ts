@@ -6,9 +6,11 @@ import path from 'node:path';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
-	envDir: path.resolve('../'),  // load .env from project root, not ui/
 	resolve: {
-		alias: { $db: path.resolve('../lib/db') }
+		alias: {
+			'@': path.resolve('./src'),
+			'$db': path.resolve('./src/lib/server/db'),
+		}
 	},
 	ssr: {
 		external: ['better-sqlite3', 'bun:sqlite'],
@@ -29,7 +31,6 @@ export default defineConfig({
 					exclude: ['src/lib/server/**']
 				}
 			},
-
 			{
 				extends: './vite.config.ts',
 				test: {

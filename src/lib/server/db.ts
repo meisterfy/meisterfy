@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const CLIENTS_DIR = path.resolve('../clients');
+const CLIENTS_DIR = path.resolve(process.cwd(), 'clients');
 
 function draftFirst<T extends { id: string; status: string }>(a: T, b: T): number {
   if (a.status === 'draft' && b.status !== 'draft') return -1;

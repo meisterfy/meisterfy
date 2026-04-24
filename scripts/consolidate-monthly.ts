@@ -8,8 +8,8 @@
  * Typically scheduled for the 1st of each month.
  */
 
-import { getMonthDays, getCampaignsForTenant, upsertMonthlySummary, type WeeklyBreakdown } from '../lib/db/monitoring.ts';
-import { logAgentRun } from '../lib/db/agent-runs.ts';
+import { getMonthDays, getCampaignsForTenant, upsertMonthlySummary, type WeeklyBreakdown } from '../src/lib/server/db/monitoring.ts';
+import { logAgentRun } from '../src/lib/server/db/agent-runs.ts';
 
 // ── Args ───────────────────────────────────────────────────────────────────
 

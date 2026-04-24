@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-ui/node_modules/
 
 # Environment variables — never commit real credentials
 .env
@@ -8,12 +7,15 @@ ui/node_modules/
 !.env.example
 
 # Build outputs
-ui/.svelte-kit/
-ui/dist/
-ui/build/
+.svelte-kit/
+dist/
+build/
 
 # Client data — contains sensitive business information and media files (local-only)
 /clients/
+
+# Storage — local image files
+/storage/images/
 
 # Database — contains operational data, never commit
 /db/*.db
@@ -24,14 +26,14 @@ ui/build/
 .claude/scheduled_tasks.lock
 
 # Dev logs
-ui/dev_log.txt
+dev_log.txt
 
 # npm lockfile (project uses bun.lock)
-ui/package-lock.json
+package-lock.json
 
 # Debug and test artifacts
-ui/err*.html
-ui/test-*.ts
+err*.html
+test-*.ts
 
 # Editor
 .vscode/

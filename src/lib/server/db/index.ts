@@ -1,22 +1,10 @@
-/**
- * Central DB connection — single instance, auto-migrates on first use.
- * Import getDb() from here; never open Database() directly elsewhere.
- *
- * Runtime detection:
- *   - Bun  → bun:sqlite  (native, built-in)
- *   - Node → better-sqlite3 (used by SvelteKit SSR via Vite)
- * Both share the same synchronous API for prepare/all/get/run.
- */
-
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
-const __dir     = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH   = path.resolve(__dir, '../../db/marketing.db');
+const DB_PATH = path.resolve(process.cwd(), 'db/marketing.db');
 const MIGRATIONS = [
-  path.resolve(__dir, '../../db/migrations/001_schema.sql'),
-  path.resolve(__dir, '../../db/migrations/002_integrations.sql'),
+  path.resolve(process.cwd(), 'db/migrations/001_schema.sql'),
+  path.resolve(process.cwd(), 'db/migrations/002_integrations.sql'),
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
