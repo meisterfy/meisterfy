@@ -7,13 +7,13 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ## Estado atual
 
-**Última task concluída:** T01 — commit `38cc85b`
+**Última task concluída:** T02 — commit `24218ec`
 
 | Task | Status | Descrição |
 |---|---|---|
 | T01 | ✅ completed | Move SvelteKit de `ui/` para root |
-| T02 | ⬜ next | Drop dual-runtime shim, usar `bun:sqlite` direto |
-| T03 | ⬜ pending | Migrations SQLite: tenants, posts, reports, campaigns |
+| T02 | ✅ completed | Drop dual-runtime shim, usar `bun:sqlite` direto |
+| T03 | ⬜ next | Migrations SQLite: tenants, posts, reports, campaigns |
 | T04 | ⬜ pending | Seed script: flat-files → SQLite |
 | T05 | ⬜ pending | Funções TS da camada de dados (`src/lib/server/`) |
 | T06 | ⬜ pending | Storage adapter interface + implementação local |
@@ -37,17 +37,16 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ---
 
-## Próximo passo: T02
+## Próximo passo: T03
 
-T02 é simples e isolado. Pode ser feito sem dependências externas.
+T03 cria as migrations SQLite para as novas tabelas que vão substituir os flat-files.
 
 **O que fazer:**
-1. Editar `src/lib/server/db/index.ts`
-2. Trocar o bloco de runtime detection por `import { Database } from 'bun:sqlite'`
-3. Tipar `_db` como `Database` (sem `any`)
-4. Remover `better-sqlite3` e `@types/better-sqlite3` do `package.json`
-5. Remover `ssr.external: ['better-sqlite3']` do `vite.config.ts`
-6. `bun install && bun run dev` para verificar
+1. Criar `db/migrations/003_content.sql` com o schema de `tenants`, `posts`, `reports`, `campaigns`
+2. Registrar a migration no array `MIGRATIONS` em `src/lib/server/db/index.ts`
+3. Iniciar o dev server e verificar que as tabelas são criadas automaticamente
+
+Ver o schema completo em `T03-sqlite-migrations-new-tables.md`.
 
 ---
 

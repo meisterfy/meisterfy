@@ -1,7 +1,7 @@
 # T02 — Drop dual-runtime DB shim, use `bun:sqlite` directly
 
 **Phase:** 0 — Foundation  
-**Status:** pending  
+**Status:** completed  
 **ADR:** ADR-001  
 **Depends on:** T01 (SvelteKit at root)  
 **Blocks:** T04
