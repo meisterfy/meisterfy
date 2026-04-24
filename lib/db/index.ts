@@ -12,9 +12,12 @@ import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const __dir          = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH        = path.resolve(__dir, '../../db/marketing.db');
-const MIGRATION_PATH = path.resolve(__dir, '../../db/migrations/001_schema.sql');
+const __dir     = path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH   = path.resolve(__dir, '../../db/marketing.db');
+const MIGRATIONS = [
+  path.resolve(__dir, '../../db/migrations/001_schema.sql'),
+  path.resolve(__dir, '../../db/migrations/002_integrations.sql'),
+];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let DatabaseImpl: any;
@@ -40,6 +43,8 @@ export function getDb(): any {
   _db = new DatabaseImpl(DB_PATH);
   _db.exec('PRAGMA journal_mode = WAL');
   _db.exec('PRAGMA foreign_keys = ON');
-  _db.exec(readFileSync(MIGRATION_PATH, 'utf-8'));
+  for (const migration of MIGRATIONS) {
+    _db.exec(readFileSync(migration, 'utf-8'));
+  }
   return _db;
 }
