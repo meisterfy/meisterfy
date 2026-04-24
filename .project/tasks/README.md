@@ -7,14 +7,14 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ## Estado atual
 
-**Última task concluída:** T02 — commit `24218ec`
+**Última task concluída:** T03 — commit `c7af794`
 
 | Task | Status | Descrição |
 |---|---|---|
 | T01 | ✅ completed | Move SvelteKit de `ui/` para root |
 | T02 | ✅ completed | Drop dual-runtime shim, usar `bun:sqlite` direto |
-| T03 | ⬜ next | Migrations SQLite: tenants, posts, reports, campaigns |
-| T04 | ⬜ pending | Seed script: flat-files → SQLite |
+| T03 | ✅ completed | Migrations SQLite: tenants, posts, reports, campaigns |
+| T04 | ⬜ next | Seed script: flat-files → SQLite |
 | T05 | ⬜ pending | Funções TS da camada de dados (`src/lib/server/`) |
 | T06 | ⬜ pending | Storage adapter interface + implementação local |
 | T07 | ⬜ pending | Migrar rotas UI de `fs.readFile` para funções SQLite |
@@ -37,16 +37,19 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ---
 
-## Próximo passo: T03
+## Próximo passo: T04
 
-T03 cria as migrations SQLite para as novas tabelas que vão substituir os flat-files.
+T04 escreve o script de seed que lê todos os flat-files de `clients/` e popula o SQLite. Deve rodar uma vez e ser idempotente (`INSERT OR REPLACE`). Não remove flat-files — isso é T10.
 
 **O que fazer:**
-1. Criar `db/migrations/003_content.sql` com o schema de `tenants`, `posts`, `reports`, `campaigns`
-2. Registrar a migration no array `MIGRATIONS` em `src/lib/server/db/index.ts`
-3. Iniciar o dev server e verificar que as tabelas são criadas automaticamente
+1. Criar `scripts/migrate-flat-to-sqlite.ts`
+2. Ler `clients/[tenant]/brand.json` → INSERT em `tenants`
+3. Ler `clients/[tenant]/posts/*.json` → INSERT em `posts`
+4. Ler `clients/[tenant]/reports/*.md` → INSERT em `reports`
+5. Ler `clients/[tenant]/ads/google/*.json` → INSERT em `campaigns`
+6. Verificar contagens: `bun --eval "import { getDb } from './src/lib/server/db/index.ts'; ..."`
 
-Ver o schema completo em `T03-sqlite-migrations-new-tables.md`.
+Ver mapeamento de campos em `T04-seed-flat-files-to-sqlite.md`.
 
 ---
 

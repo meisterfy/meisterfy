@@ -1,7 +1,7 @@
 # T03 — Add SQLite migrations for tenants, posts, reports, campaigns
 
 **Phase:** 1 — SQLite Schema  
-**Status:** pending  
+**Status:** completed  
 **ADR:** ADR-001  
 **Depends on:** T02  
 **Blocks:** T04, T05, T06, T07, T08, T09
