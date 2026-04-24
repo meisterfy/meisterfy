@@ -11,9 +11,9 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { getCustomer, fromMicros } from './lib/ads.ts';
-import { upsertDailyMetrics, type AdGroupMetrics, type AlertRecord } from '../lib/db/monitoring.ts';
-import { insertAlert } from '../lib/db/alerts.ts';
-import { logAgentRun } from '../lib/db/agent-runs.ts';
+import { upsertDailyMetrics, type AdGroupMetrics, type AlertRecord } from '../src/lib/server/db/monitoring.ts';
+import { insertAlert } from '../src/lib/server/db/alerts.ts';
+import { logAgentRun } from '../src/lib/server/db/agent-runs.ts';
 
 // ── Args ───────────────────────────────────────────────────────────────────
 
