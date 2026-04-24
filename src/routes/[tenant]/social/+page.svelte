@@ -18,6 +18,7 @@
 	const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 	let scheduled = $state<PostWithMeta[]>(data.scheduled);
+	$effect(() => { scheduled = data.scheduled; });
 
 	const calendarCells = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay();
