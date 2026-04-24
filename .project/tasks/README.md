@@ -7,7 +7,7 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ## Estado atual
 
-**Última task concluída:** T09 — MCP tools e resources
+**Refatoração concluída. Todas as tasks T01–T10 foram completadas.**
 
 | Task | Status | Descrição |
 |---|---|---|
@@ -20,57 +20,18 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 | T07 | ✅ completed | Migrar rotas UI de `fs.readFile` para funções SQLite |
 | T08 | ✅ completed | MCP server setup em `/mcp` via SvelteKit |
 | T09 | ✅ completed | MCP tools e resources |
-| T10 | ⬜ pending | Cleanup: remover flat-files, atualizar scripts e CLAUDE.md |
+| T10 | ✅ completed | Cleanup: remover flat-files, atualizar scripts e CLAUDE.md |
 
 ---
 
-## O que foi feito em T01
+## Resultado final
 
-- `ui/src/` → `src/`, `ui/static/` → `static/`, configs movidos para root
-- `lib/db/` → `src/lib/server/db/` com `process.cwd()` para resolução de paths
-- `package.json` mergeado na raiz (todas as deps unificadas)
-- Alias `@` → `src/` adicionado em `svelte.config.js` (e `vite.config.ts`)
-- Alias `$db` → `src/lib/server/db/` atualizado (mantido para compatibilidade)
-- `scripts/collect-daily-metrics.ts` e `consolidate-monthly.ts` com imports atualizados
-- `.gitignore` limpo (sem prefixos `ui/`)
-- `bun run check` → 0 errors, 52 warnings a11y pré-existentes
-
----
-
-## Próximo passo: T10
-
-T10 é o cleanup final: remover flat-files de `clients/`, simplificar scripts e atualizar o CLAUDE.md para refletir a arquitetura SQLite + MCP.
-
-**Pré-requisito:** confirmar que T07 e T09 estão verificadas antes de deletar qualquer flat-file.
-
-Ver detalhes em `T10-cleanup-and-update-docs.md`.
-
----
-
-## Sequência de dependências
-
-```
-T02 → T03 → T04
-            T05 → T07 → T10
-T02 → T08 → T09
-T05 → T09
-T06 → T07
-```
-
-T05 e T06 podem ser desenvolvidas em paralelo após T03.  
-T08 pode ser iniciada após T02 (não depende de SQLite).  
-**Não iniciar T10** antes de T07 e T09 estarem verificadas.
-
----
-
-## Contexto técnico relevante
-
-- Runtime: **Bun** (único, sem Node). Após T02, `bun:sqlite` é o único driver.
-- Dev server: `bun run dev` na raiz do projeto (porta 5173 por padrão)
-- DB: `db/marketing.db` — gerado automaticamente na primeira chamada a `getDb()`
-- Clientes ativos: `portico`, `bracar-pneus` (dados em `clients/[tenant]/`)
-- Flat-files ainda ativos: posts, brand, reports, campaigns em `clients/`
-- SQLite já ativo para: integrations, monitoring, alerts, agent-runs
+- SvelteKit na raiz (`src/`), Bun como único runtime
+- SQLite (`db/marketing.db`) é a fonte de verdade para tenants, posts, reports e campaigns
+- MCP server em `POST /mcp` com 16 tools e 5 resources
+- Scripts simplificados: leem de SQLite, não de `clients/`
+- `clients/` contém apenas imagens legadas (duplicatas de `storage/images/`)
+- CLAUDE.md atualizado para refletir a nova arquitetura
 
 ---
 

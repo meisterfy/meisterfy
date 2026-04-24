@@ -1,7 +1,7 @@
 # T10 — Cleanup: remove flat-files, update scripts and CLAUDE.md
 
 **Phase:** 5 — Cleanup  
-**Status:** pending  
+**Status:** completed  
 **ADR:** ADR-001  
 **Depends on:** T07 (all routes migrated), T09 (MCP verified)  
 **Blocks:** nothing — final task
