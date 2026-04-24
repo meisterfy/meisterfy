@@ -7,7 +7,7 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ## Estado atual
 
-**Última task concluída:** T04 — seed flat-files → SQLite
+**Última task concluída:** T07 — migrar rotas UI para SQLite
 
 | Task | Status | Descrição |
 |---|---|---|
@@ -17,7 +17,7 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 | T04 | ✅ completed | Seed script: flat-files → SQLite |
 | T05 | ✅ completed | Funções TS da camada de dados (`src/lib/server/`) |
 | T06 | ✅ completed | Storage adapter interface + implementação local |
-| T07 | ⬜ pending | Migrar rotas UI de `fs.readFile` para funções SQLite |
+| T07 | ✅ completed | Migrar rotas UI de `fs.readFile` para funções SQLite |
 | T08 | ⬜ pending | MCP server setup em `/mcp` via SvelteKit |
 | T09 | ⬜ pending | MCP tools e resources |
 | T10 | ⬜ pending | Cleanup: remover flat-files, atualizar scripts e CLAUDE.md |
@@ -37,18 +37,17 @@ Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor M
 
 ---
 
-## Próximo passo: T05
+## Próximo passo: T08
 
-T05 cria as funções TypeScript da camada de dados em `src/lib/server/`. Estas funções substituem todas as chamadas diretas a `fs.readFile`/`fs.readdir` e a lógica flat-file espalhada pelos `+page.server.ts`. Nenhuma rota ou MCP tool deve consultar o SQLite diretamente.
+T08 instala `@modelcontextprotocol/sdk`, cria o servidor MCP e expõe em `POST /mcp` + `GET /mcp` via SvelteKit (Streamable HTTP transport). Sem tools ainda — apenas o handshake MCP funcionando.
 
 **O que fazer:**
-1. Criar `src/lib/server/tenants.ts` — `listTenants`, `getTenant`, `createTenant`, `updateTenant`, `deleteTenant`
-2. Criar `src/lib/server/posts.ts` — `listPosts`, `getPost`, `createPost`, `updatePost`, `updatePostStatus`, `deletePost`
-3. Criar `src/lib/server/reports.ts` — `listReports`, `getReport`, `createReport`, `deleteReport`, `detectReportType`
-4. Criar `src/lib/server/campaigns.ts` — `listCampaigns`, `getCampaign`, `upsertCampaign`, `markDeployed`, `deleteCampaign`
-5. Verificar com script inline ou `bun --eval`
+1. `bun add @modelcontextprotocol/sdk`
+2. Criar `src/lib/server/mcp/server.ts` com `McpServer`
+3. Criar `src/routes/mcp/+server.ts` (POST + GET handlers)
+4. Testar com `curl` ou MCP Inspector
 
-Ver tipos e assinaturas completos em `T05-data-layer-functions.md`.
+Ver detalhes em `T08-mcp-server-setup.md`.
 
 ---
 
