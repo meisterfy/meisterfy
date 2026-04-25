@@ -1,134 +1,134 @@
-# Maestro — Migrar para Web App
+# Maestro — Migrate to Web App
 
-Transformar o sistema atual num produto SaaS para agências de performance.
-
----
-
-## Premissa
-
-O que existe hoje prova o conceito: coleta automática de métricas, alertas inteligentes,
-relatórios gerados por IA. O diferencial não é o dashboard — é a IA integrada ao fluxo
-operacional. Ferramentas como Data Studio e Reportei mostram dados. Maestro age sobre eles.
+Transform the current system into a SaaS product for performance marketing agencies.
 
 ---
 
-## Stack Proposta
+## Premise
+
+What exists today proves the concept: automatic metrics collection, intelligent alerts,
+AI-generated reports. The differentiator is not the dashboard — it's the AI integrated into the
+operational workflow. Tools like Data Studio and Reportei show data. Maestro acts on it.
+
+---
+
+## Proposed Stack
 
 ```
-Frontend:  SvelteKit (já existente, adaptar)
-Backend:   Go (API REST + workers de coleta)
-Banco:     PostgreSQL (migração direta do schema SQLite atual)
-Auth:      Google OAuth2 (resolve o fluxo de autorização do Google Ads)
-IA:        Anthropic API (relatórios sob demanda + alertas com análise)
-Scheduler: interno (gocron) — configurável via UI por tenant
+Frontend:  SvelteKit (existing, adapt)
+Backend:   Go (REST API + collection workers)
+Database:  PostgreSQL (direct migration from current SQLite schema)
+Auth:      Google OAuth2 (resolves the Google Ads authorization flow)
+AI:        Anthropic API (on-demand reports + alerts with analysis)
+Scheduler: internal (gocron) — configurable via UI per tenant
 ```
 
 ---
 
-## Por que Go no backend
+## Why Go for the backend
 
-- Scheduler interno com `gocron` — sem crontab manual, configurável via UI
-- Worker pool para coleta paralela de N tenants via goroutines
-- `golang.org/x/oauth2` cuida do refresh token do Google Ads automaticamente
-- Performance e baixo custo de infra em produção
+- Internal scheduler with `gocron` — no manual crontab, configurable via UI
+- Worker pool for parallel collection of N tenants via goroutines
+- `golang.org/x/oauth2` handles Google Ads refresh token automatically
+- Performance and low infrastructure cost in production
 
 ---
 
-## Arquitetura
+## Architecture
 
 ```
-UI (SvelteKit) ──→ API REST (Go) ──→ PostgreSQL
+UI (SvelteKit) ──→ REST API (Go) ──→ PostgreSQL
                          │
-                         ├──→ Google Ads API  (worker pool, por tenant)
-                         ├──→ Meta Graph API  (worker pool, por tenant)
-                         ├──→ Anthropic API   (relatórios + análise de alertas)
-                         └──→ Mailer          (envio automático de relatórios)
+                         ├──→ Google Ads API  (worker pool, per tenant)
+                         ├──→ Meta Graph API  (worker pool, per tenant)
+                         ├──→ Anthropic API   (reports + alert analysis)
+                         └──→ Mailer          (automatic report delivery)
 ```
 
 ---
 
-## O que muda vs. o sistema atual
+## What changes vs. the current system
 
-| Hoje (local)                         | Webapp                                        |
-|--------------------------------------|-----------------------------------------------|
-| Crontab manual no WSL                | Scheduler configurável na UI por tenant        |
-| `.env` com credenciais manuais       | OAuth2 — agência autoriza via UI              |
-| Relatório gerado manualmente         | Gerado automaticamente + enviado por email     |
-| Um tenant (Pórtico)                  | Multi-tenant isolado com auth por API key/JWT  |
-| Claude Code local                    | Anthropic API chamada pelo backend Go          |
-| SQLite gitignored                    | PostgreSQL gerenciado                         |
-
----
-
-## Diferenciais de Produto
-
-**Relatório executivo automático** — toda segunda-feira, o cliente da agência recebe
-um email com análise da semana escrita em linguagem executiva, não em tabela.
-Gerado por IA com os dados reais da campanha. Sem trabalho manual da agência.
-
-**Alertas com análise** — não só "CPA subiu 40%", mas "CPA subiu porque o ad group
-Reforma Apartamento perdeu impression share — sugestão: aumentar lance em R$0,30".
-
-**Aprovação inline** — agência propõe ajuste de campanha via UI, cliente aprova
-com um clique, sistema executa via API. Fim do WhatsApp de vai-e-vem.
+| Today (local)                        | Web App                                         |
+|--------------------------------------|-------------------------------------------------|
+| Manual crontab in WSL                | Scheduler configurable in UI per tenant          |
+| `.env` with manual credentials       | OAuth2 — agency authorizes via UI               |
+| Report generated manually            | Generated automatically + sent by email          |
+| One tenant (Pórtico)                 | Multi-tenant isolated with API key/JWT auth      |
+| Local Claude Code                    | Anthropic API called by Go backend               |
+| Gitignored SQLite                    | Managed PostgreSQL                              |
 
 ---
 
-## Modelo de Negócio
+## Product Differentiators
 
-**B2B2C** — vender para a agência, que usa como diferencial com os clientes dela.
+**Automatic executive report** — every Monday, the agency's client receives
+an email with a week's analysis written in executive language, not in a table.
+AI-generated with real campaign data. No manual work from the agency.
 
-- Ticket maior que B2C direto
-- Churn menor (agência não cancela ferramenta que usa com cliente ativo)
-- Sem necessidade de volume enorme para ser lucrativo
+**Alerts with analysis** — not just "CPA rose 40%", but "CPA rose because the
+Apartment Renovation ad group lost impression share — suggestion: increase bid by $0.30".
 
-**Referência de preço:** Reportei cobra ~R$150/tenant/mês sem IA.
-Com a proposta de valor atual: R$400–600/tenant/mês ou plano por agência (N tenants incluídos).
-
----
-
-## Riscos a não subestimar
-
-**Onboarding OAuth** — cada cliente novo da agência precisa autorizar o acesso
-ao Google Ads. O fluxo técnico é resolvido, a fricção operacional (convencer o cliente
-a clicar no botão) precisa ser suave.
-
-**Qualidade da IA em escala** — relatório gerado para 50 tenants precisa de um
-mecanismo de revisão ou aprovação antes de enviar para o cliente final.
-Um relatório ruim entregue automaticamente é pior que nenhum relatório.
-
-**Suporte** — quando a campanha vai mal, o cliente liga pra agência, a agência
-liga pra você. Definir SLA e limites de responsabilidade antes de lançar.
+**Inline approval** — agency proposes a campaign adjustment via UI, client approves
+with one click, system executes via API. No more back-and-forth messaging.
 
 ---
 
-## Go-to-market sugerido
+## Business Model
 
-1. **Usar internamente** — maturar o produto com os próprios clientes (já em andamento)
-2. **Beta fechado** — 2–3 agências parceiras, sem custo, com suporte próximo
-3. **Validar precificação** — entender o que a agência valoriza de fato antes de escalar
-4. **Lançamento público** — só após ter NPS positivo e churn < 5% no beta
+**B2B2C** — sell to the agency, which uses it as a differentiator with their clients.
+
+- Higher ticket than direct B2C
+- Lower churn (agency doesn't cancel a tool they use with active clients)
+- No need for huge volume to be profitable
+
+**Price reference:** Reportei charges ~$30/tenant/month without AI.
+With the current value proposition: $80–120/tenant/month or per-agency plan (N tenants included).
 
 ---
 
-## Migração do schema atual
+## Risks not to underestimate
 
-O schema SQLite já está bem modelado. Migração direta para PostgreSQL:
+**OAuth onboarding** — each new agency client needs to authorize Google Ads access.
+The technical flow is solved; the operational friction (convincing the client
+to click the button) needs to be smooth.
+
+**AI quality at scale** — a report generated for 50 tenants needs a review
+or approval mechanism before sending to the end client.
+A bad report delivered automatically is worse than no report.
+
+**Support** — when a campaign performs poorly, the client calls the agency, the agency
+calls you. Define SLA and responsibility limits before launching.
+
+---
+
+## Suggested go-to-market
+
+1. **Use internally** — mature the product with existing clients (already in progress)
+2. **Closed beta** — 2–3 partner agencies, no cost, with close support
+3. **Validate pricing** — understand what the agency actually values before scaling
+4. **Public launch** — only after achieving positive NPS and churn < 5% in beta
+
+---
+
+## Migrating the current schema
+
+The SQLite schema is already well-modeled. Direct migration to PostgreSQL:
 
 ```sql
 -- daily_metrics, monthly_summary, alert_events, agent_runs
--- Adicionar: tenant_id (FK), user_id, created_by
--- Adicionar: tabela accounts (agências) e users
--- Adicionar: tabela oauth_tokens (Google Ads por tenant)
--- Adicionar: tabela schedules (configuração de cron por tenant)
+-- Add: tenant_id (FK), user_id, created_by
+-- Add: accounts table (agencies) and users
+-- Add: oauth_tokens table (Google Ads per tenant)
+-- Add: schedules table (cron configuration per tenant)
 ```
 
 ---
 
-## Próximos passos (quando decidir avançar)
+## Next steps (when ready to proceed)
 
-- [ ] Definir se é SaaS público, white-label ou produto interno
-- [ ] Prototipar o fluxo de onboarding OAuth com uma agência parceira
-- [ ] Decidir hosting (Railway, Fly.io, VPS próprio)
-- [ ] Estimar custo de infra para 10 / 50 / 200 tenants
-- [ ] Definir mecanismo de revisão de relatórios antes do envio automático
+- [ ] Define whether it's a public SaaS, white-label, or internal product
+- [ ] Prototype the OAuth onboarding flow with a partner agency
+- [ ] Decide on hosting (Railway, Fly.io, own VPS)
+- [ ] Estimate infrastructure cost for 10 / 50 / 200 tenants
+- [ ] Define a report review mechanism before automatic delivery

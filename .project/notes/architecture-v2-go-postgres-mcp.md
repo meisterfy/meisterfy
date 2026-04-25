@@ -1,34 +1,34 @@
-# Arquitetura V2 — Go + PostgreSQL + MCP Público + Multi-Connector
+# Architecture V2 — Go + PostgreSQL + Public MCP + Multi-Connector
 
-Evolução natural do projeto atual (SvelteKit + SQLite + MCP local) para uma plataforma multi-tenant com backend robusto, integrações extensíveis e IA via UI.
+Natural evolution of the current project (SvelteKit + SQLite + local MCP) into a multi-tenant platform with a robust backend, extensible integrations, and AI via UI.
 
 ---
 
-## Visão geral
+## Overview
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  SvelteKit UI (SPA puro)                            │
-│  fetch() → Go API  |  SSE para AI streaming         │
+│  SvelteKit UI (pure SPA)                            │
+│  fetch() → Go API  |  SSE for AI streaming          │
 └──────────────┬──────────────────────────────────────┘
                │ REST / JSON
 ┌──────────────▼──────────────────────────────────────┐
 │  Go API  (chi/fiber)                                │
 │  ├── /api/*         — CRUD, uploads, deploys        │
-│  ├── /mcp           — MCP Streamable HTTP (público) │
-│  ├── /ai/*          — proxy multi-provider          │
-│  └── workers        — coleta métricas, sync, backup │
+│  ├── /mcp           — MCP Streamable HTTP (public)  │
+│  ├── /ai/*          — multi-provider proxy          │
+│  └── workers        — metrics collection, sync, backup │
 └──────────────┬──────────────────────────────────────┘
                │
        ┌───────┴────────┐
        ▼                ▼
   PostgreSQL        R2 / S3
-  (conteúdo +       (imagens,
-   métricas)         backups)
+  (content +        (images,
+   metrics)          backups)
                │
 ┌──────────────▼──────────────────────────────────────┐
-│  Python service  (opcional, localhost:8001)          │
-│  RAG · embeddings · orquestrações avançadas         │
+│  Python service  (optional, localhost:8001)          │
+│  RAG · embeddings · advanced orchestrations         │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -36,55 +36,55 @@ Evolução natural do projeto atual (SvelteKit + SQLite + MCP local) para uma pl
 
 ## Stack
 
-| Camada | Tecnologia | Justificativa |
+| Layer | Technology | Rationale |
 |---|---|---|
-| Build | Make | Orquestra todos os serviços com targets simples |
-| UI | SvelteKit (SPA) | Mantém o que existe, remove SSR, vira SPA puro |
-| API | Go (chi ou fiber) | Performance, binário único, excelente pra workers |
+| Build | Make | Orchestrates all services with simple targets |
+| UI | SvelteKit (SPA) | Keeps what exists, removes SSR, becomes pure SPA |
+| API | Go (chi or fiber) | Performance, single binary, great for workers |
 | DB | PostgreSQL | JSONB, full-text search, pg_cron, pgvector |
-| Object storage | Cloudflare R2 | Zero egress, API S3-compatible |
-| AI | Groq / OpenAI / Claude / Gemini | Multi-provider via interface única |
-| RAG | Python (FastAPI + pgvector) | Ecossistema insubstituível pra embeddings |
-| MCP | Go (endpoint HTTP público) | Serve IDE, terminal e agentes cloud |
+| Object storage | Cloudflare R2 | Zero egress, S3-compatible API |
+| AI | Groq / OpenAI / Claude / Gemini | Multi-provider via single interface |
+| RAG | Python (FastAPI + pgvector) | Unmatched ecosystem for embeddings |
+| MCP | Go (public HTTP endpoint) | Serves IDE, terminal, and cloud agents |
 
 ---
 
-## Makefile — targets principais
+## Makefile — main targets
 
 ```makefile
-make dev        # sobe todos os serviços (Go API + SvelteKit + Python)
-make build      # build de produção
-make migrate    # roda migrations Postgres
-make seed       # seed inicial
-make test       # testa Go + UI
-make deploy     # build + push imagens Docker
+make dev        # start all services (Go API + SvelteKit + Python)
+make build      # production build
+make migrate    # run Postgres migrations
+make seed       # initial seed
+make test       # test Go + UI
+make deploy     # build + push Docker images
 ```
 
 ---
 
-## Go API — estrutura interna
+## Go API — internal structure
 
 ```
 api/
   cmd/server/main.go
   internal/
-    handler/        — HTTP handlers por domínio
-    service/        — lógica de negócio
-    connector/      — integrações externas
+    handler/        — HTTP handlers per domain
+    service/        — business logic
+    connector/      — external integrations
       googleads/
       meta/
       canva/
       linkedin/
-    ai/             — abstração multi-provider
-    mcp/            — servidor MCP
+    ai/             — multi-provider abstraction
+    mcp/            — MCP server
     worker/         — background jobs
-    storage/        — abstração R2/S3
+    storage/        — R2/S3 abstraction
   db/
-    migrations/     — SQL versionado (golang-migrate)
-    queries/        — sqlc ou pgx direto
+    migrations/     — versioned SQL (golang-migrate)
+    queries/        — sqlc or pgx directly
 ```
 
-### Interface Connector
+### Connector Interface
 
 ```go
 type Connector interface {
@@ -94,9 +94,9 @@ type Connector interface {
 }
 ```
 
-Cada tenant configura quais conectores ativa. Google Ads, Meta, Canva Export, LinkedIn, TikTok implementam essa interface.
+Each tenant configures which connectors to activate. Google Ads, Meta, Canva Export, LinkedIn, TikTok implement this interface.
 
-### Interface AI Provider
+### AI Provider Interface
 
 ```go
 type AIProvider interface {
@@ -105,47 +105,47 @@ type AIProvider interface {
 }
 ```
 
-| Provider | Uso ideal |
+| Provider | Ideal use |
 |---|---|
-| Groq (Llama 4) | Drafts rápidos, respostas curtas |
-| Claude | Relatórios, revisão de qualidade, análise |
-| Gemini | Multimodal (análise de imagem do post) |
-| OpenAI | Embeddings para RAG |
+| Groq (Llama 4) | Fast drafts, short responses |
+| Claude | Reports, quality review, analysis |
+| Gemini | Multimodal (post image analysis) |
+| OpenAI | Embeddings for RAG |
 
-Tenant escolhe provider padrão por tipo de tarefa.
+Tenant chooses default provider per task type.
 
 ---
 
-## PostgreSQL — schema principal
+## PostgreSQL — main schema
 
-Mesma estrutura do SQLite atual, mais:
+Same structure as the current SQLite, plus:
 
 ```sql
--- Suporte a full-text search em posts e relatórios
+-- Full-text search support for posts and reports
 ALTER TABLE posts ADD COLUMN search_vector tsvector
   GENERATED ALWAYS AS (
-    to_tsvector('portuguese', coalesce(title,'') || ' ' || content)
+    to_tsvector('english', coalesce(title,'') || ' ' || content)
   ) STORED;
 
--- JSONB para workflow e ads data com query eficiente
--- workflow->>'strategy' funciona direto
+-- JSONB for workflow and ads data with efficient querying
+-- workflow->>'strategy' works directly
 
--- pgvector para embeddings (RAG)
+-- pgvector for embeddings (RAG)
 CREATE EXTENSION IF NOT EXISTS vector;
 ALTER TABLE reports ADD COLUMN embedding vector(1536);
 ```
 
 ---
 
-## MCP público
+## Public MCP
 
-O endpoint `/mcp` sai do SvelteKit e vai para o Go API. Com isso:
+The `/mcp` endpoint moves from SvelteKit to the Go API. With that:
 
-- **Auth:** API key por tenant (`Bearer sk-tenant-xxx`) no header
-- **Multi-dispositivo:** Claude Code local, IDE remoto, agente cloud — todos apontam pro mesmo URL
-- **URL:** `https://mcp.seutool.com/[tenant]?key=xxx` ou `http://localhost:8080/mcp` para dev local
+- **Auth:** API key per tenant (`Bearer sk-tenant-xxx`) in the header
+- **Multi-device:** local Claude Code, remote IDE, cloud agent — all point to the same URL
+- **URL:** `https://mcp.yourtool.com/[tenant]?key=xxx` or `http://localhost:8080/mcp` for local dev
 
-O `.mcp.json` continua funcionando, só muda a URL:
+`.mcp.json` continues to work, only the URL changes:
 ```json
 {
   "mcpServers": {
@@ -158,7 +158,7 @@ O `.mcp.json` continua funcionando, só muda a URL:
 }
 ```
 
-As tools T09 (list_tenants, create_post, etc.) migram 1:1 para o Go MCP.
+The T09 tools (list_tenants, create_post, etc.) migrate 1:1 to Go MCP.
 
 ---
 
@@ -166,79 +166,79 @@ As tools T09 (list_tenants, create_post, etc.) migram 1:1 para o Go MCP.
 
 ```
 Bucket: marketing-media
-  [tenant]/posts/[filename]     — imagens de posts
-  [tenant]/campaigns/[filename] — assets de campanhas
+  [tenant]/posts/[filename]     — post images
+  [tenant]/campaigns/[filename] — campaign assets
 
 Bucket: marketing-backups
-  [YYYY-MM-DD]/postgres.dump.gz — backup diário automático (worker Go)
+  [YYYY-MM-DD]/postgres.dump.gz — automatic daily backup (Go worker)
 ```
 
-O worker de backup roda via `pg_dump | gzip | upload_to_r2` agendado com `time.AfterFunc` ou cron interno do Go.
+The backup worker runs via `pg_dump | gzip | upload_to_r2` scheduled with `time.AfterFunc` or Go's internal cron.
 
 ---
 
-## Python (opcional — só quando necessário)
+## Python (optional — only when needed)
 
-Serviço leve em FastAPI, chamado via HTTP pelo Go:
+Lightweight FastAPI service, called via HTTP by Go:
 
 ```
 ml/
   main.py
   routes/
-    rag.py        — busca semântica em relatórios e posts
-    embed.py      — gera embeddings (OpenAI text-embedding-3-small)
+    rag.py        — semantic search on reports and posts
+    embed.py      — generate embeddings (OpenAI text-embedding-3-small)
   requirements.txt
 ```
 
-Casos de uso concretos:
-- "Mostre relatórios similares a este" (busca por embedding em reports)
-- "Que campanhas funcionaram para esse tipo de produto?" (query histórico + semântica)
-- Orquestrações multi-step complexas (LangGraph, CrewAI) se necessário
+Concrete use cases:
+- "Show reports similar to this one" (embedding search on reports)
+- "Which campaigns worked for this type of product?" (history + semantic query)
+- Complex multi-step orchestrations (LangGraph, CrewAI) if needed
 
-**Quando adicionar:** só quando o volume de relatórios/posts justificar busca semântica (>200 relatórios ou >1000 posts). Antes disso, full-text search no Postgres resolve.
+**When to add:** only when the volume of reports/posts justifies semantic search (>200 reports or >1000 posts). Before that, full-text search in Postgres is sufficient.
 
 ---
 
 ## Canva
 
-A API de Canva permite criação programática de designs a partir de templates. Caso de uso: o agente gera o copy do post → Canva API preenche o template visual → retorna URL do asset gerado. Ainda limitado em automação real (2025), mas vale monitorar. Implementar só quando a API estiver madura.
+The Canva API allows programmatic design creation from templates. Use case: the agent generates post copy → Canva API fills in the visual template → returns the generated asset URL. Still limited in real automation (2025), but worth monitoring. Implement only when the API matures.
 
 ---
 
-## Estrutura de repositório
+## Repository structure
 
 ```
 /
   Makefile
-  docker-compose.yml    — dev local (Postgres, MinIO para R2 mock)
+  docker-compose.yml    — local dev (Postgres, MinIO for R2 mock)
   .mcp.json
   api/                  — Go
   ui/                   — SvelteKit
-  ml/                   — Python (opcional)
+  ml/                   — Python (optional)
   db/
     migrations/         — SQL (golang-migrate)
   infra/
     Dockerfile.api
     Dockerfile.ui
-    terraform/          — infra prod (opcional)
+    terraform/          — prod infra (optional)
 ```
 
 ---
 
-## Migração do projeto atual
+## Migrating from the current project
 
-1. Manter SvelteKit UI intacta — só remover `+page.server.ts` e migrar para `fetch()`
-2. Go API replica os endpoints que existem em `src/routes/api/`
-3. Schema Postgres = SQLite atual + extensões (tsvector, vector, JSONB)
-4. MCP tools T09 migram 1:1 para Go
-5. Scripts (`collect-daily-metrics`, `deploy-google-ads`) viram workers Go
-6. Python: adicionar quando tiver caso de uso concreto
+1. Keep SvelteKit UI intact — just remove `+page.server.ts` and migrate to `fetch()`
+2. Go API replicates the endpoints that exist in `src/routes/api/`
+3. Postgres schema = current SQLite + extensions (tsvector, vector, JSONB)
+4. MCP tools T09 migrate 1:1 to Go
+5. Scripts (`collect-daily-metrics`, `deploy-google-ads`) become Go workers
+6. Python: add when there is a concrete use case
 
 ---
 
-## O que NÃO fazer prematuramente
+## What NOT to do prematurely
 
-- Multi-tenancy público (auth/RBAC completo) — só se virar SaaS
-- Canva API — aguardar maturidade
-- Python/RAG — só após volume de conteúdo justificar
-- Kubernetes — Docker Compose resolve pra escala de produto solo/pequena equipe
+- Public multi-tenancy (full auth/RBAC) — only if it becomes a SaaS
+- Canva API — wait for maturity
+- Python/RAG — only after content volume justifies it
+- Kubernetes — Docker Compose handles solo/small team product scale

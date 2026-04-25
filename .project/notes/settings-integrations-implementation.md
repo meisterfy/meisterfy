@@ -1,73 +1,73 @@
-# Implementação: Settings com Tabs + Integrations Hub + Migração SQLite
+# Implementation: Settings with Tabs + Integrations Hub + SQLite Migration
 
-> Documento de implementação gerado após brainstorm em 2026-04-24.
-> Destinado ao próximo agente — contém todas as decisões, schemas, arquivos e ordem de execução.
-
----
-
-## Decisões de arquitetura (não renegociar sem motivo forte)
-
-1. **Integrações vivem no SQLite** — não em `integrations.json`. Razão: relações reais, atomicidade no OAuth callback, superfície menor de exposição.
-2. **Clientes e posts migram para SQLite** — ver seção 9. O projeto cresceu além do que flat-file suporta bem.
-3. **Arquivos de mídia ficam no filesystem** — blobs não pertencem ao SQLite neste contexto.
-4. **Relatórios MD ficam no filesystem** — são documentos gerados, lidos como prose; sem razão para migrar.
-5. **Settings com sub-rotas e tab bar** — mesmo padrão do `/social` (Planner/Drafts). Começa com General e Integrations.
-6. **Um cliente tem no máximo UMA integração de Google Ads** — múltiplas integrações existem para diferentes GCP projects/contas MCC, não para o mesmo cliente.
-7. **Migração do .env: manual** — só existe Pórtico no ads, sem automação necessária.
+> Implementation document generated after brainstorm on 2026-04-24.
+> Intended for the next agent — contains all decisions, schemas, files, and execution order.
 
 ---
 
-## 1. Schema SQLite — novas tabelas
+## Architecture decisions (do not renegotiate without strong reason)
 
-O DB existe em `db/marketing.db`. As migrations ficam em `db/migrations/`. A migration atual é `001_schema.sql`. Criar `002_integrations.sql`:
+1. **Integrations live in SQLite** — not in `integrations.json`. Reason: real relations, atomicity on OAuth callback, smaller exposure surface.
+2. **Clients and posts migrate to SQLite** — see section 9. The project has grown beyond what flat-file handles well.
+3. **Media files stay on the filesystem** — blobs don't belong in SQLite in this context.
+4. **MD reports stay on the filesystem** — they are generated documents read as prose; no reason to migrate.
+5. **Settings with sub-routes and tab bar** — same pattern as `/social` (Planner/Drafts). Starts with General and Integrations.
+6. **A client has at most ONE Google Ads integration** — multiple integrations exist for different GCP projects/MCC accounts, not for the same client.
+7. **`.env` migration: manual** — only Pórtico exists in ads, no automation needed.
+
+---
+
+## 1. SQLite Schema — new tables
+
+The DB lives at `db/marketing.db`. Migrations are in `db/migrations/`. The current migration is `001_schema.sql`. Create `002_integrations.sql`:
 
 ```sql
 -- 002_integrations.sql
 
 CREATE TABLE IF NOT EXISTS integrations (
-  id          TEXT PRIMARY KEY,                         -- slug gerado: 'agency-google-ads', 'portico-own'
-  name        TEXT NOT NULL,                            -- label humano: "Agência — Conta Padrão"
+  id          TEXT PRIMARY KEY,                         -- generated slug: 'agency-google-ads', 'portico-own'
+  name        TEXT NOT NULL,                            -- human label: "Agency — Default Account"
   provider    TEXT NOT NULL,                            -- 'google_ads' | 'meta' | 'canva'
-  -- OAuth app credentials (inseridos pelo usuário na UI)
+  -- OAuth app credentials (entered by the user in the UI)
   oauth_client_id     TEXT,
   oauth_client_secret TEXT,
   -- Provider-specific config
   developer_token     TEXT,                             -- Google Ads: developer token
-  login_customer_id   TEXT,                             -- Google Ads: MCC customer ID (sem hífens)
+  login_customer_id   TEXT,                             -- Google Ads: MCC customer ID (no hyphens)
   -- OAuth result
-  refresh_token       TEXT,                             -- preenchido após OAuth
+  refresh_token       TEXT,                             -- filled after OAuth
   status      TEXT NOT NULL DEFAULT 'pending',          -- 'pending' | 'connected' | 'error'
-  error_message TEXT,                                   -- último erro, se houver
+  error_message TEXT,                                   -- last error, if any
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Junction: qual tenant usa qual integração
--- Um tenant pode ter no máximo UMA integração por provider
--- Enforced via UNIQUE (tenant_id, provider) ou via check na camada de negócio
+-- Junction: which tenant uses which integration
+-- A tenant can have at most ONE integration per provider
+-- Enforced via UNIQUE (tenant_id, provider) or via check in the business layer
 CREATE TABLE IF NOT EXISTS integration_clients (
   integration_id  TEXT NOT NULL REFERENCES integrations(id) ON DELETE CASCADE,
-  tenant_id       TEXT NOT NULL,  -- o slug do cliente (ex: 'portico')
+  tenant_id       TEXT NOT NULL,  -- the client slug (e.g. 'portico')
   PRIMARY KEY (integration_id, tenant_id)
 );
 
--- Índice para lookup rápido: "qual integração usa este tenant?"
+-- Index for fast lookup: "which integration uses this tenant?"
 CREATE UNIQUE INDEX IF NOT EXISTS idx_integration_clients_tenant
   ON integration_clients (tenant_id);
--- UNIQUE enforça o "no máximo uma integração por tenant" sem precisar checar na app
+-- UNIQUE enforces "at most one integration per tenant" without needing to check in the app
 ```
 
-> **Nota sobre segredos em texto plano:** Para localhost, aceitável — o arquivo `db/marketing.db` está no `.gitignore`. Para a versão desktop futura (Electrobun), mover os campos `oauth_client_secret` e `refresh_token` para o keychain do OS via `safeStorage`. Até lá, documentado como limitação.
+> **Note on plaintext secrets:** For localhost, acceptable — the `db/marketing.db` file is in `.gitignore`. For the future desktop version (Electrobun), move `oauth_client_secret` and `refresh_token` fields to the OS keychain via `safeStorage`. Until then, documented as a limitation.
 
 ---
 
-## 2. Camada de dados — `lib/db/integrations.ts`
+## 2. Data layer — `lib/db/integrations.ts`
 
-Criar arquivo novo. **Não modificar `lib/db/index.ts` diretamente** — esse arquivo já tem a lógica de conexão e schema de monitoring/alerts; manter separado.
+Create a new file. **Do not modify `lib/db/index.ts` directly** — that file already has connection logic and monitoring/alerts schema; keep them separate.
 
 ```typescript
 // lib/db/integrations.ts
-import { getDb } from './index';  // reusar a conexão existente
+import { getDb } from './index';  // reuse existing connection
 
 export type IntegrationProvider = 'google_ads' | 'meta' | 'canva';
 export type IntegrationStatus   = 'pending' | 'connected' | 'error';
@@ -88,10 +88,10 @@ export interface Integration {
 }
 
 export interface IntegrationWithClients extends Integration {
-  clients: string[];  // array de tenant_id
+  clients: string[];  // array of tenant_id
 }
 
-// CRUD básico
+// Basic CRUD
 export function listIntegrations(): IntegrationWithClients[]
 export function getIntegration(id: string): IntegrationWithClients | null
 export function getIntegrationForTenant(tenantId: string, provider: IntegrationProvider): Integration | null
@@ -108,26 +108,26 @@ export function getCredentialsForTenant(tenantId: string, provider: IntegrationP
 } | null
 ```
 
-A função `getCredentialsForTenant` é a principal — usada por `googleAds.ts` e `googleAdsDetailed.ts` em vez de `env.*`.
+The `getCredentialsForTenant` function is the primary one — used by `googleAds.ts` and `googleAdsDetailed.ts` instead of `env.*`.
 
 ---
 
-## 3. Migração do código que lê `env.GOOGLE_ADS_*`
+## 3. Migrating code that reads `env.GOOGLE_ADS_*`
 
 ### 3a. `ui/src/lib/server/googleAds.ts`
 
-Trocar a seção que lê env vars:
+Replace the section that reads env vars:
 
 ```typescript
-// ANTES
+// BEFORE
 const clientId        = env.GOOGLE_ADS_CLIENT_ID;
 const clientSecret    = env.GOOGLE_ADS_CLIENT_SECRET;
 const developerToken  = env.GOOGLE_ADS_DEVELOPER_TOKEN;
 const refreshToken    = env.GOOGLE_ADS_REFRESH_TOKEN;
 const loginCustomerId = env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '');
 
-// DEPOIS
-import { getCredentialsForTenant } from '$lib/server/db/integrations';  // wrapper server-side
+// AFTER
+import { getCredentialsForTenant } from '$lib/server/db/integrations';  // server-side wrapper
 
 const creds = getCredentialsForTenant(tenantId, 'google_ads');
 if (!creds) throw new Error(`No Google Ads integration configured for ${tenantId}`);
@@ -138,14 +138,14 @@ const { oauth_client_id: clientId, oauth_client_secret: clientSecret,
 
 ### 3b. `ui/src/lib/server/googleAdsDetailed.ts`
 
-Mesma mudança. Recebe `tenantId` como parâmetro (provavelmente já recebe via context).
+Same change. Receives `tenantId` as a parameter (probably already receives it via context).
 
 ### 3c. `scripts/lib/ads.ts`
 
-Os scripts rodam fora do SvelteKit. Precisam de acesso ao SQLite diretamente:
+Scripts run outside SvelteKit. They need direct access to SQLite:
 
 ```typescript
-// scripts/lib/ads.ts — adicionar função helper
+// scripts/lib/ads.ts — add helper function
 import { Database } from 'bun:sqlite';
 import path from 'node:path';
 
@@ -162,20 +162,20 @@ function getGoogleAdsCreds(tenantId: string) {
 }
 ```
 
-Nos scripts que hoje passam customer_id via CLI, adicionar flag `--tenant` para lookup:
+In scripts that currently pass customer_id via CLI, add a `--tenant` flag for lookup:
 ```bash
 bun run scripts/deploy-google-ads.ts clients/portico/ads/google/camp.json --tenant portico
 ```
 
-> **Fallback:** Se `--tenant` não for passado, tentar ler do `.env` como hoje (backward compat durante a transição).
+> **Fallback:** If `--tenant` is not passed, try reading from `.env` as today (backward compat during the transition).
 
 ---
 
-## 4. OAuth flow — mudanças
+## 4. OAuth flow — changes
 
 ### 4a. `ui/src/routes/api/auth/google-ads/+server.ts`
 
-Aceitar `integration_id` como query param. Buscar credenciais no DB em vez do `.env`:
+Accept `integration_id` as a query param. Fetch credentials from DB instead of `.env`:
 
 ```typescript
 // GET /api/auth/google-ads?integration_id=portico-own
@@ -183,12 +183,12 @@ export const GET: RequestHandler = async ({ url }) => {
   const integrationId = url.searchParams.get('integration_id');
   if (!integrationId) return new Response('integration_id required', { status: 400 });
 
-  const integration = getIntegration(integrationId);  // do lib/db/integrations
+  const integration = getIntegration(integrationId);  // from lib/db/integrations
   if (!integration?.oauth_client_id || !integration?.oauth_client_secret) {
     return new Response('Integration credentials not configured', { status: 400 });
   }
 
-  // Embutir integration_id no OAuth state para o callback saber qual integração atualizar
+  // Embed integration_id in OAuth state so the callback knows which integration to update
   const state = Buffer.from(JSON.stringify({ integration_id: integrationId })).toString('base64');
 
   const authUrl = buildGoogleOAuthUrl({
@@ -203,7 +203,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
 ### 4b. `ui/src/routes/api/auth/google-ads/callback/+server.ts`
 
-Extrair `integration_id` do `state`, atualizar `refresh_token` no DB em vez de escrever no `.env`:
+Extract `integration_id` from `state`, update `refresh_token` in the DB instead of writing to `.env`:
 
 ```typescript
 export const GET: RequestHandler = async ({ url }) => {
@@ -225,36 +225,36 @@ export const GET: RequestHandler = async ({ url }) => {
     updated_at: new Date().toISOString(),
   });
 
-  // Redirecionar de volta para settings/integrations com mensagem de sucesso
+  // Redirect back to settings/integrations with a success message
   return redirect(302, '/settings/integrations?connected=true');
-  // OU para o tenant que iniciou o flow, se soubermos qual é
+  // OR to the tenant that started the flow, if we know which one
 };
 ```
 
-> **Nota:** O redirect final deve voltar para a tela de integrations. Se precisar saber o tenant, incluir no `state` também.
+> **Note:** The final redirect should go back to the integrations screen. If we need to know the tenant, include it in `state` as well.
 
 ---
 
-## 5. Settings — estrutura de rotas
+## 5. Settings — route structure
 
-### Rotas a criar
+### Routes to create
 
 ```
 ui/src/routes/[tenant]/settings/
   +layout.svelte          ← tab bar: General | Integrations
-  +layout.server.ts       ← load brand + integrations (passar para sub-rotas)
-  +page.server.ts         ← redirect para /general
+  +layout.server.ts       ← load brand + integrations (pass to sub-routes)
+  +page.server.ts         ← redirect to /general
   general/
-    +page.svelte          ← brand info (o que estava em settings/+page.svelte antes)
+    +page.svelte          ← brand info (what was in settings/+page.svelte before)
     +page.server.ts       ← load + saveBrand action
   integrations/
-    +page.svelte          ← lista de integrações + add/edit/delete
+    +page.svelte          ← integration list + add/edit/delete
     +page.server.ts       ← load integrations, actions: create, update, delete, setClients
 ```
 
 ### `settings/+layout.svelte`
 
-Mesmo padrão do `social/+layout.svelte`. Tab bar horizontal no topo da área de conteúdo:
+Same pattern as `social/+layout.svelte`. Horizontal tab bar at the top of the content area:
 
 ```svelte
 <script>
@@ -264,7 +264,7 @@ Mesmo padrão do `social/+layout.svelte`. Tab bar horizontal no topo da área de
   ];
 </script>
 
-<!-- Tab bar estilo consistente com o resto do app -->
+<!-- Tab bar consistent with the rest of the app -->
 <div class="border-b border-slate-200 dark:border-slate-800">
   <nav class="flex gap-1 px-4 sm:px-6">
     {#each tabs as tab}
@@ -294,81 +294,81 @@ export const load = async ({ params }) => {
 
 ---
 
-## 6. Integrations page — UX e componentes
+## 6. Integrations page — UX and components
 
 ### `settings/integrations/+page.server.ts`
 
 ```typescript
 export const load: PageServerLoad = async ({ params }) => {
-  const integrations = listIntegrations();  // do lib/db/integrations
-  const clients = await getClients();       // do lib/server/db
+  const integrations = listIntegrations();  // from lib/db/integrations
+  const clients = await getClients();       // from lib/server/db
   return { tenant: params.tenant, integrations, clients };
 };
 
 export const actions: Actions = {
   create: async ({ request }) => {
-    // Recebe: name, provider, oauth_client_id, oauth_client_secret, developer_token, login_customer_id
-    // Gera id = nanoid() ou slug do name
-    // Cria integração com status 'pending'
+    // Receives: name, provider, oauth_client_id, oauth_client_secret, developer_token, login_customer_id
+    // Generates id = nanoid() or slug from name
+    // Creates integration with status 'pending'
   },
   update: async ({ request }) => {
-    // Recebe: id + campos a atualizar
+    // Receives: id + fields to update
   },
   delete: async ({ request }) => {
-    // Recebe: id
-    // ON DELETE CASCADE limpa integration_clients
+    // Receives: id
+    // ON DELETE CASCADE cleans up integration_clients
   },
   setClients: async ({ request }) => {
-    // Recebe: integration_id, client_ids[] (array de tenants selecionados)
-    // Chama setIntegrationClients(id, clientIds)
-    // Garante que nenhum tenant fique em duas integrações do mesmo provider
+    // Receives: integration_id, client_ids[] (array of selected tenants)
+    // Calls setIntegrationClients(id, clientIds)
+    // Ensures no tenant ends up in two integrations for the same provider
   },
 };
 ```
 
-### `settings/integrations/+page.svelte` — estrutura visual
+### `settings/integrations/+page.svelte` — visual structure
 
 ```
 [ + Add Google Ads Integration ]
 
 ┌──────────────────────────────────────────────────────────────┐
-│ 🎯  Agência — Conta Padrão                    ● Connected   │
-│     MCC: 123-456-7890 · developer token: ✓               │
-│     Clients: Bracar Pneus · Pórtico · +1                    │
+│ 🎯  Agency — Default Account                  ● Connected   │
+│     MCC: 123-456-7890 · developer token: ✓                  │
+│     Clients: Bracar Tires · Pórtico · +1                    │
 │                           [Edit]  [Re-auth]  [Delete]       │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
-│ 🎯  Pórtico — Conta Própria               ○ Not connected   │
+│ 🎯  Pórtico — Own Account                 ○ Not connected   │
 │     Client ID: ✓ · Secret: ✓ · No refresh token            │
 │     Clients: Pórtico                                        │
 │                              [Edit]  [Connect →]  [Delete]  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Modal "Add / Edit Integration"** (bits-ui Dialog):
-- Nome (text input)
-- Provider (Select — só Google Ads por ora, disabled)
+**"Add / Edit Integration" Modal** (bits-ui Dialog):
+- Name (text input)
+- Provider (Select — Google Ads only for now, disabled)
 - OAuth Client ID (text input)
 - OAuth Client Secret (password input — toggle visibility)
-- Developer Token (text input)  
-- Login / MCC Customer ID (text input, formato 123-456-7890)
-- Clients assigned (MultiSelect — lista todos os tenants disponíveis)
-- Botão "Save" → chama action `create` ou `update`
-- Se status já é 'connected', mostrar badge e botão "Re-authorize"
+- Developer Token (text input)
+- Login / MCC Customer ID (text input, format 123-456-7890)
+- Assigned clients (MultiSelect — lists all available tenants)
+- "Save" button → calls `create` or `update` action
+- If status is already 'connected', show badge and "Re-authorize" button
 
-**Botão "Connect →" / "Re-auth":**
-- Abre `/api/auth/google-ads?integration_id=xxx` em nova aba ou redirect
-- Após callback, redireciona de volta e a página mostra status updated
+**"Connect →" / "Re-auth" button:**
+- Opens `/api/auth/google-ads?integration_id=xxx` in a new tab or redirect
+- After callback, redirects back and the page shows updated status
 
 ---
 
-## 7. Mudança no `lib/db/index.ts` — carregar nova migration
+## 7. Change in `lib/db/index.ts` — load new migration
 
-O arquivo atual carrega `001_schema.sql`. Precisa carregar também `002_integrations.sql`:
+The current file loads `001_schema.sql`. It needs to also load `002_integrations.sql`:
 
 ```typescript
-// lib/db/index.ts — na função de inicialização
+// lib/db/index.ts — in the initialization function
 const migrations = [
   path.resolve(__dir, '../../db/migrations/001_schema.sql'),
   path.resolve(__dir, '../../db/migrations/002_integrations.sql'),
@@ -379,16 +379,16 @@ for (const migration of migrations) {
     const sql = readFileSync(migration, 'utf-8');
     db.exec(sql);
   } catch (e) {
-    // migration já aplicada (IF NOT EXISTS garante idempotência)
+    // migration already applied (IF NOT EXISTS ensures idempotency)
   }
 }
 ```
 
 ---
 
-## 8. Wrapper server-side para SvelteKit
+## 8. Server-side wrapper for SvelteKit
 
-O SvelteKit roda no contexto `ui/` mas `lib/db/integrations.ts` está na raiz. Criar um re-export em `ui/src/lib/server/integrations.ts`:
+SvelteKit runs in the `ui/` context but `lib/db/integrations.ts` is at the root. Create a re-export at `ui/src/lib/server/integrations.ts`:
 
 ```typescript
 // ui/src/lib/server/integrations.ts
@@ -407,19 +407,19 @@ export {
 } from '../../../../lib/db/integrations';
 ```
 
-Verificar se o path alias `$lib/server/integrations` resolve corretamente. Se o `tsconfig.json` já resolve `../../../../lib/db/` esse path funciona (já funciona para `$lib/server/db.ts`).
+Verify that the path alias `$lib/server/integrations` resolves correctly. If `tsconfig.json` already resolves `../../../../lib/db/` this path works (it already works for `$lib/server/db.ts`).
 
 ---
 
-## 9. Migração de Clientes e Posts para SQLite (decisão maior)
+## 9. Migrating Clients and Posts to SQLite (major decision)
 
-### Recomendação: migrar em duas fases
+### Recommendation: migrate in two phases
 
-**Fase 1 (junto com integrations):** Criar tabelas `clients` e `posts` no SQLite, mas **manter a leitura do flat-file** com uma função de sincronização. A UI continua funcionando; os agentes continuam gerando JSON files. Um job de sync (`sync-to-db`) importa os arquivos para o DB.
+**Phase 1 (together with integrations):** Create `clients` and `posts` tables in SQLite, but **keep flat-file reads** with a sync function. The UI keeps working; agents keep generating JSON files. A sync job (`sync-to-db`) imports the files into the DB.
 
-**Fase 2 (depois):** API routes passam a escrever diretamente no DB, flat-files tornam-se optional/readonly.
+**Phase 2 (later):** API routes write directly to the DB, flat-files become optional/readonly.
 
-### Schema para Fase 1 — `003_clients_posts.sql`
+### Schema for Phase 1 — `003_clients_posts.sql`
 
 ```sql
 -- Clients
@@ -428,26 +428,26 @@ CREATE TABLE IF NOT EXISTS clients (
   name        TEXT NOT NULL,
   niche       TEXT,
   google_ads_id TEXT,
-  brand_json  TEXT,                     -- JSON completo do brand.json (extensible)
+  brand_json  TEXT,                     -- full JSON from brand.json (extensible)
   created_at  TEXT DEFAULT (datetime('now')),
   updated_at  TEXT DEFAULT (datetime('now'))
 );
 
 -- Posts
 CREATE TABLE IF NOT EXISTS posts (
-  id            TEXT PRIMARY KEY,         -- ex: '2026-04-01_meu-post'
+  id            TEXT PRIMARY KEY,         -- e.g. '2026-04-01_my-post'
   client_id     TEXT NOT NULL REFERENCES clients(id),
-  filename      TEXT NOT NULL,            -- 'meu-post.json'
+  filename      TEXT NOT NULL,            -- 'my-post.json'
   status        TEXT NOT NULL,            -- 'draft' | 'approved' | 'scheduled' | 'published'
   title         TEXT NOT NULL,
   content       TEXT NOT NULL,
   hashtags      TEXT,                     -- JSON array: '["#tag1","#tag2"]'
   media_type    TEXT,
-  platform      TEXT,                     -- JSON array de PostPlatform
+  platform      TEXT,                     -- JSON array of PostPlatform
   scheduled_date TEXT,
   scheduled_time TEXT,
-  media_files   TEXT,                     -- JSON array de filenames
-  workflow      TEXT,                     -- JSON do workflow do agente
+  media_files   TEXT,                     -- JSON array of filenames
+  workflow      TEXT,                     -- JSON of agent workflow
   created_at    TEXT DEFAULT (datetime('now')),
   updated_at    TEXT DEFAULT (datetime('now'))
 );
@@ -459,110 +459,110 @@ CREATE INDEX IF NOT EXISTS idx_posts_scheduled ON posts (scheduled_date);
 
 ### Sync script — `scripts/sync-clients-to-db.ts`
 
-Script único que lê os flat-files e popula o DB. Rodar manualmente após implementar as tabelas:
+Single script that reads flat-files and populates the DB. Run manually after implementing the tables:
 
 ```bash
 bun run scripts/sync-clients-to-db.ts
 ```
 
-Lógica: `INSERT OR REPLACE INTO clients ...` e `INSERT OR REPLACE INTO posts ...`. Idempotente — pode rodar múltiplas vezes.
+Logic: `INSERT OR REPLACE INTO clients ...` and `INSERT OR REPLACE INTO posts ...`. Idempotent — can run multiple times.
 
-### Mudança em `lib/db/index.ts` / `ui/src/lib/server/db.ts`
+### Change in `lib/db/index.ts` / `ui/src/lib/server/db.ts`
 
-Após migração:
+After migration:
 - `getClients()` → `SELECT * FROM clients`
 - `getClientPosts(clientId)` → `SELECT * FROM posts WHERE client_id = ?`
-- Manter as funções de escrita (`createPost`, `updatePost`, `deletePost`) apontando para DB
+- Keep write functions (`createPost`, `updatePost`, `deletePost`) pointing to the DB
 
-As API routes `+server.ts` que hoje fazem `fs.writeFile` / `fs.unlink` precisariam atualizar o DB em vez do filesystem. **Esta é a parte mais trabalhosa** — cada endpoint de mutação precisa de update.
+The API routes `+server.ts` that currently do `fs.writeFile` / `fs.unlink` would need to update the DB instead of the filesystem. **This is the most labor-intensive part** — each mutation endpoint needs an update.
 
-> **Sugestão:** Implementar integrations (fases 1-8 acima) primeiro, validar, depois abordar a migração de clients/posts separadamente. São mudanças independentes.
+> **Suggestion:** Implement integrations (phases 1–8 above) first, validate, then address the clients/posts migration separately. They are independent changes.
 
 ---
 
-## 10. Arquivos a criar / modificar — checklist completo
+## 10. Files to create / modify — complete checklist
 
-### Criar (novos)
-- [ ] `db/migrations/002_integrations.sql` — schema das tabelas de integrations
-- [ ] `db/migrations/003_clients_posts.sql` — schema de clients + posts (fase 2)
-- [ ] `lib/db/integrations.ts` — CRUD de integrations
-- [ ] `ui/src/lib/server/integrations.ts` — re-export para SvelteKit
+### Create (new)
+- [ ] `db/migrations/002_integrations.sql` — integrations table schema
+- [ ] `db/migrations/003_clients_posts.sql` — clients + posts schema (phase 2)
+- [ ] `lib/db/integrations.ts` — integration CRUD
+- [ ] `ui/src/lib/server/integrations.ts` — re-export for SvelteKit
 - [ ] `ui/src/routes/[tenant]/settings/+layout.svelte` — tab bar
-- [ ] `ui/src/routes/[tenant]/settings/+layout.server.ts` — load comum
-- [ ] `ui/src/routes/[tenant]/settings/+page.server.ts` — redirect para /general
-- [ ] `ui/src/routes/[tenant]/settings/general/+page.svelte` — brand info (mover de settings/)
+- [ ] `ui/src/routes/[tenant]/settings/+layout.server.ts` — shared load
+- [ ] `ui/src/routes/[tenant]/settings/+page.server.ts` — redirect to /general
+- [ ] `ui/src/routes/[tenant]/settings/general/+page.svelte` — brand info (move from settings/)
 - [ ] `ui/src/routes/[tenant]/settings/general/+page.server.ts` — load + saveBrand action
 - [ ] `ui/src/routes/[tenant]/settings/integrations/+page.svelte` — integrations hub
 - [ ] `ui/src/routes/[tenant]/settings/integrations/+page.server.ts` — load + actions
 
-### Modificar (existentes)
-- [ ] `lib/db/index.ts` — carregar nova migration ao inicializar
-- [ ] `ui/src/lib/server/googleAds.ts` — trocar `env.*` por `getCredentialsForTenant`
-- [ ] `ui/src/lib/server/googleAdsDetailed.ts` — idem
-- [ ] `ui/src/routes/api/auth/google-ads/+server.ts` — aceitar `integration_id`, buscar creds no DB
-- [ ] `ui/src/routes/api/auth/google-ads/callback/+server.ts` — gravar token no DB via `updateIntegration`
-- [ ] `ui/src/routes/[tenant]/settings/+page.svelte` — remover (conteúdo vai para /general)
-- [ ] `ui/src/routes/[tenant]/settings/+page.server.ts` — virar redirect
+### Modify (existing)
+- [ ] `lib/db/index.ts` — load new migration on initialization
+- [ ] `ui/src/lib/server/googleAds.ts` — replace `env.*` with `getCredentialsForTenant`
+- [ ] `ui/src/lib/server/googleAdsDetailed.ts` — same
+- [ ] `ui/src/routes/api/auth/google-ads/+server.ts` — accept `integration_id`, fetch creds from DB
+- [ ] `ui/src/routes/api/auth/google-ads/callback/+server.ts` — write token to DB via `updateIntegration`
+- [ ] `ui/src/routes/[tenant]/settings/+page.svelte` — remove (content goes to /general)
+- [ ] `ui/src/routes/[tenant]/settings/+page.server.ts` — become redirect
 
-### Opcionais (fase 2 — migração clients/posts)
+### Optional (phase 2 — clients/posts migration)
 - [ ] `scripts/sync-clients-to-db.ts` — sync flat-file → DB
-- [ ] `lib/db/index.ts` — reescrever `getClients()` e `getClientPosts()` para SQLite
-- [ ] `ui/src/lib/server/db.ts` — atualizar todas as funções de escrita
-- [ ] Cada `+server.ts` de mutation de post/client — apontar para DB
+- [ ] `lib/db/index.ts` — rewrite `getClients()` and `getClientPosts()` for SQLite
+- [ ] `ui/src/lib/server/db.ts` — update all write functions
+- [ ] Each post/client mutation `+server.ts` — point to DB
 
 ---
 
-## 11. Ordem de implementação recomendada
+## 11. Recommended implementation order
 
 ```
 1. db/migrations/002_integrations.sql
-2. lib/db/integrations.ts  (CRUD puro, testável)
+2. lib/db/integrations.ts  (pure CRUD, testable)
 3. ui/src/lib/server/integrations.ts  (re-export)
-4. lib/db/index.ts  (carregar nova migration)
-5. ui/src/routes/api/auth/google-ads/ (ambos os endpoints)
-6. ui/src/routes/[tenant]/settings/ reestruturar em sub-rotas
-7. settings/general/ (mover conteúdo atual)
-8. settings/integrations/ (página principal + actions)
-9. ui/src/lib/server/googleAds.ts + googleAdsDetailed.ts (trocar env por DB)
-10. Testar OAuth flow completo (add integration → connect → use in ads page)
-11. [Fase 2] db/migrations/003_clients_posts.sql + sync script + migrate reads
+4. lib/db/index.ts  (load new migration)
+5. ui/src/routes/api/auth/google-ads/ (both endpoints)
+6. ui/src/routes/[tenant]/settings/ restructure into sub-routes
+7. settings/general/ (move current content)
+8. settings/integrations/ (main page + actions)
+9. ui/src/lib/server/googleAds.ts + googleAdsDetailed.ts (replace env with DB)
+10. Test complete OAuth flow (add integration → connect → use in ads page)
+11. [Phase 2] db/migrations/003_clients_posts.sql + sync script + migrate reads
 ```
 
 ---
 
-## 12. Contexto de referência para o próximo agente
+## 12. Reference context for the next agent
 
-### Stack do projeto
-- Runtime: Bun (bun:sqlite nativo)
+### Project stack
+- Runtime: Bun (native bun:sqlite)
 - UI: SvelteKit 2 + Svelte 5 runes + Tailwind v4
-- UI Components: bits-ui v2 (Dialog, DropdownMenu, Popover, Tooltip já em uso)
-- DB: SQLite em `db/marketing.db`, connection em `lib/db/index.ts`
-- Sem ORM — queries SQL direto com `bun:sqlite`
+- UI Components: bits-ui v2 (Dialog, DropdownMenu, Popover, Tooltip already in use)
+- DB: SQLite at `db/marketing.db`, connection in `lib/db/index.ts`
+- No ORM — direct SQL queries with `bun:sqlite`
 
-### Padrões de código existentes
-- Svelte 5: `$props()`, `$state()`, `$derived()`, `$effect()` — sem stores legados
-- SvelteKit form actions para mutações no servidor
-- `import { Dialog, DropdownMenu, Popover, Tooltip } from 'bits-ui'` no client
-- `import { cn } from '$lib/utils'` para merge de classes
-- Tipos em `lib/db/index.ts` (Brand, Post, PostWithMeta) e `ui/src/lib/server/db.ts`
-- Sem `any` — tipagem estrita
-- Sem `dotenv.config()` — Bun injeta o `.env` automaticamente
+### Existing code patterns
+- Svelte 5: `$props()`, `$state()`, `$derived()`, `$effect()` — no legacy stores
+- SvelteKit form actions for server-side mutations
+- `import { Dialog, DropdownMenu, Popover, Tooltip } from 'bits-ui'` on the client
+- `import { cn } from '$lib/utils'` for class merging
+- Types in `lib/db/index.ts` (Brand, Post, PostWithMeta) and `ui/src/lib/server/db.ts`
+- No `any` — strict typing
+- No `dotenv.config()` — Bun injects `.env` automatically
 
-### Arquivo `lib/db/index.ts` — como usar a conexão
+### `lib/db/index.ts` — how to use the connection
 ```typescript
-// Exporta getDb() que retorna a instância singleton
-// Já inicializa o schema ao primeiro acesso
+// Exports getDb() which returns the singleton instance
+// Already initializes the schema on first access
 import { getDb } from './index';
 const db = getDb();
 const rows = db.query('SELECT * FROM integrations').all();
 ```
 
-### Arquivos de settings atualmente
-- `ui/src/routes/[tenant]/settings/+page.svelte` — brand info form (já existe)
-- `ui/src/routes/[tenant]/settings/+page.server.ts` — load + saveBrand action (já existe)
-- Esses dois arquivos precisam ser movidos para `settings/general/`
+### Current settings files
+- `ui/src/routes/[tenant]/settings/+page.svelte` — brand info form (already exists)
+- `ui/src/routes/[tenant]/settings/+page.server.ts` — load + saveBrand action (already exists)
+- These two files need to be moved to `settings/general/`
 
-### Google Ads env vars atuais (referência para migração)
+### Current Google Ads env vars (reference for migration)
 ```
 GOOGLE_ADS_CLIENT_ID        → integrations.oauth_client_id
 GOOGLE_ADS_CLIENT_SECRET    → integrations.oauth_client_secret

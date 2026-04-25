@@ -1,43 +1,43 @@
 # Tasks — Marketing CMS Refactor
 
-Refatoração guiada pelo **ADR-001** (`.project/adrs/001-sveltekit-sqlite-mcp.md`).  
-Objetivo: mover SvelteKit para a raiz, substituir flat-files por SQLite, expor MCP em `/mcp`.
+Refactor guided by **ADR-001** (`.project/adrs/001-sveltekit-sqlite-mcp.md`).  
+Goal: move SvelteKit to root, replace flat-files with SQLite, expose MCP at `/mcp`.
 
 ---
 
-## Estado atual
+## Current state
 
-**Refatoração concluída. Todas as tasks T01–T10 foram completadas.**
+**Refactor complete. All tasks T01–T10 have been completed.**
 
-| Task | Status | Descrição |
+| Task | Status | Description |
 |---|---|---|
-| T01 | ✅ completed | Move SvelteKit de `ui/` para root |
-| T02 | ✅ completed | Drop dual-runtime shim, usar `bun:sqlite` direto |
-| T03 | ✅ completed | Migrations SQLite: tenants, posts, reports, campaigns |
+| T01 | ✅ completed | Move SvelteKit from `ui/` to root |
+| T02 | ✅ completed | Drop dual-runtime shim, use `bun:sqlite` directly |
+| T03 | ✅ completed | SQLite migrations: tenants, posts, reports, campaigns |
 | T04 | ✅ completed | Seed script: flat-files → SQLite |
-| T05 | ✅ completed | Funções TS da camada de dados (`src/lib/server/`) |
-| T06 | ✅ completed | Storage adapter interface + implementação local |
-| T07 | ✅ completed | Migrar rotas UI de `fs.readFile` para funções SQLite |
-| T08 | ✅ completed | MCP server setup em `/mcp` via SvelteKit |
-| T09 | ✅ completed | MCP tools e resources |
-| T10 | ✅ completed | Cleanup: remover flat-files, atualizar scripts e CLAUDE.md |
+| T05 | ✅ completed | TS data layer functions (`src/lib/server/`) |
+| T06 | ✅ completed | Storage adapter interface + local implementation |
+| T07 | ✅ completed | Migrate UI routes from `fs.readFile` to SQLite functions |
+| T08 | ✅ completed | MCP server setup at `/mcp` via SvelteKit |
+| T09 | ✅ completed | MCP tools and resources |
+| T10 | ✅ completed | Cleanup: remove flat-files, update scripts and CLAUDE.md |
 
 ---
 
-## Resultado final
+## Final result
 
-- SvelteKit na raiz (`src/`), Bun como único runtime
-- SQLite (`db/marketing.db`) é a fonte de verdade para tenants, posts, reports e campaigns
-- MCP server em `POST /mcp` com 16 tools e 5 resources
-- Scripts simplificados: leem de SQLite, não de `clients/`
-- `clients/` contém apenas imagens legadas (duplicatas de `storage/images/`)
-- CLAUDE.md atualizado para refletir a nova arquitetura
+- SvelteKit at root (`src/`), Bun as the sole runtime
+- SQLite (`db/marketing.db`) is the source of truth for tenants, posts, reports and campaigns
+- MCP server at `POST /mcp` with 16 tools and 5 resources
+- Simplified scripts: read from SQLite, not from `clients/`
+- `clients/` contains only legacy images (duplicates of `storage/images/`)
+- CLAUDE.md updated to reflect the new architecture
 
 ---
 
-## Regras do projeto
+## Project rules
 
-- Commits seguem Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
-- Tasks concluídas vão para `tasks/completed/` com `**Status:** completed`
-- Nunca alterar campanhas Google Ads ao vivo sem confirmação explícita
-- IDs de clientes e tracking tags nunca entram em arquivos commitados
+- Commits follow Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
+- Completed tasks go to `tasks/completed/` with `**Status:** completed`
+- Never modify live Google Ads campaigns without explicit confirmation
+- Client IDs and tracking tags never go in committed files

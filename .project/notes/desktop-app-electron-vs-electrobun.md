@@ -1,83 +1,83 @@
-# Desktop App: Electron vs Electrobun — Análise Técnica de Adesão
+# Desktop App: Electron vs Electrobun — Technical Analysis
 
-> Nota técnica para decisão de migração do marketing CMS de webapp local para app desktop empacotado.
-> Baseada na análise do codebase atual + pesquisa de estado dos frameworks em abril/2026.
-
----
-
-## 1. Contexto e motivação
-
-O projeto hoje roda como um servidor SvelteKit local iniciado via `bun run dev` ou `bun run build && bun run preview`. O usuário acessa via browser em `localhost:5173`. Essa abordagem funciona, mas tem fricção:
-
-- Requer Bun instalado no sistema
-- Requer terminal aberto e comando manual para iniciar
-- Sem auto-update
-- Não parece um produto — parece um projeto de desenvolvimento
-
-A migração para desktop empacotado resolve esses pontos sem necessariamente reescrever nada da lógica de negócio.
+> Technical note for deciding whether to migrate the marketing CMS from a local web app to a packaged desktop app.
+> Based on analysis of the current codebase + research into framework state as of April 2026.
 
 ---
 
-## 2. Abordagem arquitetural comum a ambos os frameworks
+## 1. Context and motivation
 
-A estratégia recomendada para este projeto (independente do framework escolhido) é **servidor embutido**, não IPC rewrite:
+The project currently runs as a local SvelteKit server started via `bun run dev` or `bun run build && bun run preview`. The user accesses it via browser at `localhost:5173`. This approach works, but has friction:
+
+- Requires Bun installed on the system
+- Requires an open terminal and a manual command to start
+- No auto-update
+- Doesn't feel like a product — it feels like a development project
+
+Migrating to a packaged desktop app resolves these points without necessarily rewriting any business logic.
+
+---
+
+## 2. Common architectural approach for both frameworks
+
+The recommended strategy for this project (regardless of the chosen framework) is **embedded server**, not IPC rewrite:
 
 ```
-Desktop main process (Node.js ou Bun)
-  └─ spawna / importa → SvelteKit (adapter-node) em porta aleatória
+Desktop main process (Node.js or Bun)
+  └─ spawns / imports → SvelteKit (adapter-node) on a random port
        └─ BrowserWindow/webview → http://localhost:PORT
 ```
 
-Isso preserva **100% do código existente**: UI, API routes, SSR, streaming, lógica de negócio. A alternativa (adapter-static + IPC handlers para cada `+server.ts`) exigiria reescrever as ~20 rotas de API e não vale o custo dado o volume.
+This preserves **100% of existing code**: UI, API routes, SSR, streaming, business logic. The alternative (adapter-static + IPC handlers for each `+server.ts`) would require rewriting the ~20 API routes and is not worth the cost given the volume.
 
 ---
 
-## 3. Electron — análise
+## 3. Electron — analysis
 
-### Vantagens
-- Ecossistema maduro: 114k stars, 10+ anos, vasta documentação
-- `electron-builder` e `electron-forge` resolvem build/packaging multiplataforma de forma confiável
-- Squirrel para auto-update está battle-tested
-- Chromium embutido: zero surpresas de compatibilidade CSS/JS em qualquer plataforma
-- Comunidade enorme: Stack Overflow, plugins, templates
+### Advantages
+- Mature ecosystem: 114k stars, 10+ years, extensive documentation
+- `electron-builder` and `electron-forge` handle cross-platform build/packaging reliably
+- Squirrel for auto-update is battle-tested
+- Bundled Chromium: zero CSS/JS compatibility surprises on any platform
+- Huge community: Stack Overflow, plugins, templates
 
-### Desvantagens para este projeto
-- **Problema central: Bun → Node.js no main process.** O Electron usa Node.js nativo. Todo script do projeto (`deploy-google-ads.ts`, `publish-social-post.ts`, `collect-daily-metrics.ts`, etc.) usa sintaxe Bun-first e Bun injeta `.env` automaticamente. A solução seria manter `bun` no PATH do sistema e usar `child_process.spawn('bun', ['run', script])` — funciona, mas é um shim feio.
-- **better-sqlite3 é um addon nativo** (`.node`). Requer `electron-rebuild` após install para recompilar contra a versão do Node que o Electron usa. Isso complica o CI/CD, especialmente em Windows onde toolchains de compilação nativa são frágeis.
-- **Bundle ~150MB** por causa do Chromium embutido.
-- **Code signing e notarization** no macOS são um processo lento e burocrático com Electron (o criador do Electrobun migrou *por causa* disso especificamente).
+### Disadvantages for this project
+- **Core problem: Bun → Node.js in the main process.** Electron uses native Node.js. All project scripts (`deploy-google-ads.ts`, `publish-social-post.ts`, `collect-daily-metrics.ts`, etc.) use Bun-first syntax and Bun injects `.env` automatically. The solution would be to keep `bun` in the system PATH and use `child_process.spawn('bun', ['run', script])` — it works, but it's an ugly shim.
+- **better-sqlite3 is a native addon** (`.node`). Requires `electron-rebuild` after install to recompile against the Node version Electron uses. This complicates CI/CD, especially on Windows where native compilation toolchains are fragile.
+- **~150MB bundle** due to bundled Chromium.
+- **Code signing and notarization** on macOS is a slow and bureaucratic process with Electron (the creator of Electrobun migrated *because of* this specifically).
 
 ---
 
-## 4. Electrobun — análise aprofundada
+## 4. Electrobun — in-depth analysis
 
-### Estado atual (abril/2026)
-Electrobun v1 foi lançado em **fevereiro de 2026** após dois anos de desenvolvimento. Não é mais alpha/experimental. Features shipped no v1:
+### Current state (April 2026)
+Electrobun v1 launched in **February 2026** after two years of development. It is no longer alpha/experimental. Features shipped in v1:
 
 - Cross-platform window controls, menus, accelerators, global shortcuts
 - Clipboard, dialogs, webview partitions, session storage, find-in-page
-- Build/packaging multiplataforma com installers gerados automaticamente
-- Auto-update com **bsdiff** — patches diferenciais de ~14KB entre versões
-- Suporte oficial: macOS 14+, Windows 11+, Ubuntu 22.04+
-- ~11.4k stars, 40+ apps em produção reportados
+- Cross-platform build/packaging with automatically generated installers
+- Auto-update with **bsdiff** — differential patches of ~14KB between versions
+- Official support: macOS 14+, Windows 11+, Ubuntu 22.04+
+- ~11.4k stars, 40+ production apps reported
 
-### Webview por plataforma — crucial para compatibilidade CSS/JS
+### Webview per platform — critical for CSS/JS compatibility
 
-| Plataforma | Engine | Implicação |
+| Platform | Engine | Implication |
 |---|---|---|
-| **macOS 14+** | WKWebView (Safari/WebKit) | Safari 17+ — suporta tudo que Tailwind v4 usa |
+| **macOS 14+** | WKWebView (Safari/WebKit) | Safari 17+ — supports everything Tailwind v4 uses |
 | **Windows 11+** | Edge WebView2 | **Chromium** — zero quirks |
-| **Ubuntu 22.04+** | WebKitGTK 4.1 | WebKit — mesmas ressalvas do macOS |
-| **Qualquer** | CEF (opt-in) | Chromium bundled — consistência total, +tamanho |
+| **Ubuntu 22.04+** | WebKitGTK 4.1 | WebKit — same caveats as macOS |
+| **Any** | CEF (opt-in) | Bundled Chromium — full consistency, +size |
 
-No caso específico deste projeto, a UI é renderizada via webview apontando para `http://localhost:PORT` — o SvelteKit continua servindo HTML/CSS/JS normalmente. Isso significa que o webview age como um browser comum, e Tailwind v4 (que já roda no Safari moderno sem issues) não terá problemas.
+In this project's specific case, the UI is rendered via webview pointing to `http://localhost:PORT` — SvelteKit continues serving HTML/CSS/JS normally. This means the webview acts like a regular browser, and Tailwind v4 (which already runs on modern Safari without issues) will have no problems.
 
-### Vantagem central para este projeto: Bun nativo no main process
+### Core advantage for this project: native Bun in the main process
 
-Com Electrobun, o main process roda **diretamente em Bun**. Isso elimina o maior bloqueador da migração com Electron:
+With Electrobun, the main process runs **directly in Bun**. This eliminates the biggest migration blocker from Electron:
 
 ```typescript
-// main.ts (Electrobun) — Bun nativo, sem shims
+// main.ts (Electrobun) — native Bun, no shims
 import { Bun } from 'bun';
 
 const server = Bun.spawn(['bun', 'run', 'build/index.js'], {
@@ -85,40 +85,40 @@ const server = Bun.spawn(['bun', 'run', 'build/index.js'], {
 });
 ```
 
-Ou ainda mais limpo — importar e rodar o SvelteKit server diretamente no processo, já que Bun tem compatibilidade com `adapter-node`:
+Or even cleaner — import and run the SvelteKit server directly in the process, since Bun is compatible with `adapter-node`:
 
 ```typescript
-// O build/index.js gerado pelo adapter-node roda com Bun
-// sem `child_process.spawn` externo
+// The build/index.js generated by adapter-node runs with Bun
+// without external `child_process.spawn`
 ```
 
 ### Bundle size
-~12–16MB vs ~150MB do Electron. A maior parte do tamanho é o runtime Bun (~63MB descomprimido no macOS) — ainda assim significativamente menor que Electron.
+~12–16MB vs ~150MB for Electron. Most of the size is the Bun runtime (~63MB uncompressed on macOS) — still significantly smaller than Electron.
 
-### Limitações reais do Electrobun
+### Real limitations of Electrobun
 
-1. **Maintainer solo** — o criador declarou explicitamente que não tem expectativa de revisar/mergear PRs externos. O projeto depende de uma pessoa. Risco real de abandono.
-2. **Linux fora de Ubuntu**: distros sem WebKitGTK 4.1 são "out of scope" oficialmente.
-3. **Windows 7 / W10 antigo**: Edge WebView2 requer W10 build 1803+. Windows 11 já tem built-in.
-4. **Type definitions** atrasam a documentação em alguns casos (reportado na thread HN do lançamento).
-5. **Ecossistema pequeno**: menos plugins, menos exemplos de integração, menos respostas prontas no Stack Overflow.
+1. **Solo maintainer** — the creator explicitly stated they don't expect to review/merge external PRs. The project depends on one person. Real risk of abandonment.
+2. **Linux outside Ubuntu**: distros without WebKitGTK 4.1 are officially "out of scope".
+3. **Windows 7 / old W10**: Edge WebView2 requires W10 build 1803+. Windows 11 already has it built-in.
+4. **Type definitions** lag behind documentation in some cases (reported in the HN launch thread).
+5. **Small ecosystem**: fewer plugins, fewer integration examples, fewer ready answers on Stack Overflow.
 
 ---
 
-## 5. Mapeamento do custo de refatoração — este codebase
+## 5. Refactoring cost mapping — this codebase
 
-### 5.1 Caminhos de arquivo (ambos os frameworks)
+### 5.1 File paths (both frameworks)
 
-Dois arquivos centralizam os paths:
+Two files centralize the paths:
 
 **`ui/src/lib/server/db.ts:4`**
 ```typescript
-// atual
+// current
 const CLIENTS_DIR = path.resolve('../clients');
 
-// desktop empacotado
+// packaged desktop
 const CLIENTS_DIR = path.join(app.getPath('userData'), 'clients');
-// ou em Electrobun: usar uma API equivalente ou env var injetada pelo main process
+// or in Electrobun: use an equivalent API or env var injected by the main process
 ```
 
 **`lib/db/index.ts:16-17`**
@@ -126,129 +126,129 @@ const CLIENTS_DIR = path.join(app.getPath('userData'), 'clients');
 const DB_PATH        = path.resolve(__dir, '../../db/marketing.db');
 const MIGRATION_PATH = path.resolve(__dir, '../../db/migrations/001_schema.sql');
 
-// desktop: mover DB para userData, migrations vêm do bundle (read-only ok)
+// desktop: move DB to userData, migrations come from bundle (read-only ok)
 const DB_PATH = path.join(getDataDir(), 'marketing.db');
 ```
 
-Impacto: **2 arquivos, mudança cirúrgica** — todos os outros arquivos que usam paths passam por essas duas funções centrais.
+Impact: **2 files, surgical change** — all other files that use paths go through these two central functions.
 
-### 5.2 Variáveis de ambiente — o maior ponto de atenção
+### 5.2 Environment variables — the biggest concern
 
-O projeto usa as seguintes env vars:
+The project uses the following env vars:
 
-| Variável | Onde é lida | Onde é escrita |
+| Variable | Where read | Where written |
 |---|---|---|
 | `GOOGLE_ADS_CLIENT_ID` | `googleAds.ts`, `googleAdsDetailed.ts`, `auth/+server.ts` | `.env` (manual) |
-| `GOOGLE_ADS_CLIENT_SECRET` | idem | `.env` (manual) |
-| `GOOGLE_ADS_DEVELOPER_TOKEN` | idem | `.env` (manual) |
-| `GOOGLE_ADS_REFRESH_TOKEN` | idem | **`auth/google-ads/callback/+server.ts`** |
-| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | idem | `.env` (manual) |
+| `GOOGLE_ADS_CLIENT_SECRET` | same | `.env` (manual) |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | same | `.env` (manual) |
+| `GOOGLE_ADS_REFRESH_TOKEN` | same | **`auth/google-ads/callback/+server.ts`** |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | same | `.env` (manual) |
 | `META_PAGE_ACCESS_TOKEN` | `publish-social-post.ts` | `.env` (manual) |
-| `META_PAGE_ID` | idem | `.env` (manual) |
-| `META_INSTAGRAM_ACCOUNT_ID` | idem | `.env` (manual) |
-| `MEDIA_PUBLIC_BASE_URL` | idem | `.env` (manual) |
+| `META_PAGE_ID` | same | `.env` (manual) |
+| `META_INSTAGRAM_ACCOUNT_ID` | same | `.env` (manual) |
+| `MEDIA_PUBLIC_BASE_URL` | same | `.env` (manual) |
 
-**Ponto crítico:** `ui/src/routes/api/auth/google-ads/callback/+server.ts` atualmente **escreve** o `GOOGLE_ADS_REFRESH_TOKEN` diretamente no arquivo `.env` após o fluxo OAuth. Em um app empacotado não existe `.env` gravável no diretório do bundle (fica em `.asar` read-only no Electron, ou equivalente no Electrobun).
+**Critical point:** `ui/src/routes/api/auth/google-ads/callback/+server.ts` currently **writes** the `GOOGLE_ADS_REFRESH_TOKEN` directly to the `.env` file after the OAuth flow. In a packaged app there is no writable `.env` in the bundle directory (locked in `.asar` read-only in Electron, or equivalent in Electrobun).
 
-**Solução:** Substituir a leitura/escrita de `.env` por uma camada de configuração persistente:
+**Solution:** Replace `.env` read/write with a persistent config layer:
 
-- **Electron**: `electron-store` com `safeStorage` (criptografa via keychain do OS)
-- **Electrobun**: equivalente nativo ou um JSON em `userData` criptografado
+- **Electron**: `electron-store` with `safeStorage` (encrypts via OS keychain)
+- **Electrobun**: native equivalent or an encrypted JSON in `userData`
 
-A mudança afeta:
-- `ui/src/routes/api/auth/google-ads/callback/+server.ts` — remover escrita no `.env`, escrever no config store
-- `ui/src/lib/server/googleAds.ts` — trocar `env.GOOGLE_ADS_*` por leitura do config store
-- `ui/src/lib/server/googleAdsDetailed.ts` — idem
-- `scripts/lib/ads.ts` — `process.env.GOOGLE_ADS_*` → ler do JSON de config (scripts rodam como subprocessos)
+The change affects:
+- `ui/src/routes/api/auth/google-ads/callback/+server.ts` — remove write to `.env`, write to config store
+- `ui/src/lib/server/googleAds.ts` — replace `env.GOOGLE_ADS_*` with config store reads
+- `ui/src/lib/server/googleAdsDetailed.ts` — same
+- `scripts/lib/ads.ts` — `process.env.GOOGLE_ADS_*` → read from config JSON (scripts run as subprocesses)
 
-**Estimativa:** 5–6 arquivos com mudanças localizadas. A abstração seria uma função `getConfig(key)` que lê do store; substituir `env.GOOGLE_ADS_CLIENT_ID` → `getConfig('GOOGLE_ADS_CLIENT_ID')` é mecânico.
+**Estimate:** 5–6 files with localized changes. The abstraction would be a `getConfig(key)` function that reads from the store; replacing `env.GOOGLE_ADS_CLIENT_ID` → `getConfig('GOOGLE_ADS_CLIENT_ID')` is mechanical.
 
-### 5.3 Fluxo OAuth — sem copy-paste
+### 5.3 OAuth flow — no rewrite needed
 
-O fluxo atual já usa localhost callback (`/api/auth/google-ads/callback`), o que é exatamente o que funciona em apps desktop. **Não precisa mudar nada no fluxo OAuth em si.** O que muda é só o destino do armazenamento do refresh token (ponto 5.2 acima).
+The current flow already uses a localhost callback (`/api/auth/google-ads/callback`), which is exactly what works in desktop apps. **Nothing in the OAuth flow itself needs to change.** What changes is only the storage destination for the refresh token (point 5.2 above).
 
-Para o desktop: o main process abre o browser do sistema via `shell.openExternal(authUrl)` (Electron) ou equivalente no Electrobun. O SvelteKit server já está rodando internamente na porta aleatória e captura o callback normalmente.
+For the desktop: the main process opens the system browser via `shell.openExternal(authUrl)` (Electron) or Electrobun's equivalent. The SvelteKit server is already running internally on the random port and captures the callback normally.
 
-### 5.4 Scripts de linha de comando
+### 5.4 Command-line scripts
 
-Scripts como `deploy-google-ads.ts`, `publish-social-post.ts`, `collect-daily-metrics.ts` — continuam rodando como subprocessos via `bun run script.ts`. No Electron, isso exige `bun` no PATH do sistema (é uma dependência externa). No Electrobun, o runtime Bun já está embutido — os scripts podem ser executados diretamente sem depender do Bun do sistema.
+Scripts like `deploy-google-ads.ts`, `publish-social-post.ts`, `collect-daily-metrics.ts` — continue running as subprocesses via `bun run script.ts`. In Electron, this requires `bun` in the system PATH (an external dependency). In Electrobun, the Bun runtime is already embedded — scripts can be executed directly without depending on the system's Bun.
 
-### 5.5 `better-sqlite3` — problema apenas no Electron
+### 5.5 `better-sqlite3` — problem only in Electron
 
-`lib/db/index.ts` tem fallback para `better-sqlite3` quando não está rodando com Bun:
+`lib/db/index.ts` has a fallback to `better-sqlite3` when not running with Bun:
 
 ```typescript
 // lib/db/index.ts
-// usa bun:sqlite em runtime Bun, better-sqlite3 caso contrário
+// uses bun:sqlite in Bun runtime, better-sqlite3 otherwise
 ```
 
-Com Electrobun (Bun no main process), `bun:sqlite` é usado diretamente — **zero problema de addon nativo**. Com Electron (Node.js), `better-sqlite3` precisa de `electron-rebuild`. Esse é um dos maiores argumentos técnicos a favor do Electrobun para este projeto.
+With Electrobun (Bun in main process), `bun:sqlite` is used directly — **zero native addon issues**. With Electron (Node.js), `better-sqlite3` needs `electron-rebuild`. This is one of the strongest technical arguments in favor of Electrobun for this project.
 
 ---
 
-## 6. Tabela comparativa consolidada
+## 6. Consolidated comparison table
 
-| Critério | Electron | Electrobun |
+| Criterion | Electron | Electrobun |
 |---|---|---|
-| Runtime main process | Node.js | **Bun nativo** |
-| Problema Bun→Node.js | Sim (shims necessários) | **Não existe** |
-| `better-sqlite3` rebuild | Sim (electron-rebuild) | **Não necessário** (bun:sqlite) |
-| Scripts `.ts` | `spawn('bun', ...)` externo | **Bun embutido** |
+| Main process runtime | Node.js | **Native Bun** |
+| Bun→Node.js problem | Yes (shims needed) | **Does not exist** |
+| `better-sqlite3` rebuild | Yes (electron-rebuild) | **Not needed** (bun:sqlite) |
+| `.ts` scripts | `spawn('bun', ...)` external | **Embedded Bun** |
 | Bundle size | ~150MB | **~12–16MB** |
-| Webview Windows | Chromium (embutido) | Edge WebView2 (Chromium) |
-| Webview macOS | Chromium (embutido) | WKWebView (WebKit) |
-| CSS/JS compat | Perfeita (Chromium) | Boa (Safari 17+ / Edge) |
-| Auto-update | Squirrel (maduro) | bsdiff patches (inovador) |
-| Ecossistema | Enorme | Pequeno mas crescendo |
-| Risco de abandono | Muito baixo | **Médio (maintainer solo)** |
-| Code signing macOS | Burocrático | Resolvido no tooling |
-| Multiplataforma | Windows/Mac/Linux sólido | Windows/Mac/Ubuntu oficial |
-| Maturidade | 10+ anos | v1 fev/2026 |
+| Webview Windows | Chromium (embedded) | Edge WebView2 (Chromium) |
+| Webview macOS | Chromium (embedded) | WKWebView (WebKit) |
+| CSS/JS compat | Perfect (Chromium) | Good (Safari 17+ / Edge) |
+| Auto-update | Squirrel (mature) | bsdiff patches (innovative) |
+| Ecosystem | Huge | Small but growing |
+| Abandonment risk | Very low | **Medium (solo maintainer)** |
+| macOS code signing | Bureaucratic | Resolved in tooling |
+| Cross-platform | Windows/Mac/Linux solid | Windows/Mac/Ubuntu official |
+| Maturity | 10+ years | v1 Feb/2026 |
 
 ---
 
-## 7. Estimativa de esforço total
+## 7. Total effort estimate
 
-| Tarefa | Complexidade | Igual para ambos? |
+| Task | Complexity | Same for both? |
 |---|---|---|
-| Main process boilerplate (janela, ciclo de vida) | Baixa | Não — APIs diferentes |
-| Spawn do SvelteKit server | Baixa | Sim |
-| Substituir paths hardcoded (2 arquivos) | Baixa | Sim |
-| Camada de config store (BYOK) | Média | Não — electron-store vs solução Electrobun |
-| Tela de Settings na UI para inserir chaves | Média | Sim |
-| OAuth callback → gravar no config store | Baixa | Sim |
-| `better-sqlite3` rebuild no CI | **Alta (Electron only)** | Não |
-| Build pipeline (adapter-node + builder) | Média | Sim |
-| Migração de dados existentes (first-run) | Baixa | Sim |
+| Main process boilerplate (window, lifecycle) | Low | No — different APIs |
+| Spawn the SvelteKit server | Low | Yes |
+| Replace hardcoded paths (2 files) | Low | Yes |
+| Config store layer (BYOK) | Medium | No — electron-store vs Electrobun solution |
+| Settings screen in UI for entering keys | Medium | Yes |
+| OAuth callback → write to config store | Low | Yes |
+| `better-sqlite3` rebuild in CI | **High (Electron only)** | No |
+| Build pipeline (adapter-node + builder) | Medium | Yes |
+| Existing data migration (first-run) | Low | Yes |
 
-**Com Electron**: 3–5 dias funcional + 1–2 semanas build/packaging multiplataforma estável (especialmente o rebuild de melhor-sqlite3 no Windows).
+**With Electron**: 3–5 days functional + 1–2 weeks stable cross-platform build/packaging (especially the better-sqlite3 rebuild on Windows).
 
-**Com Electrobun**: 2–3 dias funcional + alguns dias de build/packaging. O tooling de build do Electrobun automatiza installers e updates nativamente.
-
----
-
-## 8. Recomendação
-
-**Para distribuição macOS + Windows: Electrobun é a escolha mais coerente com o stack.**
-
-Os argumentos técnicos são fortes: Bun nativo elimina os dois maiores bloqueadores da migração (addon nativo do SQLite e compatibilidade de scripts). O projeto chega em v1 com tudo que é necessário para produção. Bundle menor é um bônus.
-
-O único risco real é o maintainer solo. Mitigação: o projeto é open-source em Zig/Bun — se for abandonado, o framework pode ser forkado ou congelado numa versão funcional sem maiores problemas, já que a UI continua sendo SvelteKit padrão.
-
-**Se Linux for requisito**: usar Electron. O suporte Linux do Electrobun é limitado a Ubuntu 22.04+ oficialmente.
-
-**Se a preferência for risco zero**: usar Electron. Mais burocrático para este stack, mas nunca vai deixar de ser mantido.
+**With Electrobun**: 2–3 days functional + a few days of build/packaging. Electrobun's build tooling automates installers and updates natively.
 
 ---
 
-## 9. Próximos passos (se decisão for Electrobun)
+## 8. Recommendation
 
-1. `bun add electrobun` no root do projeto
-2. Criar `electron-main/main.ts` com boilerplate mínimo: janela + spawn do SvelteKit server
-3. Criar camada `lib/config.ts` para leitura/escrita de configurações (substitui `.env`)
-4. Atualizar `ui/src/lib/server/db.ts` e `lib/db/index.ts` para paths dinâmicos
-5. Criar tela `/settings` na UI para inserir e testar as credenciais
-6. Atualizar `auth/google-ads/callback/+server.ts` para gravar no config store
-7. Configurar `adapter-node` build e wiring com o main process
-8. Testar fluxo OAuth completo no app empacotado
-9. Configurar build pipeline com installers e auto-update
+**For macOS + Windows distribution: Electrobun is the most coherent choice for this stack.**
+
+The technical arguments are strong: native Bun eliminates the two biggest migration blockers (native SQLite addon and script compatibility). The project ships v1 with everything needed for production. Smaller bundle is a bonus.
+
+The only real risk is the solo maintainer. Mitigation: the project is open-source in Zig/Bun — if abandoned, the framework can be forked or frozen at a working version without major issues, since the UI remains standard SvelteKit.
+
+**If Linux is a requirement**: use Electron. Electrobun's Linux support is officially limited to Ubuntu 22.04+.
+
+**If the preference is zero risk**: use Electron. More bureaucratic for this stack, but it will never stop being maintained.
+
+---
+
+## 9. Next steps (if Electrobun is chosen)
+
+1. `bun add electrobun` at the project root
+2. Create `electron-main/main.ts` with minimal boilerplate: window + spawn the SvelteKit server
+3. Create `lib/config.ts` layer for reading/writing config (replaces `.env`)
+4. Update `ui/src/lib/server/db.ts` and `lib/db/index.ts` for dynamic paths
+5. Create a `/settings` screen in the UI for entering and testing credentials
+6. Update `auth/google-ads/callback/+server.ts` to write to config store
+7. Configure `adapter-node` build and wiring with the main process
+8. Test complete OAuth flow in the packaged app
+9. Configure build pipeline with installers and auto-update
