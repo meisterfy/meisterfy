@@ -1,24 +1,29 @@
 # Marketing CMS — Context for Claude Code
 
-Local marketing management system with multi-tenant support. Combines CMS with SQLite, AI-assisted content generation, Google Ads API integration, and an MCP server for agents.
+Local marketing management system with multi-tenant support. Combines a CMS with SQLite, AI-assisted content generation, Google Ads API integration, and an MCP server as the single communication layer for all agents.
 
 ## Stack
 
 - **Runtime:** Bun
 - **UI:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `@tailwindcss/typography`
 - **Database:** SQLite via `bun:sqlite` at `db/marketing.db`
-- **MCP:** `@modelcontextprotocol/sdk` exposed at `POST /mcp` (Streamable HTTP)
+- **MCP:** `@modelcontextprotocol/sdk` — Streamable HTTP at `POST /mcp`
 - **Google Ads:** `google-ads-api` npm package (v23)
 - **Markdown:** `marked` v18 (server-side, for reports)
 - **Storage:** SQLite for content; images at `storage/images/[tenant]/`
-- **Env:** variables in `.env` (never committed)
+- **Credentials:** Google Ads OAuth stored in the `integrations` table (not `.env`)
+
+## Agent Communication — MCP Only
+
+**All agents interact with this system exclusively through MCP tools.** There are no agent `.md` files, no flat-file workflows, no direct script invocations from agents. The MCP server at `http://localhost:5173/mcp` is the only interface.
+
+This design supports both CLI agents (Claude Code, Gemini CLI) and a future UI with LLM API connectors — every operation that a model can trigger goes through a typed, versioned tool.
 
 ## Clients
 
-Each client has a record in the `tenants` table in SQLite. Use the MCP tool `create_tenant` or the seed script to create new ones.
-
-Each client's `google_ads_id` lives in SQLite (`tenants.google_ads_id`).
-Real IDs, tracking tags and client URLs **never** go in committed files — they stay only in the database and `.env`.
+Each client is a record in the `tenants` table. Create with `create_tenant` MCP tool.
+Google Ads credentials live in the `integrations` table (provider `google_ads`).
+Real IDs, tracking tags and URLs **never** go in committed files.
 
 ## Directory Structure
 
@@ -26,139 +31,144 @@ Real IDs, tracking tags and client URLs **never** go in committed files — they
 src/
   routes/
     [tenant]/
-      social/         — social post management (draft/approved/published)
-      ads/google/     — Google Ads campaigns (local + live API)
+      social/         — social post management (draft / approved / scheduled / published)
+      ads/google/     — Google Ads campaigns (local draft + live API)
       reports/        — report listing and viewing (MD rendered as prose)
-      settings/       — client settings
+      alerts/         — monitoring alert inbox
+      schedule/       — content planner calendar
     mcp/              — MCP endpoint (POST /mcp, GET /mcp, DELETE /mcp)
     api/              — internal REST endpoints
+    settings/         — integrations, tenant settings
 
   lib/server/
-    tenants.ts        — client CRUD (SQLite)
-    posts.ts          — social post CRUD (SQLite)
-    reports.ts        — report CRUD (SQLite)
-    campaigns.ts      — Google Ads campaign CRUD (SQLite)
-    googleAds.ts      — live campaign query via API
+    tenants.ts           — tenant CRUD
+    posts.ts             — social post CRUD
+    reports.ts           — report CRUD
+    campaigns.ts         — Google Ads local campaign CRUD
+    googleAds.ts         — live campaign query via API
     googleAdsDetailed.ts — detailed metrics + history
-    storage.ts        — image read/write in storage/images/
+    googleAdsClient.ts   — shared Google Ads customer factory (reads creds from integrations)
+    storage.ts           — image read/write in storage/images/
+    integrations.ts      — re-exports from db/integrations
     mcp/
-      server.ts       — createServer() factory (registers tools and resources)
+      server.ts          — createServer() — registers all tools and resources
       tools/
-        content.ts    — tools: tenants, posts, reports, campaigns, alerts
-        ads.ts        — tools: get_live_metrics
+        content.ts       — tenants, posts, reports, campaigns, alerts
+        ads.ts           — Google Ads read + write operations
+        monitoring.ts    — metrics collection, consolidation, history
       resources/
-        tenants.ts    — resources: tenant://list, tenant://{id}/brand|posts|reports
+        tenants.ts       — tenant:// resources
     db/
-      index.ts        — getDb(), automatic migrations
-      monitoring.ts   — daily and monthly metrics
-      alerts.ts       — alert_events (WARN/CRITICAL)
-      agent-runs.ts   — agent execution log
+      index.ts           — getDb(), automatic migrations
+      monitoring.ts      — daily_metrics + monthly_summary CRUD
+      alerts.ts          — alert_events (WARN/CRITICAL)
+      agent-runs.ts      — agent execution log
+      integrations.ts    — OAuth integrations CRUD
 
-scripts/
-  lib/
-    ads.ts            — shared client factory (import from here, never write boilerplate)
-  test-ads-connection.ts   — verify Google Ads API connection
-  test-query.ts            — query campaign by ID
-  test-query-ag.ts         — query ad groups by campaign
-  test-query-history.ts    — 30-day history by campaign
-  deploy-google-ads.ts     — deploy approved campaign to Google Ads
-  publish-social-post.ts   — publish posts via Meta Graph API
-  collect-daily-metrics.ts — collect daily Google Ads metrics → SQLite
-  consolidate-monthly.ts   — consolidate monthly metrics → SQLite
+scripts/              — system-level utilities (cron, deployment, diagnostics)
+  lib/ads.ts          — script-side Google Ads client (reads creds from integrations)
+  collect-daily-metrics.ts  — cron wrapper for collect_daily_metrics logic
+  consolidate-monthly.ts    — cron wrapper for consolidate_monthly logic
+  deploy-google-ads.ts      — deploy approved campaign JSON to live Google Ads
+  publish-social-post.ts    — publish posts via Meta Graph API
+  test-ads-connection.ts    — verify Google Ads API connection
+  test-query*.ts            — diagnostic queries
 
-storage/images/[tenant]/   — post images (served by /api/media/[tenant]/[filename])
-db/marketing.db            — SQLite database (auto-generated, not committed)
-
-.mcp.json                  — MCP config for Claude Code and Gemini CLI
-.claude/
-  agents/             — AI agent personas per client
-  skills/             — custom Claude Code skills
+storage/images/[tenant]/   — post images (served at /api/media/[tenant]/[filename])
+db/marketing.db            — SQLite database (auto-generated, gitignored)
+.mcp.json                  — MCP config (auto-detected by Claude Code and Gemini CLI)
 ```
 
-## MCP Server
+## MCP Tools Reference
 
-The MCP server exposes the data layer to external agents (Claude Code, Gemini CLI, etc.).
-
-- **Endpoint:** `http://localhost:5173/mcp` (Streamable HTTP, stateless)
-- **Config:** `.mcp.json` at root — auto-detected by Claude Code
-- **Transport:** `WebStandardStreamableHTTPServerTransport` (new instance per request)
-
-### Available Tools
+### Content
 
 | Tool | Description |
 |---|---|
 | `list_tenants` | List all clients |
-| `get_tenant` | Brand config and persona for a client |
+| `get_tenant` | Brand config for a client |
 | `create_tenant` | Create new client |
 | `update_tenant` | Edit brand config |
-| `list_posts` | Posts for a client (optional filter by status) |
+| `list_posts` | Posts for a client (filter by status) |
 | `get_post` | Individual post with workflow |
 | `create_post` | Create new draft |
-| `update_post_status` | Status transition (draft → approved → published) |
+| `update_post_status` | Status transition (draft → approved → scheduled → published) |
 | `delete_post` | Delete post |
 | `list_reports` | Reports for a client |
 | `get_report` | Full markdown content of a report |
 | `create_report` | Save new report |
-| `list_campaigns` | Local campaigns for a client |
-| `get_campaign` | Full JSON of a campaign |
-| `check_alerts` | Open monitoring alerts |
-| `get_live_metrics` | Live metrics from Google Ads API |
+| `list_campaigns` | Local campaign drafts for a client |
+| `get_campaign` | Full JSON of a local campaign |
+| `check_alerts` | Open monitoring alerts (WARN/CRITICAL) |
 
-### Available Resources
+### Google Ads — Read
+
+| Tool | Description |
+|---|---|
+| `get_live_metrics` | Live campaign metrics from Google Ads API |
+| `get_campaign_criteria` | Negative keywords, ad schedule, location/device criteria |
+| `get_search_terms` | Search terms report (last N days) |
+| `get_ad_groups` | Ad groups with metrics |
+
+### Google Ads — Write
+
+| Tool | Description |
+|---|---|
+| `add_negative_keywords` | Add negative keywords at campaign level |
+| `update_campaign_budget` | Update daily budget (in BRL) |
+| `set_weekday_schedule` | Add Mon–Fri schedule — ads don't serve Sat/Sun |
+| `add_ad_group_keywords` | Add keywords to an ad group |
+| `add_campaign_extensions` | Create and link callout + sitelink assets |
+| `set_campaign_status` | Pause or enable a campaign |
+
+### Monitoring
+
+| Tool | Description |
+|---|---|
+| `collect_daily_metrics` | Fetch metrics from Google Ads API → store in SQLite + generate alerts |
+| `consolidate_monthly` | Aggregate daily → monthly summary in SQLite |
+| `get_metrics_history` | Read stored daily metrics (last N days) from SQLite |
+| `get_monthly_summary` | Read consolidated monthly data from SQLite |
+
+### Resources
 
 | URI | Description |
 |---|---|
-| `tenant://list` | List all tenants (JSON) |
-| `tenant://{id}/brand` | Brand config for a tenant |
-| `tenant://{id}/posts` | All posts for a tenant |
-| `tenant://{id}/reports` | Report list for a tenant |
-| `tenant://{id}/reports/{slug}` | Markdown content of a report |
+| `tenant://list` | List all tenants |
+| `tenant://{id}/brand` | Brand config |
+| `tenant://{id}/posts` | All posts |
+| `tenant://{id}/reports` | Report list |
+| `tenant://{id}/reports/{slug}` | Report markdown content |
 
 ## Scripts
 
-All scripts run via `bun run <file>` from the project root. Bun injects `.env` automatically — never use `dotenv.config()`.
+Scripts are system-level only — for cron jobs, deployment, and diagnostics. Agents do not call scripts directly; they use MCP tools.
 
 ```bash
-bun run scripts/test-ads-connection.ts <customer-id>
-bun run scripts/test-query.ts <customer-id> <campaign-id>
-bun run scripts/test-query-ag.ts <customer-id> <campaign-id>
-bun run scripts/test-query-history.ts <customer-id> <campaign-id>
-bun run scripts/deploy-google-ads.ts <path-to-campaign.json> <tenant_id>
-bun run scripts/publish-social-post.ts <tenant_id> <post_id>
 bun run scripts/collect-daily-metrics.ts <tenant> [YYYY-MM-DD]
 bun run scripts/consolidate-monthly.ts <tenant> [YYYY-MM]
+bun run scripts/deploy-google-ads.ts <path-to-campaign.json> <tenant_id>
+bun run scripts/publish-social-post.ts <tenant_id> <post_id>
+bun run scripts/test-ads-connection.ts <customer-id>
+bun run scripts/test-query.ts <customer-id> <campaign-id>
 ```
 
-**Temporary analysis scripts** should be created at the root (not in `/tmp`) and deleted after use.
+**Temporary analysis scripts** go at the project root and are deleted after use.
 
-### scripts/lib/ads.ts — always use this
+### scripts/lib/ads.ts
 
-Every script that accesses Google Ads imports from here. Never instantiate `GoogleAdsApi` directly in scripts.
+Every script that accesses Google Ads imports from here (reads OAuth creds from `integrations` table). Never instantiate `GoogleAdsApi` directly in scripts.
 
 ```typescript
-import { ads, getCustomer, enums, micros, fromMicros } from './scripts/lib/ads.ts';
-
-// Pre-configured client (defined in CLIENTS in ads.ts)
-await ads['your-client'].query(`SELECT ...`);
-
-// Ad-hoc client (any customer ID)
+import { getCustomer, enums, micros, fromMicros } from './scripts/lib/ads.ts';
 const c = getCustomer('123-456-7890');
-
-// Currency helpers
-micros(50)       // → 50_000_000
-fromMicros(m)    // → value in BRL
 ```
 
-To add a client to the pre-configured `ads`, edit `scripts/lib/ads.ts`:
-```typescript
-export const CLIENTS: Record<string, string> = {
-  'your-client': 'CUSTOMER_ID_HERE', // comes from SQLite → tenants.google_ads_id
-};
-```
+Server-side code (MCP tools, loaders) uses `src/lib/server/googleAdsClient.ts` instead.
 
-## UI — Types and Conventions
+## UI Types and Conventions
 
-The UI uses strict typing — no `any`. Core types:
+Strict typing throughout — no `any` in production code. Core types:
 
 - `src/lib/server/tenants.ts` → `Tenant`, `AdsMonitoringConfig`
 - `src/lib/server/posts.ts` → `Post`, `PostStatus`, `MediaType`, `PostWorkflow`
@@ -166,43 +176,38 @@ The UI uses strict typing — no `any`. Core types:
 - `src/lib/server/campaigns.ts` → `Campaign`
 - `src/lib/server/googleAds.ts` → `LiveCampaign`
 - `src/lib/server/googleAdsDetailed.ts` → `DetailedCampaign`, `CampaignAdGroup`, `AdGroupMetrics`, `HistoryEntry`
-- `src/lib/server/db.ts` → `PostWithMeta`, `PostPlatform`, `GoogleAdCampaignWithMeta` (UI types, shapes created by loaders)
+- `src/lib/server/db.ts` → `PostWithMeta`, `PostPlatform`, `GoogleAdCampaignWithMeta`
 
 ## Reports
 
-Reports are SQLite records (`reports` table) with markdown content. The UI detects the type from the slug:
+Reports are SQLite records with markdown content. Slug naming drives the UI badge color:
 
 | Slug pattern | Type | Color |
 |---|---|---|
 | `audit` | Audit | amber |
 | `search` / `campaign` | Search Campaign | blue |
 | `weekly` | Weekly | emerald |
-| `monthly` / `YYYY-MM` at the end | Monthly | violet |
+| `monthly` / ends with `YYYY-MM` | Monthly | violet |
 | `alert` | Alert | red |
 | others | Report | slate |
 
-Slug naming conventions:
-- Audit: `google-ads-audit-YYYY-MM-DD`
-- Monthly performance: `google-ads-YYYY-MM`
-- Search campaign: `google-ads-search-YYYY-MM-DD`
+Naming conventions: `google-ads-audit-YYYY-MM-DD`, `google-ads-YYYY-MM`, `google-ads-search-YYYY-MM-DD`.
 
-The route `/[tenant]/reports/[slug]` renders MD as prose with a "Download PDF" button (via `window.print()`).
-To create reports: MCP tool `create_report` or `createReport()` from `src/lib/server/reports.ts`.
+Route `/[tenant]/reports/[slug]` renders MD as prose with "Download PDF" (`window.print()`).
 
 ## Operational Rules — Google Ads
 
-**Never modify live campaigns autonomously.** Every change to an active campaign requires explicit confirmation before executing via API.
+**Never modify live campaigns autonomously.** Required workflow:
 
-Required workflow:
-1. Analysis and diagnosis → run freely
-2. Change draft → generate, show, wait for approval
-3. Live campaign change → describe the action, wait for confirmation, then execute
-4. Confirm result via query after execution
+1. Analysis → run freely via read tools
+2. Draft changes → generate, show to user, wait for approval
+3. Execute mutation → describe the action, wait for explicit confirmation, then call write tool
+4. Verify → query after execution to confirm the change took effect
 
 ## General Conventions
 
-- SQLite is the source of truth for all content (posts, reports, campaigns, tenants)
-- `clients/` is in `.gitignore` — contains only legacy post images
-- `db/marketing.db` is in `.gitignore` — auto-generated by `getDb()`
+- SQLite is the source of truth for all content
+- `db/marketing.db` is gitignored — auto-generated by `getDb()`
 - Commits follow Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
 - Client IDs, campaign IDs and tracking tags never go in committed files
+- Svelte components use `untrack()` for `$state` initialized from `$props` + `$effect` for sync
