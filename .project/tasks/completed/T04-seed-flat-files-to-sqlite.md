@@ -1,7 +1,7 @@
 # T04 — Write and run flat-file to SQLite seed script
 
 **Phase:** 1 — SQLite Schema  
-**Status:** completed  
+**Status:** pending  
 **ADR:** ADR-001  
 **Depends on:** T03  
 **Blocks:** T09, T10, T11, T12 (UI migration tasks)

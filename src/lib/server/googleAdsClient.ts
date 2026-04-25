@@ -1,14 +1,4 @@
-/**
- * Shared Google Ads customer factory for server-side code (MCP tools, loaders).
- * Reads credentials from the `integrations` table; falls back to env vars.
- *
- * Usage:
- *   const customer = getAdsCustomer(tenantId, customerId)
- *   const rows = await customer.query(`SELECT ...`)
- */
-
 import { GoogleAdsApi, enums, toMicros } from 'google-ads-api';
-import { env } from '$env/dynamic/private';
 import { getCredentialsForTenant } from '$lib/server/integrations';
 
 export { enums, toMicros };
@@ -25,22 +15,8 @@ export type AdsCredentials = {
 };
 
 export function resolveCreds(tenantId: string): AdsCredentials | null {
-	const db = getCredentialsForTenant(tenantId, 'google_ads');
-	if (db) return db as AdsCredentials;
-
-	const clientId       = env.GOOGLE_ADS_CLIENT_ID;
-	const clientSecret   = env.GOOGLE_ADS_CLIENT_SECRET;
-	const developerToken = env.GOOGLE_ADS_DEVELOPER_TOKEN;
-	const refreshToken   = env.GOOGLE_ADS_REFRESH_TOKEN;
-	if (!clientId || !clientSecret || !developerToken || !refreshToken) return null;
-
-	return {
-		oauth_client_id:     clientId,
-		oauth_client_secret: clientSecret,
-		developer_token:     developerToken,
-		login_customer_id:   env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '') ?? '',
-		refresh_token:       refreshToken,
-	};
+	const creds = getCredentialsForTenant(tenantId, 'google_ads');
+	return creds ? (creds as AdsCredentials) : null;
 }
 
 export function getAdsCustomer(tenantId: string, customerId: string) {

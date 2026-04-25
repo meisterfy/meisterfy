@@ -211,3 +211,14 @@ Route `/[tenant]/reports/[slug]` renders MD as prose with "Download PDF" (`windo
 - Commits follow Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
 - Client IDs, campaign IDs and tracking tags never go in committed files
 - Svelte components use `untrack()` for `$state` initialized from `$props` + `$effect` for sync
+
+## Language Rules
+
+**All files in `.project/` must be written in English** — this includes task files, ADRs, architecture notes, and the roadmap README. This ensures any agent (regardless of session language) can read and act on them without ambiguity.
+
+- `.project/tasks/*.md` → English
+- `.project/adrs/*.md` → English
+- `.project/notes/*.md` → English
+- Code comments → English
+- Commit messages → English
+- Conversation with the user → Portuguese (the user communicates in pt-BR)
