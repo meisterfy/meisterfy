@@ -1,122 +1,122 @@
-# Marketing CMS — Contexto para Claude Code
+# Marketing CMS — Context for Claude Code
 
-Sistema local de gestão de marketing com suporte a múltiplos clientes. Combina CMS com SQLite, geração de conteúdo via IA, integração com Google Ads API e servidor MCP para agentes.
+Local marketing management system with multi-tenant support. Combines CMS with SQLite, AI-assisted content generation, Google Ads API integration, and an MCP server for agents.
 
 ## Stack
 
 - **Runtime:** Bun
 - **UI:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `@tailwindcss/typography`
-- **Banco de dados:** SQLite via `bun:sqlite` em `db/marketing.db`
-- **MCP:** `@modelcontextprotocol/sdk` exposto em `POST /mcp` (Streamable HTTP)
+- **Database:** SQLite via `bun:sqlite` at `db/marketing.db`
+- **MCP:** `@modelcontextprotocol/sdk` exposed at `POST /mcp` (Streamable HTTP)
 - **Google Ads:** `google-ads-api` npm package (v23)
-- **Markdown:** `marked` v18 (server-side, para relatórios)
-- **Armazenamento:** SQLite para conteúdo; imagens em `storage/images/[tenant]/`
-- **Env:** variáveis em `.env` (nunca commitadas)
+- **Markdown:** `marked` v18 (server-side, for reports)
+- **Storage:** SQLite for content; images at `storage/images/[tenant]/`
+- **Env:** variables in `.env` (never committed)
 
-## Clientes
+## Clients
 
-Cada cliente tem um registro em `tenants` no SQLite. Use a MCP tool `create_tenant` ou o seed script para criar novos.
+Each client has a record in the `tenants` table in SQLite. Use the MCP tool `create_tenant` or the seed script to create new ones.
 
-O `google_ads_id` de cada cliente fica em SQLite (`tenants.google_ads_id`).
-IDs reais, tracking tags e URLs de clientes **nunca** vão em arquivos commitados — ficam só no banco e no `.env`.
+Each client's `google_ads_id` lives in SQLite (`tenants.google_ads_id`).
+Real IDs, tracking tags and client URLs **never** go in committed files — they stay only in the database and `.env`.
 
-## Estrutura de Diretórios
+## Directory Structure
 
 ```
 src/
   routes/
     [tenant]/
-      social/         — gestão de posts sociais (draft/approved/published)
-      ads/google/     — campanhas Google Ads (local + live API)
-      reports/        — listagem e visualização de relatórios MD em prose
-      settings/       — configurações do cliente
-    mcp/              — endpoint MCP (POST /mcp, GET /mcp, DELETE /mcp)
-    api/              — REST endpoints internos
+      social/         — social post management (draft/approved/published)
+      ads/google/     — Google Ads campaigns (local + live API)
+      reports/        — report listing and viewing (MD rendered as prose)
+      settings/       — client settings
+    mcp/              — MCP endpoint (POST /mcp, GET /mcp, DELETE /mcp)
+    api/              — internal REST endpoints
 
   lib/server/
-    tenants.ts        — CRUD de clientes (SQLite)
-    posts.ts          — CRUD de posts sociais (SQLite)
-    reports.ts        — CRUD de relatórios (SQLite)
-    campaigns.ts      — CRUD de campanhas Google Ads (SQLite)
-    googleAds.ts      — consulta live de campanhas via API
-    googleAdsDetailed.ts — métricas detalhadas + histórico
-    storage.ts        — leitura/escrita de imagens em storage/images/
+    tenants.ts        — client CRUD (SQLite)
+    posts.ts          — social post CRUD (SQLite)
+    reports.ts        — report CRUD (SQLite)
+    campaigns.ts      — Google Ads campaign CRUD (SQLite)
+    googleAds.ts      — live campaign query via API
+    googleAdsDetailed.ts — detailed metrics + history
+    storage.ts        — image read/write in storage/images/
     mcp/
-      server.ts       — createServer() factory (registra tools e resources)
+      server.ts       — createServer() factory (registers tools and resources)
       tools/
         content.ts    — tools: tenants, posts, reports, campaigns, alerts
         ads.ts        — tools: get_live_metrics
       resources/
         tenants.ts    — resources: tenant://list, tenant://{id}/brand|posts|reports
     db/
-      index.ts        — getDb(), migrations automáticas
-      monitoring.ts   — métricas diárias e mensais
+      index.ts        — getDb(), automatic migrations
+      monitoring.ts   — daily and monthly metrics
       alerts.ts       — alert_events (WARN/CRITICAL)
-      agent-runs.ts   — log de execuções de agentes
+      agent-runs.ts   — agent execution log
 
 scripts/
   lib/
-    ads.ts            — client factory compartilhado (importar daqui, não criar boilerplate)
-  test-ads-connection.ts   — verifica conexão com Google Ads API
-  test-query.ts            — query de campanha por ID
-  test-query-ag.ts         — query de ad groups por campanha
-  test-query-history.ts    — histórico 30 dias por campanha
-  deploy-google-ads.ts     — deploy de campanha aprovada para o Google Ads
-  publish-social-post.ts   — publicação de posts via Meta Graph API
-  collect-daily-metrics.ts — coleta métricas diárias do Google Ads → SQLite
-  consolidate-monthly.ts   — consolida métricas mensais → SQLite
+    ads.ts            — shared client factory (import from here, never write boilerplate)
+  test-ads-connection.ts   — verify Google Ads API connection
+  test-query.ts            — query campaign by ID
+  test-query-ag.ts         — query ad groups by campaign
+  test-query-history.ts    — 30-day history by campaign
+  deploy-google-ads.ts     — deploy approved campaign to Google Ads
+  publish-social-post.ts   — publish posts via Meta Graph API
+  collect-daily-metrics.ts — collect daily Google Ads metrics → SQLite
+  consolidate-monthly.ts   — consolidate monthly metrics → SQLite
 
-storage/images/[tenant]/   — imagens de posts (servidas por /api/media/[tenant]/[filename])
-db/marketing.db            — banco SQLite (gerado automaticamente, não commitado)
+storage/images/[tenant]/   — post images (served by /api/media/[tenant]/[filename])
+db/marketing.db            — SQLite database (auto-generated, not committed)
 
-.mcp.json                  — config MCP para Claude Code e Gemini CLI
+.mcp.json                  — MCP config for Claude Code and Gemini CLI
 .claude/
-  agents/             — personas de agentes IA por cliente
-  skills/             — skills Claude Code customizadas
+  agents/             — AI agent personas per client
+  skills/             — custom Claude Code skills
 ```
 
 ## MCP Server
 
-O servidor MCP expõe a camada de dados a agentes externos (Claude Code, Gemini CLI, etc.).
+The MCP server exposes the data layer to external agents (Claude Code, Gemini CLI, etc.).
 
 - **Endpoint:** `http://localhost:5173/mcp` (Streamable HTTP, stateless)
-- **Config:** `.mcp.json` na raiz — detectado automaticamente pelo Claude Code
-- **Transporte:** `WebStandardStreamableHTTPServerTransport` (instância nova por request)
+- **Config:** `.mcp.json` at root — auto-detected by Claude Code
+- **Transport:** `WebStandardStreamableHTTPServerTransport` (new instance per request)
 
-### Tools disponíveis
+### Available Tools
 
-| Tool | Descrição |
+| Tool | Description |
 |---|---|
-| `list_tenants` | Lista todos os clientes |
-| `get_tenant` | Brand config e persona de um cliente |
-| `create_tenant` | Cria novo cliente |
-| `update_tenant` | Edita brand config |
-| `list_posts` | Posts de um cliente (filtro opcional por status) |
-| `get_post` | Post individual com workflow |
-| `create_post` | Cria novo rascunho |
-| `update_post_status` | Transição de status (draft → approved → published) |
-| `delete_post` | Remove post |
-| `list_reports` | Relatórios de um cliente |
-| `get_report` | Conteúdo markdown completo de um relatório |
-| `create_report` | Salva novo relatório |
-| `list_campaigns` | Campanhas locais de um cliente |
-| `get_campaign` | JSON completo de uma campanha |
-| `check_alerts` | Alertas de monitoramento em aberto |
-| `get_live_metrics` | Métricas ao vivo do Google Ads API |
+| `list_tenants` | List all clients |
+| `get_tenant` | Brand config and persona for a client |
+| `create_tenant` | Create new client |
+| `update_tenant` | Edit brand config |
+| `list_posts` | Posts for a client (optional filter by status) |
+| `get_post` | Individual post with workflow |
+| `create_post` | Create new draft |
+| `update_post_status` | Status transition (draft → approved → published) |
+| `delete_post` | Delete post |
+| `list_reports` | Reports for a client |
+| `get_report` | Full markdown content of a report |
+| `create_report` | Save new report |
+| `list_campaigns` | Local campaigns for a client |
+| `get_campaign` | Full JSON of a campaign |
+| `check_alerts` | Open monitoring alerts |
+| `get_live_metrics` | Live metrics from Google Ads API |
 
-### Resources disponíveis
+### Available Resources
 
-| URI | Descrição |
+| URI | Description |
 |---|---|
-| `tenant://list` | Lista todos os tenants (JSON) |
-| `tenant://{id}/brand` | Brand config de um tenant |
-| `tenant://{id}/posts` | Todos os posts de um tenant |
-| `tenant://{id}/reports` | Lista de relatórios de um tenant |
-| `tenant://{id}/reports/{slug}` | Conteúdo markdown de um relatório |
+| `tenant://list` | List all tenants (JSON) |
+| `tenant://{id}/brand` | Brand config for a tenant |
+| `tenant://{id}/posts` | All posts for a tenant |
+| `tenant://{id}/reports` | Report list for a tenant |
+| `tenant://{id}/reports/{slug}` | Markdown content of a report |
 
 ## Scripts
 
-Todos os scripts rodam via `bun run <arquivo>` a partir da raiz do projeto. Bun injeta o `.env` automaticamente — nunca usar `dotenv.config()`.
+All scripts run via `bun run <file>` from the project root. Bun injects `.env` automatically — never use `dotenv.config()`.
 
 ```bash
 bun run scripts/test-ads-connection.ts <customer-id>
@@ -129,36 +129,36 @@ bun run scripts/collect-daily-metrics.ts <tenant> [YYYY-MM-DD]
 bun run scripts/consolidate-monthly.ts <tenant> [YYYY-MM]
 ```
 
-**Scripts temporários de análise** devem ser criados na raiz (não em `/tmp`) e removidos após uso.
+**Temporary analysis scripts** should be created at the root (not in `/tmp`) and deleted after use.
 
-### scripts/lib/ads.ts — usar sempre
+### scripts/lib/ads.ts — always use this
 
-Todo script que acessa o Google Ads importa daqui. Nunca instanciar `GoogleAdsApi` diretamente nos scripts.
+Every script that accesses Google Ads imports from here. Never instantiate `GoogleAdsApi` directly in scripts.
 
 ```typescript
 import { ads, getCustomer, enums, micros, fromMicros } from './scripts/lib/ads.ts';
 
-// Client pré-configurado (definido em CLIENTS no ads.ts)
+// Pre-configured client (defined in CLIENTS in ads.ts)
 await ads['your-client'].query(`SELECT ...`);
 
-// Client ad-hoc (qualquer customer ID)
+// Ad-hoc client (any customer ID)
 const c = getCustomer('123-456-7890');
 
-// Helpers de moeda
+// Currency helpers
 micros(50)       // → 50_000_000
-fromMicros(m)    // → valor em R$
+fromMicros(m)    // → value in BRL
 ```
 
-Para adicionar um cliente ao `ads` pré-configurado, editar `scripts/lib/ads.ts`:
+To add a client to the pre-configured `ads`, edit `scripts/lib/ads.ts`:
 ```typescript
 export const CLIENTS: Record<string, string> = {
-  'your-client': 'CUSTOMER_ID_HERE', // vem do SQLite → tenants.google_ads_id
+  'your-client': 'CUSTOMER_ID_HERE', // comes from SQLite → tenants.google_ads_id
 };
 ```
 
-## UI — Tipos e Convenções
+## UI — Types and Conventions
 
-A UI usa tipagem estrita — sem `any`. Tipos centrais:
+The UI uses strict typing — no `any`. Core types:
 
 - `src/lib/server/tenants.ts` → `Tenant`, `AdsMonitoringConfig`
 - `src/lib/server/posts.ts` → `Post`, `PostStatus`, `MediaType`, `PostWorkflow`
@@ -166,43 +166,43 @@ A UI usa tipagem estrita — sem `any`. Tipos centrais:
 - `src/lib/server/campaigns.ts` → `Campaign`
 - `src/lib/server/googleAds.ts` → `LiveCampaign`
 - `src/lib/server/googleAdsDetailed.ts` → `DetailedCampaign`, `CampaignAdGroup`, `AdGroupMetrics`, `HistoryEntry`
-- `src/lib/server/db.ts` → `PostWithMeta`, `PostPlatform`, `GoogleAdCampaignWithMeta` (tipos de UI, shapes criados pelos loaders)
+- `src/lib/server/db.ts` → `PostWithMeta`, `PostPlatform`, `GoogleAdCampaignWithMeta` (UI types, shapes created by loaders)
 
-## Relatórios
+## Reports
 
-Relatórios são registros em SQLite (`reports` table) com conteúdo markdown. A UI detecta o tipo pelo slug:
+Reports are SQLite records (`reports` table) with markdown content. The UI detects the type from the slug:
 
-| Padrão no slug | Tipo | Cor |
+| Slug pattern | Type | Color |
 |---|---|---|
 | `audit` | Audit | amber |
 | `search` / `campaign` | Search Campaign | blue |
 | `weekly` | Weekly | emerald |
-| `monthly` / `YYYY-MM` no final | Monthly | violet |
+| `monthly` / `YYYY-MM` at the end | Monthly | violet |
 | `alert` | Alert | red |
-| outros | Report | slate |
+| others | Report | slate |
 
-Convenções de nome (slug):
-- Auditoria: `google-ads-audit-YYYY-MM-DD`
-- Performance mensal: `google-ads-YYYY-MM`
-- Campanha Search: `google-ads-search-YYYY-MM-DD`
+Slug naming conventions:
+- Audit: `google-ads-audit-YYYY-MM-DD`
+- Monthly performance: `google-ads-YYYY-MM`
+- Search campaign: `google-ads-search-YYYY-MM-DD`
 
-A rota `/[tenant]/reports/[slug]` renderiza o MD em prose com botão "Download PDF" (via `window.print()`).
-Para criar relatórios: MCP tool `create_report` ou `createReport()` de `src/lib/server/reports.ts`.
+The route `/[tenant]/reports/[slug]` renders MD as prose with a "Download PDF" button (via `window.print()`).
+To create reports: MCP tool `create_report` or `createReport()` from `src/lib/server/reports.ts`.
 
-## Regras Operacionais — Google Ads
+## Operational Rules — Google Ads
 
-**Nunca alterar campanhas ao vivo de forma autônoma.** Toda mudança em campanha ativa exige confirmação explícita antes de executar via API.
+**Never modify live campaigns autonomously.** Every change to an active campaign requires explicit confirmation before executing via API.
 
-Fluxo obrigatório:
-1. Análise e diagnóstico → executa livremente
-2. Rascunho de mudança → gera, mostra, aguarda OK
-3. Mudança em campanha ao vivo → descreve ação, aguarda confirmação, então executa
-4. Confirma resultado via query após execução
+Required workflow:
+1. Analysis and diagnosis → run freely
+2. Change draft → generate, show, wait for approval
+3. Live campaign change → describe the action, wait for confirmation, then execute
+4. Confirm result via query after execution
 
-## Convenções Gerais
+## General Conventions
 
-- SQLite é a fonte de verdade para todo conteúdo (posts, reports, campaigns, tenants)
-- `clients/` está no `.gitignore` — contém apenas imagens legadas de posts
-- `db/marketing.db` está no `.gitignore` — gerado automaticamente pelo `getDb()`
-- Commits seguem Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
-- IDs de clientes, campaign IDs e tracking tags nunca entram em arquivos commitados
+- SQLite is the source of truth for all content (posts, reports, campaigns, tenants)
+- `clients/` is in `.gitignore` — contains only legacy post images
+- `db/marketing.db` is in `.gitignore` — auto-generated by `getDb()`
+- Commits follow Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
+- Client IDs, campaign IDs and tracking tags never go in committed files
