@@ -1,97 +1,103 @@
-# Marketing CMS
+# Rush Maestro
 
-Local marketing management system for multiple clients. SvelteKit UI, SQLite storage, Google Ads integration, AI-assisted content generation via MCP and scripts.
+Local marketing management system with multi-tenant support. Combines a CMS, Google Ads integration, AI-assisted content generation, and an MCP server as the single interface for all AI agents.
 
 ## Stack
 
 - **Runtime:** Bun
 - **UI:** SvelteKit (Svelte 5 runes) + Tailwind v4
-- **Database:** SQLite (`db/marketing.db`) via `bun:sqlite`
-- **MCP server:** `@modelcontextprotocol/sdk` at `POST /mcp` (Streamable HTTP)
+- **Database:** SQLite at `db/marketing.db` via `bun:sqlite`
+- **MCP:** `@modelcontextprotocol/sdk` — Streamable HTTP at `POST /mcp`
 - **Google Ads:** `google-ads-api` v23
-- **AI agents:** Claude Code sub-agents (`.claude/agents/`)
+- **Credentials:** Google Ads OAuth stored in the `integrations` table
 
 ## Architecture
 
-SQLite is the single source of truth for all content. The SvelteKit server routes read/write exclusively through the data layer in `src/lib/server/`.
+SQLite is the single source of truth. The MCP server is the single interface for all AI agents — no flat-file workflows, no agent `.md` personas. The same 29 MCP tools serve both CLI agents today and a future UI with LLM API connectors.
 
 ```
 SvelteKit UI
-  └── src/routes/[tenant]/*        — pages + server loaders
-  └── src/routes/mcp/+server.ts    — MCP endpoint (POST/GET/DELETE)
-  └── src/routes/api/*             — REST endpoints
+  └── src/routes/[tenant]/*      — pages + server loaders
+  └── src/routes/mcp/+server.ts  — MCP endpoint (POST/GET/DELETE)
+  └── src/routes/api/*           — internal REST
 
 src/lib/server/
-  tenants.ts · posts.ts · reports.ts · campaigns.ts   — SQLite CRUD
-  googleAds.ts · googleAdsDetailed.ts                 — live Google Ads API
-  storage.ts                                          — image reads from storage/images/
-  mcp/server.ts                                       — createServer() factory
-  mcp/tools/content.ts · ads.ts                       — 16 MCP tools
-  mcp/resources/tenants.ts                            — 5 MCP resources
+  tenants · posts · reports · campaigns   — SQLite CRUD
+  googleAds · googleAdsDetailed           — live Google Ads API
+  googleAdsClient.ts                      — shared customer factory
+  mcp/server.ts                           — createServer() factory
+  mcp/tools/content · ads · monitoring    — 29 MCP tools
+  mcp/resources/tenants                   — tenant:// resources
+  db/monitoring · alerts · agent-runs     — telemetry
 
-scripts/                  — debug tools and CLI operations (Bun, read .env automatically)
-storage/images/[tenant]/  — post media files
-db/marketing.db           — SQLite database (gitignored, auto-created)
-.mcp.json                 — MCP config (auto-detected by Claude Code, Gemini CLI)
+scripts/        — cron wrappers and deployment utilities (system-level only)
+storage/images/ — post media (served at /api/media/[tenant]/[filename])
+.mcp.json       — MCP config (auto-detected by Claude Code and Gemini CLI)
 ```
 
 ## Features
 
-**Social** — post drafts, planner calendar, status workflow (draft → approved → published), media attach, Meta Graph API publish
+**Social** — drafts, content planner calendar, status workflow (draft → approved → scheduled → published), media upload, Meta Graph API publishing
 
-**Google Ads** — local campaign drafts, deploy to Google Ads API (all PAUSED for review), live metrics, historical query
+**Google Ads** — local campaign drafts, deploy to Google Ads API, live metrics, negative keywords, budget management, ad scheduling, extensions
 
-**Monitoring** — daily metrics collection, threshold alerts (CPA, conversions, impressions, budget pace), alerts inbox with resolve/ignore
+**Monitoring** — daily metrics collection, threshold alerts (CPA, conversions, impression share, budget pacing), WARN/CRITICAL inbox with resolve/ignore
 
-**Reports** — markdown reports stored in SQLite, auto-typed by slug (audit, search, weekly, monthly), browser print-to-PDF
+**Reports** — markdown reports in SQLite, auto-typed by slug (audit, search, weekly, monthly), browser print-to-PDF
 
-**MCP** — 16 tools + 5 resources exposing the full data layer to agents; served at `http://localhost:5173/mcp`
+**MCP** — 29 tools + 5 resources over Streamable HTTP at `http://localhost:5173/mcp`
 
 ## MCP Tools
 
-`list_tenants` · `get_tenant` · `create_tenant` · `update_tenant` · `list_posts` · `get_post` · `create_post` · `update_post_status` · `delete_post` · `list_reports` · `get_report` · `create_report` · `list_campaigns` · `get_campaign` · `check_alerts` · `get_live_metrics`
+See [`docs/mcp.md`](docs/mcp.md) for full reference.
+
+**Content:** `list_tenants` · `get_tenant` · `create_tenant` · `update_tenant` · `list_posts` · `get_post` · `create_post` · `update_post_status` · `delete_post` · `list_reports` · `get_report` · `create_report` · `list_campaigns` · `get_campaign` · `check_alerts`
+
+**Google Ads — Read:** `get_live_metrics` · `get_campaign_criteria` · `get_search_terms` · `get_ad_groups`
+
+**Google Ads — Write:** `add_negative_keywords` · `update_campaign_budget` · `set_weekday_schedule` · `add_ad_group_keywords` · `add_campaign_extensions` · `set_campaign_status`
+
+**Monitoring:** `collect_daily_metrics` · `consolidate_monthly` · `get_metrics_history` · `get_monthly_summary`
+
+## Quick Start
+
+```bash
+bun install
+bun dev          # starts UI + MCP server at http://localhost:5173
+```
+
+Google Ads credentials are configured via **Settings → Integrations** in the UI (OAuth flow). No manual `.env` needed for Google Ads.
 
 ## Scripts
 
+System-level only — for cron jobs, deployment, and diagnostics. Agents use MCP tools instead.
+
 ```bash
-bun run dev                                                        # start UI + MCP server
-
-bun run scripts/collect-daily-metrics.ts <tenant> [YYYY-MM-DD]    # Google Ads metrics → SQLite
-bun run scripts/consolidate-monthly.ts <tenant> [YYYY-MM]         # monthly rollup
-bun run scripts/deploy-google-ads.ts <campaign.json> <tenant_id>  # deploy to Google Ads API
-bun run scripts/publish-social-post.ts <tenant_id> <post_id>      # publish via Meta API
-
+bun run scripts/collect-daily-metrics.ts <tenant> [YYYY-MM-DD]
+bun run scripts/consolidate-monthly.ts <tenant> [YYYY-MM]
+bun run scripts/deploy-google-ads.ts <campaign.json> <tenant_id>
+bun run scripts/publish-social-post.ts <tenant_id> <post_id>
 bun run scripts/test-ads-connection.ts <customer-id>
-bun run scripts/test-query.ts <customer-id> <campaign-id>
 ```
 
 ## Environment Variables
 
-Create `.env` at the project root. Bun loads it automatically — never use `dotenv.config()`.
+Only a subset of functionality requires `.env`. Bun loads it automatically.
 
 ```
-GOOGLE_ADS_CLIENT_ID=
-GOOGLE_ADS_CLIENT_SECRET=
-GOOGLE_ADS_DEVELOPER_TOKEN=
-GOOGLE_ADS_REFRESH_TOKEN=
-GOOGLE_ADS_LOGIN_CUSTOMER_ID=
 META_PAGE_ACCESS_TOKEN=
 META_PAGE_ID=
 META_INSTAGRAM_ACCOUNT_ID=
-MEDIA_PUBLIC_BASE_URL=          # tunnel URL for Meta media uploads
-FINAL_URL=                      # landing page URL for Google Ads deploy
+MEDIA_PUBLIC_BASE_URL=     # tunnel URL for Meta media uploads
+FINAL_URL=                 # landing page for Google Ads deploy script
 ```
 
-## Crontab (monitoring)
+## Crontab
 
 ```
-3 7 * * * cd /path/to/marketing && bun run scripts/collect-daily-metrics.ts portico >> /tmp/ads.log 2>&1
+3 7 * * * cd /path/to/rush-maestro && bun run scripts/collect-daily-metrics.ts <tenant> >> /tmp/ads.log 2>&1
 ```
 
 ---
 
-## Roadmap
-
-The next planned evolution is a full architecture upgrade — Go backend, PostgreSQL, public MCP endpoint, multi-connector (Canva, Meta, LinkedIn), multi-provider AI via UI, and R2/S3 for media and backups.
-
-See [`.project/notes/architecture-v2-go-postgres-mcp.md`](.project/notes/architecture-v2-go-postgres-mcp.md) for the full design.
+Architecture notes and future plans: [`.project/notes/`](.project/notes/)

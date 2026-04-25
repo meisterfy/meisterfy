@@ -1,6 +1,6 @@
-# MCP Server — Marketing CMS
+# MCP Server — Rush Maestro
 
-The Marketing CMS exposes a **Model Context Protocol (MCP)** server so that external AI agents (Claude Code, Gemini CLI, custom agents) can read and write content programmatically without touching the database directly.
+Rush Maestro exposes a **Model Context Protocol (MCP)** server so that external AI agents and future UI connectors can read and write all content programmatically.
 
 ## Endpoint
 
@@ -8,19 +8,18 @@ The Marketing CMS exposes a **Model Context Protocol (MCP)** server so that exte
 http://localhost:5173/mcp
 ```
 
-Transport: **Streamable HTTP** (`WebStandardStreamableHTTPServerTransport`).  
-Stateless — a new transport + server instance is created per request.
-
+Transport: **Streamable HTTP** (`WebStandardStreamableHTTPServerTransport`).
+Stateless — a new transport + server instance per request.
 Accepts: `POST`, `GET`, `DELETE`
 
 ## Configuration
 
-The root `.mcp.json` is auto-detected by Claude Code and Gemini CLI:
+`.mcp.json` at the project root is auto-detected by Claude Code and Gemini CLI:
 
 ```json
 {
   "mcpServers": {
-    "marketing": {
+    "rush-maestro": {
       "type": "http",
       "url": "http://localhost:5173/mcp"
     }
@@ -28,148 +27,132 @@ The root `.mcp.json` is auto-detected by Claude Code and Gemini CLI:
 }
 ```
 
-The dev server must be running (`bun dev`) before any agent call reaches the endpoint.
+The dev server must be running (`bun dev`) for agents to reach the endpoint.
 
 ## Architecture
 
 ```
 POST /mcp
-  └─ src/routes/mcp/+server.ts          — SvelteKit request handler
-       └─ createServer()                 — src/lib/server/mcp/server.ts
+  └─ src/routes/mcp/+server.ts
+       └─ createServer()  — src/lib/server/mcp/server.ts
             ├─ registerContentTools()    — tools/content.ts
             ├─ registerAdsTools()        — tools/ads.ts
+            ├─ registerMonitoringTools() — tools/monitoring.ts
             └─ registerTenantResources() — resources/tenants.ts
 ```
 
-Each call to `createServer()` registers tools and resources on a fresh `McpServer` instance from `@modelcontextprotocol/sdk`. The `McpServer` is then connected to the transport before handling the request.
+All tools return `{ content: [{ type: "text", text: "<JSON>" }] }`.
+On error: `isError: true` is also set.
 
 ---
 
 ## Tools
 
-All tools return `{ content: [{ type: "text", text: "<JSON>" }] }`.  
-On error, `isError: true` is also set.
+### Content
 
-### Tenant tools
+| Tool | Params | Description |
+|---|---|---|
+| `list_tenants` | — | All clients as JSON array |
+| `get_tenant` | `id` | Full tenant record (brand config) |
+| `create_tenant` | `id`, `name` + optional fields | Create new client in SQLite |
+| `update_tenant` | `id` + fields to patch | Update brand config |
+| `list_posts` | `tenant_id`, `status?` | Posts filtered by status |
+| `get_post` | `id` | Single post with workflow JSON |
+| `create_post` | `tenant_id`, `content` + optional | Create draft; ID auto-generated |
+| `update_post_status` | `id`, `status` | Transition: draft → approved → scheduled → published |
+| `delete_post` | `id` | Hard delete |
+| `list_reports` | `tenant_id` | Report list (no content) |
+| `get_report` | `tenant_id`, `slug` | Full report with markdown content |
+| `create_report` | `tenant_id`, `slug`, `content`, `title?` | Save report; type inferred from slug |
+| `list_campaigns` | `tenant_id` | Local Google Ads campaign drafts |
+| `get_campaign` | `tenant_id`, `slug` | Full campaign JSON |
+| `check_alerts` | `tenant_id` | Open WARN/CRITICAL monitoring alerts |
 
-| Tool | Required params | Optional params | What it does |
-|---|---|---|---|
-| `list_tenants` | — | — | Returns all tenants as JSON array |
-| `get_tenant` | `id: string` | — | Returns full tenant record (brand config + persona) |
-| `create_tenant` | `id`, `name` | `language`, `niche`, `location`, `tone`, `instructions`, `hashtags[]`, `google_ads_id` | Creates a new client in SQLite |
-| `update_tenant` | `id` | same optional fields as create | Patches a tenant record |
+### Google Ads — Read
 
-### Post tools
+| Tool | Params | Description |
+|---|---|---|
+| `get_live_metrics` | `tenant_id` | Live campaign metrics from Google Ads API |
+| `get_campaign_criteria` | `tenant_id`, `campaign_id` | Negative keywords, schedule, location, device bids |
+| `get_search_terms` | `tenant_id`, `campaign_id`, `days?` | Search terms report (default 30 days) |
+| `get_ad_groups` | `tenant_id`, `campaign_id`, `days?` | Ad groups with metrics |
 
-| Tool | Required params | Optional params | What it does |
-|---|---|---|---|
-| `list_posts` | `tenant_id` | `status` (`draft`\|`approved`\|`scheduled`\|`published`) | Lists posts, optionally filtered |
-| `get_post` | `id` | — | Returns single post including workflow JSON |
-| `create_post` | `tenant_id`, `content` | `title`, `hashtags[]`, `media_type` | Creates a draft post; ID auto-generated from date + title slug |
-| `update_post_status` | `id`, `status` | — | Transitions post status; sets `published_at` when publishing |
-| `delete_post` | `id` | — | Hard-deletes a post |
+### Google Ads — Write
 
-### Report tools
+| Tool | Params | Description |
+|---|---|---|
+| `add_negative_keywords` | `tenant_id`, `campaign_id`, `keywords[]`, `match_type?` | Add negative keywords at campaign level |
+| `update_campaign_budget` | `tenant_id`, `budget_id`, `amount_brl` | Update daily budget (R$) |
+| `set_weekday_schedule` | `tenant_id`, `campaign_id` | Add Mon–Fri schedule — ads stop serving Sat/Sun |
+| `add_ad_group_keywords` | `tenant_id`, `ad_group_resource_name`, `keywords[]` | Add keywords to an ad group |
+| `add_campaign_extensions` | `tenant_id`, `campaign_id`, `callouts[]`, `sitelinks[]` | Create and link callout + sitelink assets |
+| `set_campaign_status` | `tenant_id`, `campaign_id`, `status` | `ENABLED` or `PAUSED` |
 
-| Tool | Required params | Optional params | What it does |
-|---|---|---|---|
-| `list_reports` | `tenant_id` | — | Returns report list (no content) |
-| `get_report` | `tenant_id`, `slug` | — | Returns full report with markdown content |
-| `create_report` | `tenant_id`, `slug`, `content` | `title` | Saves a report; type is inferred from slug |
+### Monitoring
 
-**Slug naming conventions** (so the UI picks the right color/badge):
-
-| Pattern | Type |
-|---|---|
-| contains `audit` | Audit (amber) |
-| contains `search` or `campaign` | Search Campaign (blue) |
-| contains `weekly` | Weekly (emerald) |
-| ends with `YYYY-MM` or contains `monthly` | Monthly (violet) |
-| contains `alert` | Alert (red) |
-| anything else | Report (slate) |
-
-### Campaign tools
-
-| Tool | Required params | What it does |
-|---|---|
-| `list_campaigns` | `tenant_id` | Lists local campaign slugs for a client |
-| `get_campaign` | `tenant_id`, `slug` | Returns full campaign JSON |
-
-### Alert tool
-
-| Tool | Required params | What it does |
-|---|---|
-| `check_alerts` | `tenant_id` | Returns open `WARN` / `CRITICAL` monitoring alerts |
-
-### Ads tool
-
-| Tool | Required params | What it does |
-|---|---|
-| `get_live_metrics` | `tenant_id` | Calls Google Ads API live and returns campaign metrics |
-
-`get_live_metrics` requires:
-- Tenant has a valid `google_ads_id` in SQLite
-- `GOOGLE_ADS_*` env vars to be set (see `.env`)
+| Tool | Params | Description |
+|---|---|---|
+| `collect_daily_metrics` | `tenant_id`, `date?` | Fetch from Google Ads API → store in SQLite + generate alerts. Defaults to yesterday. |
+| `consolidate_monthly` | `tenant_id`, `month?` | Aggregate daily → monthly summary. Defaults to previous month. |
+| `get_metrics_history` | `tenant_id`, `campaign_id`, `days?` | Read stored daily metrics from SQLite (no API call) |
+| `get_monthly_summary` | `tenant_id`, `campaign_id`, `month` | Read consolidated monthly data from SQLite |
 
 ---
 
 ## Resources
 
-Resources follow the `tenant://` URI scheme and return static snapshots of data.
+Read-only snapshots. Use tools to write.
 
 | URI | MIME | Description |
 |---|---|---|
 | `tenant://list` | `application/json` | All tenants |
-| `tenant://{id}/brand` | `application/json` | Single tenant's brand config |
+| `tenant://{id}/brand` | `application/json` | Tenant brand config |
 | `tenant://{id}/posts` | `application/json` | All posts for a tenant |
 | `tenant://{id}/reports` | `application/json` | Report list (no content) |
-| `tenant://{id}/reports/{slug}` | `text/markdown` | Full markdown content of one report |
-
-Resources are read-only. Use tools to write data.
+| `tenant://{id}/reports/{slug}` | `text/markdown` | Full markdown of one report |
 
 ---
 
-## Typical agent workflow
+## Report slug conventions
 
-### Creating and publishing a social post
+The UI assigns type and badge color based on slug pattern:
 
-```
-1. list_tenants          → pick tenant ID
-2. create_post           → get draft ID back
-3. update_post_status    → transition to "approved"
-4. update_post_status    → transition to "published"  ← sets published_at
-```
+| Pattern | Type | Color |
+|---|---|---|
+| contains `audit` | Audit | amber |
+| contains `search` or `campaign` | Search Campaign | blue |
+| contains `weekly` | Weekly | emerald |
+| ends with `YYYY-MM` or contains `monthly` | Monthly | violet |
+| contains `alert` | Alert | red |
+| anything else | Report | slate |
 
-### Saving a report from analysis output
-
-```
-1. create_report(tenant_id, slug="google-ads-2026-04", content="# April\n...")
-   → report is immediately visible in the UI at /{tenant}/reports/google-ads-2026-04
-```
-
-### Checking campaign health
-
-```
-1. check_alerts(tenant_id)     → any open WARN/CRITICAL?
-2. get_live_metrics(tenant_id) → live spend, impressions, CPC from Google Ads
-```
+Naming examples: `google-ads-audit-2026-04-25` · `google-ads-2026-04` · `google-ads-search-2026-04-25` · `weekly-2026-04-21`
 
 ---
 
-## Data layer
+## Typical agent workflows
 
-All tools call the same server-side TypeScript functions used by the SvelteKit loaders:
+**Collect and report on campaign performance:**
+```
+collect_daily_metrics(tenant_id)          → store yesterday's data
+get_metrics_history(tenant_id, campaign_id, days=7)  → read trend
+create_report(tenant_id, slug, content)   → save to UI
+```
 
-| Module | Functions |
-|---|---|
-| `src/lib/server/tenants.ts` | `listTenants`, `getTenant`, `createTenant`, `updateTenant` |
-| `src/lib/server/posts.ts` | `listPosts`, `getPost`, `createPost`, `updatePostStatus`, `deletePost` |
-| `src/lib/server/reports.ts` | `listReports`, `getReport`, `createReport`, `detectReportType` |
-| `src/lib/server/campaigns.ts` | `listCampaigns`, `getCampaign` |
-| `src/lib/server/googleAds.ts` | `getLiveCampaigns` |
-| `src/lib/server/db/alerts.ts` | `getOpenAlerts` |
+**Diagnose and fix a campaign issue:**
+```
+check_alerts(tenant_id)                   → see open WARN/CRITICAL
+get_search_terms(tenant_id, campaign_id)  → find irrelevant terms
+add_negative_keywords(tenant_id, campaign_id, keywords)
+get_live_metrics(tenant_id)               → confirm campaign is healthy
+```
 
-SQLite is the single source of truth. MCP writes are immediately reflected in the UI on next page load.
+**Create and publish a social post:**
+```
+create_post(tenant_id, content, ...)      → draft ID returned
+update_post_status(id, "approved")
+update_post_status(id, "published")       → sets published_at
+```
 
 ---
 
@@ -177,19 +160,19 @@ SQLite is the single source of truth. MCP writes are immediately reflected in th
 
 1. Open the relevant file in `src/lib/server/mcp/tools/`
 2. Call `server.registerTool(name, { description, inputSchema }, handler)` inside the `register*` function
-3. The `inputSchema` uses **zod** — each key becomes a validated parameter
+3. `inputSchema` uses **zod** — each key becomes a validated parameter
 4. Return `ok(data)` or `err(message)`
-5. Restart the dev server — no other configuration needed
+5. Restart dev server — no other config needed
 
 ```typescript
 server.registerTool('my_tool', {
   description: 'Does something useful',
   inputSchema: {
     tenant_id: z.string(),
-    limit: z.number().int().positive().default(10),
+    limit:     z.number().int().positive().default(10),
   }
-}, ({ tenant_id, limit }) => {
-  const rows = getSomething(tenant_id, limit)
+}, async ({ tenant_id, limit }) => {
+  const rows = await getSomething(tenant_id, limit)
   return ok(rows)
 })
 ```
