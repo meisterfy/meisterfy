@@ -43,3 +43,9 @@ test-*.ts
 # OS
 .DS_Store
 Thumbs.db
+
+# Go API
+api/.env
+api/*.db
+api/tmp/
+api/bin/

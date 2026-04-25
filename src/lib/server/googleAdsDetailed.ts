@@ -1,5 +1,4 @@
 import { GoogleAdsApi } from 'google-ads-api';
-import { env } from '$env/dynamic/private';
 import { getCredentialsForTenant } from '$lib/server/integrations';
 
 export interface AdGroupMetrics {
@@ -106,24 +105,7 @@ function fromMicros(value: number | bigint | undefined, fallback = '0.00'): stri
 }
 
 function resolveDetailedCreds(tenantId: string) {
-    const dbCreds = getCredentialsForTenant(tenantId, 'google_ads');
-    if (dbCreds) return dbCreds;
-
-    const clientId        = env.GOOGLE_ADS_CLIENT_ID;
-    const clientSecret    = env.GOOGLE_ADS_CLIENT_SECRET;
-    const developerToken  = env.GOOGLE_ADS_DEVELOPER_TOKEN;
-    const refreshToken    = env.GOOGLE_ADS_REFRESH_TOKEN;
-    const loginCustomerId = env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/-/g, '') ?? '';
-
-    if (!clientId || !clientSecret || !developerToken || !refreshToken) return null;
-
-    return {
-        oauth_client_id: clientId,
-        oauth_client_secret: clientSecret,
-        developer_token: developerToken,
-        login_customer_id: loginCustomerId,
-        refresh_token: refreshToken,
-    };
+    return getCredentialsForTenant(tenantId, 'google_ads') ?? null;
 }
 
 export async function getDetailedCampaign(
