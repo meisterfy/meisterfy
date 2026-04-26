@@ -10,8 +10,8 @@ export interface Campaign extends CampaignListItem {
 	data: Record<string, unknown>
 }
 
-export const getCampaigns = (tenantId: string) =>
-	apiFetch<{ data: CampaignListItem[] }>(`/admin/tenants/${tenantId}/campaigns`).then(r => r.data)
+export const getCampaigns = (tenantId: string, fetchFn?: typeof fetch) =>
+	apiFetch<{ data: CampaignListItem[] }>(`/admin/tenants/${tenantId}/campaigns`, {}, fetchFn).then(r => r.data)
 
 export const getCampaign = (tenantId: string, slug: string) =>
 	apiFetch<{ data: Campaign }>(`/admin/tenants/${tenantId}/campaigns/${slug}`).then(r => r.data)

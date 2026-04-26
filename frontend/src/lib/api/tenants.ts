@@ -24,11 +24,11 @@ export interface Tenant {
 	updated_at: string
 }
 
-export const getTenants = () =>
-	apiFetch<{ data: Tenant[] }>('/admin/tenants').then(r => r.data)
+export const getTenants = (fetchFn?: typeof fetch) =>
+	apiFetch<{ data: Tenant[] }>('/admin/tenants', {}, fetchFn).then(r => r.data)
 
-export const getTenant = (id: string) =>
-	apiFetch<{ data: Tenant }>(`/admin/tenants/${id}`).then(r => r.data)
+export const getTenant = (id: string, fetchFn?: typeof fetch) =>
+	apiFetch<{ data: Tenant }>(`/admin/tenants/${id}`, {}, fetchFn).then(r => r.data)
 
 export const createTenant = (body: Partial<Tenant>) =>
 	apiFetch<{ data: Tenant }>('/admin/tenants', { method: 'POST', body: JSON.stringify(body) }).then(r => r.data)

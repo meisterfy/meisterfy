@@ -14,10 +14,10 @@ const toClient = (t: Awaited<ReturnType<typeof getTenant>>) => ({
 	},
 })
 
-export const load: LayoutLoad = async ({ params }) => {
+export const load: LayoutLoad = async ({ params, fetch }) => {
 	const [tenant, tenants] = await Promise.all([
-		getTenant(params.tenant).catch(() => null),
-		getTenants().catch(() => []),
+		getTenant(params.tenant, fetch).catch(() => null),
+		getTenants(fetch).catch(() => []),
 	])
 
 	if (!tenant) {

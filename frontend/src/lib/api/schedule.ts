@@ -17,5 +17,5 @@ export interface ScheduleData {
 	cron_command: string
 }
 
-export const getSchedule = (tenantId: string) =>
-	apiFetch<ScheduleData>(`/admin/tenants/${tenantId}/schedule`)
+export const getSchedule = (tenantId: string, fetchFn?: typeof fetch) =>
+	apiFetch<ScheduleData>(`/admin/tenants/${tenantId}/schedule`, {}, fetchFn)

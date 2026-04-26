@@ -3,8 +3,8 @@ import type { PageLoad } from './$types'
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
-	const all = await getPosts(params.tenant).catch(() => [])
+export const load: PageLoad = async ({ params, fetch }) => {
+	const all = await getPosts(params.tenant, undefined, fetch).catch(() => [])
 	const drafts = all
 		.filter(p => p.status !== 'scheduled' && p.status !== 'published')
 		.map(p => ({
