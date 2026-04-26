@@ -1,0 +1,104 @@
+{
+	"/": [
+		"src/routes/+page.ts"
+	],
+	"/api/ads/google/[client_id]/import": [
+		"src/routes/api/ads/google/[client_id]/import/+server.ts"
+	],
+	"/api/ads/google/[client_id]/live/[campaign_id]/export": [
+		"src/routes/api/ads/google/[client_id]/live/[campaign_id]/export/+server.ts"
+	],
+	"/api/ads/google/[client_id]/[filename]/deploy": [
+		"src/routes/api/ads/google/[client_id]/[filename]/deploy/+server.ts"
+	],
+	"/api/ads/google/[client_id]/[filename]/status": [
+		"src/routes/api/ads/google/[client_id]/[filename]/status/+server.ts"
+	],
+	"/api/alerts/[client_id]": [
+		"src/routes/api/alerts/[client_id]/+server.ts"
+	],
+	"/api/auth/google-ads": [
+		"src/routes/api/auth/google-ads/+server.ts"
+	],
+	"/api/auth/google-ads/callback": [
+		"src/routes/api/auth/google-ads/callback/+server.ts"
+	],
+	"/api/media/[client_id]/[filename]": [
+		"src/routes/api/media/[client_id]/[filename]/+server.ts"
+	],
+	"/api/posts/[client_id]/import": [
+		"src/routes/api/posts/[client_id]/import/+server.ts"
+	],
+	"/api/posts/[client_id]/[filename]": [
+		"src/routes/api/posts/[client_id]/[filename]/+server.ts"
+	],
+	"/api/posts/[client_id]/[filename]/media": [
+		"src/routes/api/posts/[client_id]/[filename]/media/+server.ts"
+	],
+	"/api/posts/[client_id]/[filename]/status": [
+		"src/routes/api/posts/[client_id]/[filename]/status/+server.ts"
+	],
+	"/login": [],
+	"/mcp": [
+		"src/routes/mcp/+server.ts"
+	],
+	"/settings": [
+		"src/routes/settings/+page.ts"
+	],
+	"/settings/integrations": [
+		"src/routes/settings/integrations/+page.ts"
+	],
+	"/setup": [],
+	"/[tenant]": [
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/ads/google": [
+		"src/routes/[tenant]/ads/google/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/ads/google/live/[campaign_id]": [
+		"src/routes/[tenant]/ads/google/live/[campaign_id]/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/ads/google/[filename]": [
+		"src/routes/[tenant]/ads/google/[filename]/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/alerts": [
+		"src/routes/[tenant]/alerts/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/reports": [
+		"src/routes/[tenant]/reports/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/reports/[slug]": [
+		"src/routes/[tenant]/reports/[slug]/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/schedule": [
+		"src/routes/[tenant]/schedule/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/settings": [
+		"src/routes/[tenant]/settings/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/settings/general": [
+		"src/routes/[tenant]/settings/general/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/social": [
+		"src/routes/[tenant]/social/+page.ts",
+		"src/routes/[tenant]/+layout.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/social/drafts": [
+		"src/routes/[tenant]/social/drafts/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	],
+	"/[tenant]/social/[filename]": [
+		"src/routes/[tenant]/social/[filename]/+page.ts",
+		"src/routes/[tenant]/+layout.ts"
+	]
+}

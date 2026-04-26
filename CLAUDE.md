@@ -1,23 +1,20 @@
 # Rush Maestro — Context for Claude Code
 
-Local marketing management system with multi-tenant support. Combines a CMS with SQLite, AI-assisted content generation, Google Ads API integration, and an MCP server as the single communication layer for all agents.
+Local marketing management system with multi-tenant support. Combines a CMS with AI-assisted content generation, Google Ads API integration, and an MCP server as the single communication layer for all agents.
 
 ## Stack
 
-- **Runtime:** Bun
-- **UI:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `@tailwindcss/typography`
-- **Database:** SQLite via `bun:sqlite` at `db/marketing.db`
-- **MCP:** `@modelcontextprotocol/sdk` — Streamable HTTP at `POST /mcp`
-- **Google Ads:** `google-ads-api` npm package (v23)
-- **Markdown:** `marked` v18 (server-side, for reports)
-- **Storage:** SQLite for content; images at `storage/images/[tenant]/`
+- **Backend:** Go (chi router, pgx/v5, goose migrations) — `backend/`
+- **Frontend:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `adapter-static` — `frontend/`
+- **Database:** PostgreSQL via pgx at `rush_maestro`
+- **MCP:** `@modelcontextprotocol/sdk` — Streamable HTTP at `POST /mcp` (Bun, temporary until T16)
+- **Google Ads:** `google-ads-api` npm package (v23) — temporary until T17
+- **Storage:** PostgreSQL for content; images at `storage/images/[tenant]/`
 - **Credentials:** Google Ads OAuth stored in the `integrations` table (not `.env`)
 
 ## Agent Communication — MCP Only
 
 **All agents interact with this system exclusively through MCP tools.** There are no agent `.md` files, no flat-file workflows, no direct script invocations from agents. The MCP server at `http://localhost:5173/mcp` is the only interface.
-
-This design supports both CLI agents (Claude Code, Gemini CLI) and a future UI with LLM API connectors — every operation that a model can trigger goes through a typed, versioned tool.
 
 ## Clients
 
@@ -28,56 +25,105 @@ Real IDs, tracking tags and URLs **never** go in committed files.
 ## Directory Structure
 
 ```
-src/
-  routes/
-    [tenant]/
-      social/         — social post management (draft / approved / scheduled / published)
-      ads/google/     — Google Ads campaigns (local draft + live API)
-      reports/        — report listing and viewing (MD rendered as prose)
-      alerts/         — monitoring alert inbox
-      schedule/       — content planner calendar
-    mcp/              — MCP endpoint (POST /mcp, GET /mcp, DELETE /mcp)
-    api/              — internal REST endpoints
-    settings/         — integrations, tenant settings
+backend/                   — Go API (chi, pgx, goose)
+  cmd/server/main.go       — entrypoint, router wiring, embeds frontend SPA
+  cmd/migrate/main.go      — goose migration runner
+  internal/
+    api/                   — HTTP handlers (admin_tenants, admin_posts, …)
+    domain/                — business types + logic (Tenant, Post, JWT, …)
+    middleware/             — auth, CORS, logging
+    repository/            — pgx repositories (one per domain entity)
+    config/                — env-based config
+  migrations/              — SQL migration files (goose)
+  Makefile                 — backend-only targets (dev, migrate/*, sqlc, test)
+  .env                     — local env (gitignored)
 
-  lib/server/
-    tenants.ts           — tenant CRUD
-    posts.ts             — social post CRUD
-    reports.ts           — report CRUD
-    campaigns.ts         — Google Ads local campaign CRUD
-    googleAds.ts         — live campaign query via API
-    googleAdsDetailed.ts — detailed metrics + history
-    googleAdsClient.ts   — shared Google Ads customer factory (reads creds from integrations)
-    storage.ts           — image read/write in storage/images/
-    integrations.ts      — re-exports from db/integrations
-    mcp/
-      server.ts          — createServer() — registers all tools and resources
-      tools/
-        content.ts       — tenants, posts, reports, campaigns, alerts
-        ads.ts           — Google Ads read + write operations
-        monitoring.ts    — metrics collection, consolidation, history
-      resources/
-        tenants.ts       — tenant:// resources
-    db/
-      index.ts           — getDb(), automatic migrations
-      monitoring.ts      — daily_metrics + monthly_summary CRUD
-      alerts.ts          — alert_events (WARN/CRITICAL)
-      agent-runs.ts      — agent execution log
-      integrations.ts    — OAuth integrations CRUD
+frontend/                  — SvelteKit SPA (adapter-static → backend/cmd/server/ui/dist/)
+  src/
+    routes/
+      [tenant]/
+        social/            — social post management (draft / approved / scheduled / published)
+        ads/google/        — Google Ads campaigns (local draft + live API)
+        reports/           — report listing and viewing (MD rendered as prose)
+        alerts/            — monitoring alert inbox
+        schedule/          — content planner calendar
+      login/               — login page
+      setup/               — first-run onboarding
+      settings/            — integrations, tenant settings
+    lib/
+      api/                 — typed fetch modules (client.ts, tenants.ts, posts.ts, …)
+      stores/auth.svelte.ts — in-memory token store (Svelte 5 runes)
+      server/              — legacy Bun server code (being removed task by task)
+        mcp/               — MCP server (kept until T16)
+        googleAds*.ts      — Google Ads client (kept until T17)
+  scripts/                 — legacy Bun scripts for cron/deployment (being replaced by Go)
+    lib/ads.ts             — script-side Google Ads client
 
-scripts/              — system-level utilities (cron, deployment, diagnostics)
-  lib/ads.ts          — script-side Google Ads client (reads creds from integrations)
-  collect-daily-metrics.ts  — cron wrapper for collect_daily_metrics logic
-  consolidate-monthly.ts    — cron wrapper for consolidate_monthly logic
-  deploy-google-ads.ts      — deploy approved campaign JSON to live Google Ads
-  publish-social-post.ts    — publish posts via Meta Graph API
-  test-ads-connection.ts    — verify Google Ads API connection
-  test-query*.ts            — diagnostic queries
-
+Makefile                   — root coordinator (dev/backend, dev/frontend, build, migrate/*)
 storage/images/[tenant]/   — post images (served at /api/media/[tenant]/[filename])
-db/marketing.db            — SQLite database (auto-generated, gitignored)
 .mcp.json                  — MCP config (auto-detected by Claude Code and Gemini CLI)
+docker-compose.yml         — postgres + minio
+docker-compose.dev.yml     — backend service with air hot-reload
 ```
+
+## Development
+
+```bash
+make dev/backend    # Go API with air on :8181
+make dev/frontend   # SvelteKit dev server on :5173 (proxies /admin /auth /setup /health /mcp → :8181)
+make build          # bun run build → backend/cmd/server/ui/dist/ + go build
+make migrate/up     # run pending goose migrations
+```
+
+First-time setup: `GET /health` returns `setup_required: true` → visit `http://localhost:5173/setup`.
+
+## Backend — Go API
+
+### Handler files
+
+```
+backend/internal/api/
+  admin_tenants.go    — GET/POST /admin/tenants, CRUD /admin/tenants/{id}
+  admin_posts.go      — CRUD + status transitions /admin/tenants/{id}/posts
+  admin_reports.go    — CRUD /admin/tenants/{id}/reports
+  admin_campaigns.go  — CRUD + deploy /admin/tenants/{id}/campaigns
+  admin_alerts.go     — list/count/history/resolve/ignore /admin/tenants/{id}/alerts
+  admin_schedule.go   — GET /admin/tenants/{id}/schedule (agent-run history)
+  admin_users.go      — user management
+  admin_roles.go      — RBAC roles and permissions
+  auth.go             — login, refresh, logout, me
+  setup.go            — first-run admin creation
+  health.go           — /health
+```
+
+All `/admin/*` routes require a valid JWT (`AuthenticateAdmin` middleware).
+Tenant-scoped endpoints validate that the requesting user has access via `UserClaims`.
+
+### Repository pattern
+
+One repository per entity in `backend/internal/repository/`. Each wraps sqlc-generated queries from `backend/internal/repository/db/`. Raw pgx queries only for tables without sqlc coverage (e.g., `agent_runs`).
+
+## Frontend — SvelteKit SPA
+
+### API client layer (`frontend/src/lib/api/`)
+
+| File | Exports |
+|---|---|
+| `client.ts` | `apiFetch`, `setToken`, `clearToken` — base fetch with auto-refresh |
+| `tenants.ts` | `getTenants`, `getTenant`, `createTenant`, `updateTenant`, `deleteTenant` |
+| `posts.ts` | `getPosts`, `getPost`, `createPost`, `updatePost`, `updatePostStatus`, `deletePost` |
+| `reports.ts` | `getReports`, `getReport`, `createReport`, `deleteReport` |
+| `campaigns.ts` | `getCampaigns`, `getCampaign`, `createCampaign`, `deleteCampaign`, `deployCampaign` |
+| `alerts.ts` | `getAlerts`, `getAlertCount`, `getAlertHistory`, `resolveAlert`, `ignoreAlert` |
+| `schedule.ts` | `getSchedule` |
+| `integrations.ts` | `getIntegrations`, `createIntegration`, `updateIntegration`, `deleteIntegration` |
+
+### Auth flow
+
+- Access token stored in memory (`frontend/src/lib/stores/auth.svelte.ts`)
+- Refresh token lives in HttpOnly cookie managed by Go API
+- `hooks.client.ts` calls `auth.restoreSession()` on every page load
+- Unauthenticated API calls throw `{ status: 401 }` — `+page.ts` loads redirect to `/login`
 
 ## MCP Tools Reference
 
@@ -125,62 +171,36 @@ db/marketing.db            — SQLite database (auto-generated, gitignored)
 
 | Tool | Description |
 |---|---|
-| `collect_daily_metrics` | Fetch metrics from Google Ads API → store in SQLite + generate alerts |
-| `consolidate_monthly` | Aggregate daily → monthly summary in SQLite |
-| `get_metrics_history` | Read stored daily metrics (last N days) from SQLite |
-| `get_monthly_summary` | Read consolidated monthly data from SQLite |
+| `collect_daily_metrics` | Fetch metrics from Google Ads API → store in PostgreSQL + generate alerts |
+| `consolidate_monthly` | Aggregate daily → monthly summary in PostgreSQL |
+| `get_metrics_history` | Read stored daily metrics (last N days) |
+| `get_monthly_summary` | Read consolidated monthly data |
 
-### Resources
+## Legacy Scripts (`frontend/scripts/`)
 
-| URI | Description |
-|---|---|
-| `tenant://list` | List all tenants |
-| `tenant://{id}/brand` | Brand config |
-| `tenant://{id}/posts` | All posts |
-| `tenant://{id}/reports` | Report list |
-| `tenant://{id}/reports/{slug}` | Report markdown content |
-
-## Scripts
-
-Scripts are system-level only — for cron jobs, deployment, and diagnostics. Agents do not call scripts directly; they use MCP tools.
+Scripts are Bun/TypeScript utilities being replaced by Go handlers task by task. Agents do not call them directly.
 
 ```bash
+cd frontend
 bun run scripts/collect-daily-metrics.ts <tenant> [YYYY-MM-DD]
 bun run scripts/consolidate-monthly.ts <tenant> [YYYY-MM]
 bun run scripts/deploy-google-ads.ts <path-to-campaign.json> <tenant_id>
 bun run scripts/publish-social-post.ts <tenant_id> <post_id>
 bun run scripts/test-ads-connection.ts <customer-id>
-bun run scripts/test-query.ts <customer-id> <campaign-id>
 ```
-
-**Temporary analysis scripts** go at the project root and are deleted after use.
 
 ### scripts/lib/ads.ts
 
-Every script that accesses Google Ads imports from here (reads OAuth creds from `integrations` table). Never instantiate `GoogleAdsApi` directly in scripts.
+Every script that accesses Google Ads imports from here. Never instantiate `GoogleAdsApi` directly in scripts.
 
 ```typescript
 import { getCustomer, enums, micros, fromMicros } from './scripts/lib/ads.ts';
 const c = getCustomer('123-456-7890');
 ```
 
-Server-side code (MCP tools, loaders) uses `src/lib/server/googleAdsClient.ts` instead.
-
-## UI Types and Conventions
-
-Strict typing throughout — no `any` in production code. Core types:
-
-- `src/lib/server/tenants.ts` → `Tenant`, `AdsMonitoringConfig`
-- `src/lib/server/posts.ts` → `Post`, `PostStatus`, `MediaType`, `PostWorkflow`
-- `src/lib/server/reports.ts` → `Report`, `ReportType`
-- `src/lib/server/campaigns.ts` → `Campaign`
-- `src/lib/server/googleAds.ts` → `LiveCampaign`
-- `src/lib/server/googleAdsDetailed.ts` → `DetailedCampaign`, `CampaignAdGroup`, `AdGroupMetrics`, `HistoryEntry`
-- `src/lib/server/db.ts` → `PostWithMeta`, `PostPlatform`, `GoogleAdCampaignWithMeta`
-
 ## Reports
 
-Reports are SQLite records with markdown content. Slug naming drives the UI badge color:
+Reports are PostgreSQL records with markdown content. Slug naming drives the UI badge color:
 
 | Slug pattern | Type | Color |
 |---|---|---|
@@ -193,8 +213,6 @@ Reports are SQLite records with markdown content. Slug naming drives the UI badg
 
 Naming conventions: `google-ads-audit-YYYY-MM-DD`, `google-ads-YYYY-MM`, `google-ads-search-YYYY-MM-DD`.
 
-Route `/[tenant]/reports/[slug]` renders MD as prose with "Download PDF" (`window.print()`).
-
 ## Operational Rules — Google Ads
 
 **Never modify live campaigns autonomously.** Required workflow:
@@ -206,11 +224,11 @@ Route `/[tenant]/reports/[slug]` renders MD as prose with "Download PDF" (`windo
 
 ## General Conventions
 
-- SQLite is the source of truth for all content
-- `db/marketing.db` is gitignored — auto-generated by `getDb()`
+- PostgreSQL is the source of truth for all content
 - Commits follow Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `docs:`
 - Client IDs, campaign IDs and tracking tags never go in committed files
 - Svelte components use `untrack()` for `$state` initialized from `$props` + `$effect` for sync
+- Rune-based stores must use `.svelte.ts` extension (not `.ts`)
 
 ## Language Rules
 

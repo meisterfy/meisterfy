@@ -7,9 +7,9 @@ node_modules/
 !.env.example
 
 # Build outputs
-.svelte-kit/
-dist/
-build/
+frontend/.svelte-kit/
+frontend/dist/
+frontend/build/
 
 # Client data — contains sensitive business information and media files (local-only)
 /clients/
@@ -44,8 +44,9 @@ test-*.ts
 .DS_Store
 Thumbs.db
 
-# Go API
-api/.env
-api/*.db
-api/tmp/
-api/bin/
+# Backend
+backend/.env
+backend/*.db
+backend/tmp/
+backend/bin/
+frontend/.svelte-kit/
