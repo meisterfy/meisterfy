@@ -1,19 +1,37 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import { CheckCircle2, Settings } from 'lucide-svelte';
-	import type { PageData, ActionData } from './$types';
+	import { updateTenant } from '$lib/api/tenants';
+	import type { PageData } from './$types';
 
-	let { data, form } = $props<{ data: PageData; form: ActionData }>();
+	let { data } = $props<{ data: PageData }>();
 
-	let isSaving = $state(false);
-	let saved = $state(false);
+	let name         = $state(untrack(() => data.brand.name));
+	let niche        = $state(untrack(() => data.brand.niche));
+	let google_ads_id = $state(untrack(() => data.brand.google_ads_id));
+	let isSaving     = $state(false);
+	let saved        = $state(false);
+	let errorMsg     = $state<string | null>(null);
 
-	$effect(() => {
-		if (form?.success) {
+	async function save(e: SubmitEvent) {
+		e.preventDefault();
+		if (!name.trim()) { errorMsg = 'Brand name is required'; return; }
+		errorMsg = null;
+		isSaving = true;
+		try {
+			await updateTenant(data.tenant, {
+				name: name.trim(),
+				niche: niche.trim() || null,
+				google_ads_id: google_ads_id.trim() || null,
+			});
 			saved = true;
 			setTimeout(() => (saved = false), 2500);
+		} catch (err) {
+			errorMsg = err instanceof Error ? err.message : 'Save failed';
+		} finally {
+			isSaving = false;
 		}
-	});
+	}
 </script>
 
 <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 w-full">
@@ -26,18 +44,7 @@
 	</div>
 
 	<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-		<form
-			method="POST"
-			action="?/saveBrand"
-			use:enhance={() => {
-				isSaving = true;
-				return async ({ update }) => {
-					await update();
-					isSaving = false;
-				};
-			}}
-			class="flex flex-col gap-5"
-		>
+		<form onsubmit={save} class="flex flex-col gap-5">
 			<div class="grid gap-5 sm:grid-cols-2">
 				<div>
 					<label for="brand-name" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -45,9 +52,8 @@
 					</label>
 					<input
 						id="brand-name"
-						name="name"
 						type="text"
-						value={String(data.brand.name ?? '')}
+						bind:value={name}
 						required
 						class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 					/>
@@ -58,9 +64,8 @@
 					</label>
 					<input
 						id="brand-niche"
-						name="niche"
 						type="text"
-						value={String(data.brand.niche ?? '')}
+						bind:value={niche}
 						placeholder="e.g. Automotive, SaaS, Retail"
 						class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 					/>
@@ -73,19 +78,16 @@
 				</label>
 				<input
 					id="google-ads-id"
-					name="google_ads_id"
 					type="text"
-					value={String(data.brand.google_ads_id ?? '')}
+					bind:value={google_ads_id}
 					placeholder="123-456-7890"
 					class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 				/>
 				<p class="mt-1 text-xs text-slate-400">Found in Google Ads → Admin → Account settings.</p>
 			</div>
 
-			{#if form?.error}
-				<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-					{form.error}
-				</p>
+			{#if errorMsg}
+				<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{errorMsg}</p>
 			{/if}
 
 			<div class="flex items-center gap-3">

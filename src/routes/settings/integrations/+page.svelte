@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import { page } from '$app/stores';
 	import { Dialog, DropdownMenu } from 'bits-ui';
 	import {
@@ -17,9 +17,12 @@
 	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
 	import MultiSelect from '$lib/components/ui/multiselect/MultiSelect.svelte';
 	import type { PageData } from './$types';
-	import type { IntegrationWithClients } from '$lib/server/integrations';
+	import type { IntegrationWithClients } from '$lib/api/integrations';
+	import { createIntegration, updateIntegration, deleteIntegration } from '$lib/api/integrations';
 
 	let { data } = $props<{ data: PageData }>();
+
+	let integrations = $state(untrack(() => [...(data.integrations ?? [])]));
 
 	let justConnected = $derived($page.url.searchParams.get('connected') === '1');
 
@@ -49,7 +52,6 @@
 	let showDelete = $state(false);
 	let deletingId = $state<string | null>(null);
 	let isDeleting = $state(false);
-	let deleteFormEl = $state<HTMLFormElement | undefined>(undefined);
 
 	function openCreate(providerId: string) {
 		editingId = null;
@@ -82,6 +84,51 @@
 	function confirmDelete(id: string) {
 		deletingId = id;
 		showDelete = true;
+	}
+
+	async function handleSubmit(e: SubmitEvent) {
+		e.preventDefault();
+		if (!formName.trim()) { modalError = 'Name is required'; return; }
+		isSubmitting = true;
+		modalError = null;
+		try {
+			const payload = {
+				name: formName.trim(),
+				provider: selectedProvider as IntegrationWithClients['provider'],
+				oauth_client_id: formClientId.trim() || null,
+				oauth_client_secret: formClientSecret.trim() || null,
+				developer_token: formDeveloperToken.trim() || null,
+				login_customer_id: formMccId.trim() || null,
+				client_ids: formSelectedClients,
+			};
+			if (editingId) {
+				const updated = await updateIntegration(editingId, payload);
+				integrations = integrations.map(i => i.id === editingId ? updated : i);
+			} else {
+				const created = await createIntegration(payload);
+				integrations = [...integrations, created];
+			}
+			showModal = false;
+		} catch (err) {
+			modalError = err instanceof Error ? err.message : 'Save failed';
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	async function handleDelete() {
+		if (!deletingId) return;
+		isDeleting = true;
+		try {
+			await deleteIntegration(deletingId);
+			integrations = integrations.filter(i => i.id !== deletingId);
+			showDelete = false;
+			deletingId = null;
+		} catch {
+			// keep dialog open on error
+		} finally {
+			isDeleting = false;
+		}
 	}
 
 	const providerLabel = $derived(PROVIDERS.find((p) => p.id === selectedProvider)?.label ?? 'Integration');
@@ -145,7 +192,7 @@
 	{/if}
 
 	<!-- Integration cards -->
-	{#if data.integrations.length === 0}
+	{#if integrations.length === 0}
 		<div class="rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
 			<Layers class="mx-auto mb-3 h-8 w-8 text-slate-300 dark:text-slate-600" />
 			<p class="text-sm font-medium text-slate-500 dark:text-slate-400">No integrations yet</p>
@@ -155,7 +202,7 @@
 		</div>
 	{:else}
 		<div class="flex flex-col gap-3">
-			{#each data.integrations as integration (integration.id)}
+			{#each integrations as integration (integration.id)}
 				{@const cfg = STATUS[integration.status as keyof typeof STATUS] ?? STATUS.pending}
 				{@const Icon = cfg.Icon}
 				{@const providerInfo = PROVIDERS.find((p) => p.id === integration.provider)}
@@ -241,30 +288,7 @@
 					: 'Configure your OAuth app credentials. You can connect after saving.'}
 			</Dialog.Description>
 
-			<form
-				method="POST"
-				action={editingId ? '?/update' : '?/create'}
-				use:enhance={() => {
-					isSubmitting = true;
-					modalError = null;
-					return async ({ result, update }) => {
-						if (result.type === 'success') {
-							await update();
-							showModal = false;
-						} else if (result.type === 'failure') {
-							modalError =
-								(result.data as { error?: string } | undefined)?.error ?? 'An error occurred';
-						}
-						isSubmitting = false;
-					};
-				}}
-				class="flex flex-col gap-4"
-			>
-				{#if editingId}
-					<input type="hidden" name="id" value={editingId} />
-				{/if}
-				<input type="hidden" name="provider" value={selectedProvider} />
-				<input type="hidden" name="client_ids" value={JSON.stringify(formSelectedClients)} />
+			<form onsubmit={handleSubmit} class="flex flex-col gap-4">
 
 				<!-- Name -->
 				<div>
@@ -389,29 +413,11 @@
 	</Dialog.Portal>
 </Dialog.Root>
 
-<!-- ── Hidden delete form ────────────────────────────────────────────────── -->
-<form
-	bind:this={deleteFormEl}
-	method="POST"
-	action="?/delete"
-	use:enhance={() => {
-		isDeleting = true;
-		return async ({ update }) => {
-			await update();
-			isDeleting = false;
-			showDelete = false;
-			deletingId = null;
-		};
-	}}
->
-	<input type="hidden" name="id" value={deletingId ?? ''} />
-</form>
-
 <ConfirmDialog
 	bind:open={showDelete}
 	title="Delete integration?"
 	description="This will permanently remove the integration and disconnect all associated clients. This cannot be undone."
 	confirmLabel="Delete"
 	isLoading={isDeleting}
-	onconfirm={() => deleteFormEl?.requestSubmit()}
+	onconfirm={handleDelete}
 />

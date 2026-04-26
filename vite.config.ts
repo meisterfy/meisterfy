@@ -6,6 +6,15 @@ import path from 'node:path';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	server: {
+		proxy: {
+			'/admin': 'http://localhost:8080',
+			'/auth':  'http://localhost:8080',
+			'/setup': 'http://localhost:8080',
+			'/health':'http://localhost:8080',
+			'/mcp':   'http://localhost:8080',
+		}
+	},
 	resolve: {
 		alias: {
 			'@': path.resolve('./src'),

@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-static';
 import path from 'node:path';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -7,7 +7,12 @@ const config = {
 		runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
 	},
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({
+			pages: 'api/cmd/server/ui/dist',
+			assets: 'api/cmd/server/ui/dist',
+			fallback: '200.html',
+			precompress: false,
+		}),
 		alias: {
 			'@': path.resolve('./src'),
 			'$db': path.resolve('./src/lib/server/db'),
