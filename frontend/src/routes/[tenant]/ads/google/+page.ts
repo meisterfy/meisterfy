@@ -4,10 +4,10 @@ import type { PageLoad } from './$types'
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
+export const load: PageLoad = async ({ params, fetch }) => {
 	const [tenant, rawCampaigns] = await Promise.all([
-		getTenant(params.tenant).catch(() => null),
-		getCampaigns(params.tenant).catch(() => []),
+		getTenant(params.tenant, fetch).catch(() => null),
+		getCampaigns(params.tenant, fetch).catch(() => []),
 	])
 
 	const campaigns = rawCampaigns.map(c => {

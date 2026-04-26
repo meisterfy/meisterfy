@@ -12,8 +12,8 @@ const TYPE_MAP: Record<string, { label: string; color: string }> = {
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
-	const rows = await getReports(params.tenant).catch(() => [])
+export const load: PageLoad = async ({ params, fetch }) => {
+	const rows = await getReports(params.tenant, fetch).catch(() => [])
 	const reports = rows.map(r => {
 		const dateMatch = r.slug.match(/(\d{4}-\d{2}-\d{2})/)
 		return {

@@ -8,9 +8,10 @@ export function getToken() { return accessToken }
 
 export async function apiFetch<T>(
 	path: string,
-	options: RequestInit = {}
+	options: RequestInit = {},
+	fetchFn: typeof fetch = globalThis.fetch
 ): Promise<T> {
-	const res = await fetch(`${BASE_URL}${path}`, {
+	const res = await fetchFn(`${BASE_URL}${path}`, {
 		...options,
 		credentials: 'include',
 		headers: {
@@ -23,7 +24,7 @@ export async function apiFetch<T>(
 	if (res.status === 401) {
 		const refreshed = await tryRefresh()
 		if (refreshed) {
-			return apiFetch(path, options)
+			return apiFetch(path, options, fetchFn)
 		}
 		const e = Object.assign(new Error('Unauthorized'), { status: 401 })
 		throw e

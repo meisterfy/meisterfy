@@ -3,8 +3,8 @@ import type { PageLoad } from './$types'
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
-	const scheduled = await getPosts(params.tenant, 'scheduled').catch(() => [])
+export const load: PageLoad = async ({ params, fetch }) => {
+	const scheduled = await getPosts(params.tenant, 'scheduled', fetch).catch(() => [])
 	return {
 		tenant: params.tenant,
 		scheduled: scheduled.map(p => ({

@@ -3,8 +3,8 @@ import type { PageLoad } from './$types'
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
-	const data = await getSchedule(params.tenant).catch(() => ({
+export const load: PageLoad = async ({ params, fetch }) => {
+	const data = await getSchedule(params.tenant, fetch).catch(() => ({
 		last_run: null,
 		runs: [],
 		cron_command: '',

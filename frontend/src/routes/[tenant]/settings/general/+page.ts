@@ -4,8 +4,8 @@ import type { PageLoad } from './$types'
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params }) => {
-	const tenant = await getTenant(params.tenant).catch(() => null)
+export const load: PageLoad = async ({ params, fetch }) => {
+	const tenant = await getTenant(params.tenant, fetch).catch(() => null)
 	if (!tenant) error(404, 'Client not found')
 
 	return {

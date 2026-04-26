@@ -15,8 +15,8 @@ export interface Report extends ReportListItem {
 	content: string
 }
 
-export const getReports = (tenantId: string) =>
-	apiFetch<{ data: ReportListItem[] }>(`/admin/tenants/${tenantId}/reports`).then(r => r.data)
+export const getReports = (tenantId: string, fetchFn?: typeof fetch) =>
+	apiFetch<{ data: ReportListItem[] }>(`/admin/tenants/${tenantId}/reports`, {}, fetchFn).then(r => r.data)
 
 export const getReport = (tenantId: string, slug: string) =>
 	apiFetch<{ data: Report }>(`/admin/tenants/${tenantId}/reports/${slug}`).then(r => r.data)

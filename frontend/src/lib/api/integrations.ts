@@ -22,8 +22,8 @@ export interface IntegrationWithClients extends Integration {
 	clients: string[]
 }
 
-export const getIntegrations = () =>
-	apiFetch<{ data: IntegrationWithClients[] }>('/admin/integrations').then(r => r.data)
+export const getIntegrations = (fetchFn?: typeof fetch) =>
+	apiFetch<{ data: IntegrationWithClients[] }>('/admin/integrations', {}, fetchFn).then(r => r.data)
 
 export const createIntegration = (body: Partial<Integration> & { client_ids?: string[] }) =>
 	apiFetch<{ data: IntegrationWithClients }>('/admin/integrations', {

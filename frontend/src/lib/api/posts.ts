@@ -26,9 +26,9 @@ export interface Post {
 	updated_at: string
 }
 
-export const getPosts = (tenantId: string, status?: string) => {
+export const getPosts = (tenantId: string, status?: string, fetchFn?: typeof fetch) => {
 	const qs = status ? `?status=${status}` : ''
-	return apiFetch<{ data: Post[] }>(`/admin/tenants/${tenantId}/posts${qs}`).then(r => r.data)
+	return apiFetch<{ data: Post[] }>(`/admin/tenants/${tenantId}/posts${qs}`, {}, fetchFn).then(r => r.data)
 }
 
 export const getPost = (tenantId: string, id: string) =>
