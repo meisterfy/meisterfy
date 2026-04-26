@@ -4,6 +4,7 @@ dev:
 	air
 
 build:
+	cd .. && bun run build
 	go build -o bin/server ./cmd/server
 
 migrate:

@@ -1,7 +1,16 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { HistoryEntry } from '$lib/server/googleAdsDetailed';
-	import type { DbHistoryDay } from './+page.server';
+
+	interface DbHistoryDay {
+		date: string;
+		cost: number;
+		conversions: number;
+		clicks: number;
+		impressions: number;
+		cpa: number;
+		budgetMicros: number;
+	}
 	import {
 		ArrowLeft, Download, Target, DollarSign, Activity, ActivityIcon,
 		Play, Pause, BarChart2, MousePointerClick, Loader2,
