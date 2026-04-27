@@ -128,6 +128,50 @@ func (h *AdminCampaignsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *AdminCampaignsHandler) Update(w http.ResponseWriter, r *http.Request) {
+	tenantID := chi.URLParam(r, "tenantId")
+	slug := chi.URLParam(r, "slug")
+
+	c, err := h.campaignRepo.GetBySlug(r.Context(), tenantID, slug)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			NotFound(w)
+			return
+		}
+		InternalError(w)
+		return
+	}
+
+	var req struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		UnprocessableEntity(w, "invalid request body")
+		return
+	}
+	if len(req.Data) == 0 {
+		UnprocessableEntity(w, "data is required")
+		return
+	}
+
+	if err := h.campaignRepo.Upsert(r.Context(), c.ID, tenantID, slug, req.Data); err != nil {
+		InternalError(w)
+		return
+	}
+
+	updated, err := h.campaignRepo.GetBySlug(r.Context(), tenantID, slug)
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	JSON(w, http.StatusOK, map[string]any{"data": campaignDetailResponse{
+		ID:       updated.ID,
+		TenantID: updated.TenantID,
+		Slug:     updated.Slug,
+		Data:     updated.Data,
+	}})
+}
+
 func (h *AdminCampaignsHandler) Deploy(w http.ResponseWriter, r *http.Request) {
 	if err := h.campaignRepo.MarkDeployed(r.Context(), chi.URLParam(r, "id")); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {

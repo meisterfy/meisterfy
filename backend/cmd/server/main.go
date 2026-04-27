@@ -137,6 +137,7 @@ func main() {
 	scheduleHandler     := api.NewAdminScheduleHandler(agentRunRepo)
 	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo)
 	oauthGoogleAds      := api.NewOAuthGoogleAdsHandler(integrationRepo, cfg.BaseURL)
+	mediaHandler        := api.NewMediaHandler(cfg.StoragePath, postRepo)
 
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
@@ -208,6 +209,7 @@ func main() {
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns", campaignsHandler.List)
 			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns", campaignsHandler.Create)
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/{slug}", campaignsHandler.Get)
+			r.With(middleware.RequirePermission("manage:campaign")).Put("/campaigns/{slug}", campaignsHandler.Update)
 			r.With(middleware.RequirePermission("manage:campaign")).Delete("/campaigns/{id}", campaignsHandler.Delete)
 			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/{id}/deploy", campaignsHandler.Deploy)
 
@@ -221,6 +223,15 @@ func main() {
 			// schedule / agent-runs
 			r.Get("/schedule", scheduleHandler.Get)
 		})
+	})
+
+	// Media file serving (public GET) and upload/delete (authenticated)
+	r.Get("/api/media/{tenantId}/{filename}", mediaHandler.Serve)
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+		r.Use(middleware.AuthenticateAdmin(jwtSvc))
+		r.Post("/api/media/{tenantId}/{postId}", mediaHandler.Upload)
+		r.Delete("/api/media/{tenantId}/{postId}", mediaHandler.Delete)
 	})
 
 	r.Route("/mcp", func(r chi.Router) {
