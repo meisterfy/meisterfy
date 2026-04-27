@@ -5,10 +5,10 @@ import type { PageLoad } from './$types'
 export const ssr = false
 
 export const load: PageLoad = async ({ fetch }) => {
-	const [integrations, tenants] = await Promise.all([
-		getIntegrations(fetch).catch(() => []),
+	const [data, tenants] = await Promise.all([
+		getIntegrations(fetch).catch(() => ({ integrations: [], providers: [] })),
 		getTenants(fetch).catch(() => []),
 	])
-	const clientOptions = tenants.map(t => ({ value: t.id, label: t.name }))
-	return { integrations, clientOptions }
+	const tenantOptions = tenants.map(t => ({ value: t.id, label: t.name }))
+	return { ...data, tenantOptions }
 }

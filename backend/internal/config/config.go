@@ -12,6 +12,8 @@ type Config struct {
 	AdminCORSOrigins string
 	CookieDomain     string
 	AppEnv           string
+	BaseURL          string
+	MCPAPIKey        string
 }
 
 func Load() (*Config, error) {
@@ -22,6 +24,8 @@ func Load() (*Config, error) {
 		AdminCORSOrigins: getEnv("ADMIN_CORS_ORIGINS", "http://localhost:5173"),
 		CookieDomain:     os.Getenv("COOKIE_DOMAIN"),
 		AppEnv:           getEnv("APP_ENV", "development"),
+		BaseURL:          getEnv("BASE_URL", "http://localhost:8080"),
+		MCPAPIKey:        os.Getenv("MCP_API_KEY"),
 	}
 
 	if cfg.DatabaseURL == "" {
