@@ -2,7 +2,7 @@
   "mcpServers": {
     "marketing": {
       "type": "http",
-      "url": "http://localhost:5173/mcp"
+      "url": "http://localhost:8181/mcp"
     }
   }
 }
