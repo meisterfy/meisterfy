@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { HistoryEntry } from '$lib/server/googleAdsDetailed';
 
 	interface DbHistoryDay {
 		date: string;

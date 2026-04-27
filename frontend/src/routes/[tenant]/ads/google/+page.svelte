@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { FileEdit, CheckCircle, Send, Trash2, Search, Target, DollarSign, Activity, AlertCircle, Plus, Filter, ChevronRight, Play, FileJson, X, Loader2 } from 'lucide-svelte';
-	import type { GoogleAdCampaignWithMeta } from '$lib/server/db';
+	import { createCampaign, deployCampaign as apiDeployCampaign } from '$lib/api/campaigns';
 
 	let { data } = $props<{ data: PageData }>();
 
@@ -26,34 +26,31 @@
 		}
 
 		isImporting = true;
-		const res = await fetch(`/api/ads/google/${data.tenant}/import`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(parsed)
-		});
-		isImporting = false;
-
-		if (res.ok) {
+		try {
+			const slug = parsed.result.id
+			await createCampaign(data.tenant, { slug, data: parsed })
 			isImportModalOpen = false;
 			jsonInput = '';
 			window.location.reload();
-		} else {
-			const err = await res.json();
-			importError = err.error || 'Failed to import campaign';
+		} catch {
+			importError = 'Failed to import campaign';
+		} finally {
+			isImporting = false;
 		}
 	}
 
 	async function deployCampaign(filename: string) {
 		deployingFilename = filename;
 		deployResult = null;
-		const res = await fetch(`/api/ads/google/${data.tenant}/${filename}/deploy`, { method: 'POST' });
-		const body = await res.json();
-		deployingFilename = null;
-		if (res.ok) {
+		const slug = filename.replace(/\.json$/, '')
+		try {
+			await apiDeployCampaign(data.tenant, slug)
 			deployResult = { success: true, message: 'Campaign deployed successfully. All assets created as PAUSED in Google Ads.' };
 			setTimeout(() => window.location.reload(), 2000);
-		} else {
-			deployResult = { success: false, message: body.error || 'Deploy failed.' };
+		} catch {
+			deployResult = { success: false, message: 'Deploy failed.' };
+		} finally {
+			deployingFilename = null;
 		}
 	}
 </script>
@@ -183,7 +180,7 @@
 										<AlertCircle class="w-6 h-6 text-amber-500" />
 										<p class="text-sm font-medium">Google Ads authentication expired (invalid_grant)</p>
 										<a
-											href="/api/auth/google-ads"
+											href="/auth/google-ads/start"
 											target="_blank"
 											rel="noopener"
 											class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
@@ -191,7 +188,7 @@
 											Re-authenticate with Google
 										</a>
 										<p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
-											After authorizing, restart the dev server for the new token to take effect. Make sure <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">http://127.0.0.1:5173/api/auth/google-ads/callback</code> is in your Google Cloud Console redirect URIs.
+											After authorizing, the token is stored automatically via the Go API OAuth flow.
 										</p>
 									</div>
 								{:else}
