@@ -17,3 +17,8 @@ dev_log.txt
 # OS
 .DS_Store
 Thumbs.db
+
+# AIPIM Local State
+.project/*.db
+.project/*.db-wal
+.project/*.db-shm
