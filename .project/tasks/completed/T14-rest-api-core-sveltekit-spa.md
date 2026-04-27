@@ -1,6 +1,6 @@
 # T14 — REST API Core + SvelteKit SPA Migration
 
-**Status:** pending  
+**Status:** completed — moved to `completed/T14-rest-api-core-sveltekit-spa.md`  
 **Phase:** 3 — API REST Core  
 **Estimate:** 10–12 hours  
 **Depends on:** T11, T12, T13  

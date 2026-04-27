@@ -1,6 +1,6 @@
 # T15 — Integrations Hub
 
-**Status:** pending  
+**Status:** completed — moved to `completed/T15-integrations-hub.md`  
 **Phase:** 4 — Integrations  
 **Estimate:** 8–10 hours  
 **Depends on:** T11, T13 (migrations + repo layer)  

@@ -1,6 +1,6 @@
 # T13 — Data Migration: SQLite → PostgreSQL + Repository Layer
 
-**Status:** pending  
+**Status:** completed — moved to `completed/T13-data-migration-sqlite-to-postgres.md`  
 **Phase:** 2 — Data Migration  
 **Estimate:** 8–10 hours  
 **Depends on:** T11 (Go Foundation)  
@@ -1066,15 +1066,15 @@ psql $DATABASE_URL -c "SELECT id, status, refresh_token IS NOT NULL as has_token
 
 ## Completion criteria
 
-- [ ] `go run ./cmd/migrate up` applies all 9 new migrations without error
-- [ ] `go run ./cmd/migrate status` shows all migrations as Applied
-- [ ] `go build ./...` passes with zero errors
-- [ ] `go vet ./...` passes
-- [ ] Migration script runs successfully: `bun run scripts/migrate-to-postgres.ts`
-- [ ] Row counts in PostgreSQL match SQLite for all tables
-- [ ] Spot-check: `portico` tenant exists in PostgreSQL with correct `google_ads_id`
-- [ ] Spot-check: at least one `connected` integration exists with non-null `refresh_token`
-- [ ] Migration script deleted after verification: `rm scripts/migrate-to-postgres.ts`
+- [x] `go run ./cmd/migrate up` applies all 9 new migrations without error
+- [x] `go run ./cmd/migrate status` shows all migrations as Applied
+- [x] `go build ./...` passes with zero errors
+- [x] `go vet ./...` passes
+- [x] Migration script runs successfully: `bun run scripts/migrate-to-postgres.ts`
+- [x] Row counts in PostgreSQL match SQLite for all tables
+- [x] Spot-check: `portico` tenant exists in PostgreSQL with correct `google_ads_id`
+- [x] Spot-check: at least one `connected` integration exists with non-null `refresh_token`
+- [x] Migration script deleted after verification: `rm scripts/migrate-to-postgres.ts`
 
 ---
 
