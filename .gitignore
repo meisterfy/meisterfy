@@ -25,3 +25,4 @@ db/
 .project/*.db
 .project/*.db-wal
 .project/*.db-shm
+.project/events.jsonl
