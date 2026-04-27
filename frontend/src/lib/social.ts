@@ -1,4 +1,4 @@
-import type { PostPlatform } from '$lib/server/db';
+export type PostPlatform = 'instagram_feed' | 'instagram_stories' | 'instagram_reels' | 'linkedin' | 'facebook';
 
 export const PLATFORM_CONFIG: Record<PostPlatform, { label: string; color: string }> = {
 	instagram_feed:    { label: 'IG Feed',    color: 'bg-pink-500'   },

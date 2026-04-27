@@ -3,11 +3,20 @@
 	import { untrack } from 'svelte';
 	import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2, ImagePlus } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import type { PostWithMeta, PostPlatform } from '$lib/server/db';
-	import { PLATFORM_CONFIG as PLATFORM, normPlatforms } from '$lib/social';
+	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social';
+	import { updatePost, createPost as apiCreatePost, deletePost as apiDeletePost } from '$lib/api/posts';
 	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
 	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte';
 	import Drawer from '$lib/components/ui/drawer/Drawer.svelte';
+
+	type PostShape = {
+		id: string; status: string; title: string; content: string;
+		hashtags: string[]; media_type?: string | null;
+		scheduled_date?: string | null; scheduled_time?: string | null;
+		platform: PostPlatform | PostPlatform[] | null;
+		client_id: string; filename: string; media_files: string[];
+		workflow: Record<string, unknown>;
+	};
 
 	let { data } = $props<{ data: PageData }>();
 
@@ -19,8 +28,8 @@
 	const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 	const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-	let scheduled = $state<PostWithMeta[]>(untrack(() => data.scheduled));
-	$effect(() => { scheduled = data.scheduled; });
+	let scheduled = $state<PostShape[]>(untrack(() => data.scheduled as PostShape[]));
+	$effect(() => { scheduled = data.scheduled as PostShape[]; });
 
 	const calendarCells = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay();
@@ -49,7 +58,7 @@
 
 	// ── Post edit drawer ──────────────────────────────────────────────────────
 	let showEditDrawer = $state(false);
-	let selectedPost = $state<PostWithMeta | null>(null);
+	let selectedPost = $state<PostShape | null>(null);
 	let editTitle = $state('');
 	let editContent = $state('');
 	let editHashtags = $state('');
@@ -60,7 +69,7 @@
 	let isSavingPost = $state(false);
 	let isUploadingMedia = $state(false);
 
-	function openPostDrawer(post: PostWithMeta) {
+	function openPostDrawer(post: PostShape) {
 		selectedPost = post;
 		editTitle = post.title;
 		editContent = post.content;
@@ -79,26 +88,21 @@
 		isSavingPost = true;
 		try {
 			const tags = editHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
-			const res = await fetch(`/api/posts/${data.tenant}/${selectedPost.filename}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					title: editTitle, content: editContent, hashtags: tags,
-					platform: editPlatforms,
-					scheduled_date: editDate || undefined,
-					scheduled_time: editTime || undefined,
-				}),
+			const id = selectedPost.filename.replace(/\.json$/, '');
+			await updatePost(data.tenant, id, {
+				title: editTitle, content: editContent, hashtags: tags,
+				platforms: editPlatforms,
+				scheduled_date: editDate || undefined,
+				scheduled_time: editTime || undefined,
 			});
-			if (res.ok) {
-				selectedPost.title = editTitle;
-				selectedPost.content = editContent;
-				selectedPost.hashtags = tags;
-				selectedPost.platform = editPlatforms;
-				selectedPost.scheduled_date = editDate || undefined;
-				selectedPost.scheduled_time = editTime || undefined;
-				scheduled = [...scheduled];
-				showEditDrawer = false;
-			}
+			selectedPost.title = editTitle;
+			selectedPost.content = editContent;
+			selectedPost.hashtags = tags;
+			selectedPost.platform = editPlatforms;
+			selectedPost.scheduled_date = editDate || undefined;
+			selectedPost.scheduled_time = editTime || undefined;
+			scheduled = [...scheduled];
+			showEditDrawer = false;
 		} finally { isSavingPost = false; }
 	}
 
@@ -110,7 +114,8 @@
 		isUploadingMedia = true;
 		const fd = new FormData();
 		for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-		const res = await fetch(`/api/posts/${data.tenant}/${selectedPost.filename}/media`, { method: 'POST', body: fd });
+		const id = selectedPost.filename.replace(/\.json$/, '');
+		const res = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
 		if (res.ok) {
 			const body = await res.json() as { media_files: string[] };
 			editMediaFiles = body.media_files ?? [];
@@ -122,7 +127,8 @@
 
 	async function removeMedia() {
 		if (!selectedPost) return;
-		await fetch(`/api/posts/${data.tenant}/${selectedPost.filename}/media`, { method: 'DELETE' });
+		const id = selectedPost.filename.replace(/\.json$/, '');
+		await fetch(`/api/media/${data.tenant}/${id}`, { method: 'DELETE', credentials: 'include' });
 		editMediaFiles = [];
 		selectedPost.media_files = [];
 	}
@@ -135,12 +141,13 @@
 		if (!selectedPost) return;
 		isDeletingPost = true;
 		try {
-			const res = await fetch(`/api/posts/${data.tenant}/${selectedPost.filename}`, { method: 'DELETE' });
-			if (res.ok) {
-				scheduled = scheduled.filter((p) => p.id !== selectedPost!.id);
-				showEditDrawer = false;
-				showDeleteConfirm = false;
-			}
+			const id = selectedPost.filename.replace(/\.json$/, '');
+			await apiDeletePost(data.tenant, id);
+			scheduled = scheduled.filter((p) => p.id !== selectedPost!.id);
+			showEditDrawer = false;
+			showDeleteConfirm = false;
+		} catch {
+			// ignore
 		} finally { isDeletingPost = false; }
 	}
 
@@ -166,42 +173,42 @@
 		if (!newPostDate || !newTitle.trim() || !newContent.trim()) return;
 		isCreating = true;
 		try {
-			const slug = newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-			const id = `${newPostDate}_${slug || 'post'}`;
 			const tags = newHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
-			const res = await fetch(`/api/posts/${data.tenant}/import`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					workflow: {},
-					result: { id, status: 'scheduled', title: newTitle, content: newContent,
-						hashtags: tags, media_type: 'image',
-						scheduled_date: newPostDate, scheduled_time: newTime || undefined,
-						platform: newPlatforms },
-				}),
+			const newPost = await apiCreatePost(data.tenant, {
+				title: newTitle, content: newContent, hashtags: tags,
+				platforms: newPlatforms,
+				status: 'scheduled',
+				scheduled_date: newPostDate,
+				scheduled_time: newTime || undefined,
 			});
-			if (res.ok) {
-				const body = await res.json() as { success: boolean; filename: string };
-				const files = newMediaInput?.files;
-				let mediaFiles: string[] = [];
-				if (files && files.length > 0 && body.filename) {
-					const fd = new FormData();
-					for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-					const mr = await fetch(`/api/posts/${data.tenant}/${body.filename}/media`, { method: 'POST', body: fd });
-					if (mr.ok) {
-						const mb = await mr.json() as { media_files: string[] };
-						mediaFiles = mb.media_files ?? [];
-					}
+			const id = newPost.id;
+			const files = newMediaInput?.files;
+			let mediaFiles: string[] = [];
+			if (files && files.length > 0) {
+				const fd = new FormData();
+				for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
+				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
+				if (mr.ok) {
+					const mb = await mr.json() as { media_files: string[] };
+					mediaFiles = mb.media_files ?? [];
 				}
-				scheduled = [...scheduled, {
-					id, status: 'scheduled', title: newTitle, content: newContent,
-					hashtags: tags, media_type: 'image',
-					scheduled_date: newPostDate, scheduled_time: newTime || undefined,
-					platform: newPlatforms,
-					client_id: data.tenant, filename: `${id}.json`, media_files: mediaFiles, workflow: {},
-				}];
-				showNewPostDrawer = false;
 			}
+			scheduled = [...scheduled, {
+				...newPost,
+				status: newPost.status,
+				title: newPost.title ?? newTitle,
+				content: newPost.content,
+				hashtags: newPost.hashtags ?? [],
+				media_type: newPost.media_type,
+				scheduled_date: newPost.scheduled_date ?? newPostDate,
+				scheduled_time: newPost.scheduled_time,
+				platform: (newPost.platforms?.[0] as PostPlatform | undefined) ?? null,
+				client_id: newPost.tenant_id,
+				filename: id + '.json',
+				media_files: mediaFiles,
+				workflow: {},
+			}];
+			showNewPostDrawer = false;
 		} finally { isCreating = false; }
 	}
 
