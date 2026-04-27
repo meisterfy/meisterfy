@@ -26,6 +26,7 @@ frontend/build/
 # Claude Code runtime files
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+.claude/skills/
 
 # Dev logs
 dev_log.txt
