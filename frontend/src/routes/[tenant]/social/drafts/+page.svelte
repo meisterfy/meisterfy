@@ -78,7 +78,7 @@
 
 	// ── Edit drawer ───────────────────────────────────────────────────────────
 	let showEdit = $state(false);
-	let editingPost = $state<PostWithMeta | null>(null);
+	let editingPost = $state<PostShape | null>(null);
 	let editTitle = $state('');
 	let editContent = $state('');
 	let editHashtags = $state('');
@@ -87,7 +87,7 @@
 	let isSavingEdit = $state(false);
 	let isUploadingMedia = $state(false);
 
-	function openEdit(post: PostWithMeta) {
+	function openEdit(post: PostShape) {
 		editingPost = post;
 		editTitle = post.title;
 		editContent = post.content;
@@ -104,10 +104,9 @@
 		isSavingEdit = true;
 		try {
 			const tags = editHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
-			await fetch(`/api/posts/${data.tenant}/${editingPost.filename}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ title: editTitle, content: editContent, hashtags: tags, platform: editPlatforms }),
+			await updatePost(data.tenant, editingPost.id, {
+				title: editTitle, content: editContent, hashtags: tags,
+				platforms: editPlatforms,
 			});
 			editingPost.title = editTitle;
 			editingPost.content = editContent;
@@ -126,7 +125,7 @@
 		isUploadingMedia = true;
 		const fd = new FormData();
 		for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-		const res = await fetch(`/api/posts/${data.tenant}/${editingPost.filename}/media`, { method: 'POST', body: fd });
+		const res = await fetch(`/api/media/${data.tenant}/${editingPost.id}`, { method: 'POST', body: fd });
 		if (res.ok) {
 			const body = await res.json() as { media_files: string[] };
 			editMediaFiles = body.media_files ?? [];
@@ -138,17 +137,17 @@
 
 	async function removeMedia() {
 		if (!editingPost) return;
-		await fetch(`/api/posts/${data.tenant}/${editingPost.filename}/media`, { method: 'DELETE' });
+		await fetch(`/api/media/${data.tenant}/${editingPost.id}`, { method: 'DELETE' });
 		editMediaFiles = [];
 		editingPost.media_files = [];
 	}
 
 	// ── Delete confirm ────────────────────────────────────────────────────────
-	let postToDelete = $state<PostWithMeta | null>(null);
+	let postToDelete = $state<PostShape | null>(null);
 	let showDeleteConfirm = $state(false);
 	let isDeletingPost = $state(false);
 
-	function requestDelete(post: PostWithMeta) {
+	function requestDelete(post: PostShape) {
 		postToDelete = post;
 		showDeleteConfirm = true;
 	}
@@ -157,25 +156,23 @@
 		if (!postToDelete) return;
 		isDeletingPost = true;
 		try {
-			const res = await fetch(`/api/posts/${data.tenant}/${postToDelete.filename}`, { method: 'DELETE' });
-			if (res.ok) {
-				drafts = drafts.filter((p) => p.id !== postToDelete!.id);
-				if (editingPost?.id === postToDelete.id) showEdit = false;
-				postToDelete = null;
-				showDeleteConfirm = false;
-			}
+			await apiDeletePost(data.tenant, postToDelete.id);
+			drafts = drafts.filter((p) => p.id !== postToDelete!.id);
+			if (editingPost?.id === postToDelete.id) showEdit = false;
+			postToDelete = null;
+			showDeleteConfirm = false;
 		} finally { isDeletingPost = false; }
 	}
 
 	// ── Schedule drawer ───────────────────────────────────────────────────────
 	let showSchedule = $state(false);
-	let schedulingPost = $state<PostWithMeta | null>(null);
+	let schedulingPost = $state<PostShape | null>(null);
 	let schedDate = $state('');
 	let schedTime = $state('10:00');
 	let schedPlatforms = $state<PostPlatform[]>(['instagram_feed']);
 	let isSavingSched = $state(false);
 
-	function openSchedule(post: PostWithMeta) {
+	function openSchedule(post: PostShape) {
 		schedulingPost = post;
 		schedDate = '';
 		schedTime = '10:00';
@@ -189,11 +186,11 @@
 		if (!schedulingPost || !schedDate) return;
 		isSavingSched = true;
 		try {
-			await fetch(`/api/posts/${data.tenant}/${schedulingPost.filename}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status: 'scheduled', scheduled_date: schedDate, scheduled_time: schedTime || undefined, platform: schedPlatforms }),
+			await updatePostStatus(data.tenant, schedulingPost.id, 'scheduled', {
+				scheduled_date: schedDate,
+				scheduled_time: schedTime || undefined,
 			});
+			await updatePost(data.tenant, schedulingPost.id, { platforms: schedPlatforms });
 			drafts = drafts.filter((p) => p.id !== schedulingPost!.id);
 			showSchedule = false;
 		} finally { isSavingSched = false; }
@@ -202,15 +199,11 @@
 	// ── Approve toggle ────────────────────────────────────────────────────────
 	let approvingId = $state<string | null>(null);
 
-	async function toggleApprove(post: PostWithMeta) {
+	async function toggleApprove(post: PostShape) {
 		approvingId = post.id;
-		const newStatus = post.status === 'approved' ? 'draft' : 'approved';
+		const newStatus = post.status === 'approved' ? 'draft' : 'approved'
 		try {
-			await fetch(`/api/posts/${data.tenant}/${post.filename}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status: newStatus }),
-			});
+			await updatePostStatus(data.tenant, post.id, newStatus as import('$lib/api/posts').PostStatus);
 			post.status = newStatus;
 			drafts = [...drafts];
 		} finally { approvingId = null; }

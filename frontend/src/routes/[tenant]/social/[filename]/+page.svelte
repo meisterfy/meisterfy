@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import { ArrowLeft, Save, FileEdit, Trash2 } from 'lucide-svelte';
+	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts';
 
 	let { data } = $props<{ data: PageData }>();
 
@@ -31,7 +32,7 @@
 			formData.append('file', files[i]);
 		}
 
-		const res = await fetch(`/api/posts/${data.client_id}/${data.post.filename}/media`, {
+		const res = await fetch(`/api/media/${data.client_id}/${data.post.id}`, {
 			method: 'POST',
 			body: formData
 		});
@@ -47,30 +48,26 @@
 	async function savePost() {
 		saving = true;
 		const tags = hashtags.split(' ').map((t: string) => t.trim()).filter((t: string) => t);
-		
-		await fetch(`/api/posts/${data.client_id}/${data.post.filename}`, {
-			method: 'POST',
-			body: JSON.stringify({
+		try {
+			await updatePost(data.client_id, data.post.id, {
 				title,
 				content,
 				hashtags: tags,
-				status,
-				media_type: mediaType
+				status: status as import('$lib/api/posts').PostStatus,
+				media_type: mediaType,
 			})
-		});
-		
-		saving = false;
-		window.location.href = `/${data.client_id}/social`;
+			window.location.href = `/${data.client_id}/social`;
+		} finally {
+			saving = false;
+		}
 	}
 
 	async function deletePost() {
 		if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-			const res = await fetch(`/api/posts/${data.client_id}/${data.post.filename}`, {
-				method: 'DELETE'
-			});
-			if (res.ok) {
+			try {
+				await apiDeletePost(data.client_id, data.post.id)
 				window.location.href = `/${data.client_id}/social`;
-			} else {
+			} catch {
 				alert('Failed to delete post');
 			}
 		}

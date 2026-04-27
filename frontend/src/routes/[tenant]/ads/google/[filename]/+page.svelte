@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import type { PageData } from './$types';
 	import { ArrowLeft, Save, Search, Target, DollarSign, LayoutList } from 'lucide-svelte';
+	import { updateCampaign } from '$lib/api/campaigns';
 
 	let { data } = $props<{ data: PageData }>();
 
@@ -13,17 +14,14 @@
 	async function saveCampaign() {
 		saving = true;
 		saveError = '';
-		const res = await fetch(`/api/ads/google/${data.tenant}/${data.campaign.filename}/status`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ status: campaign.status })
-		});
-		saving = false;
-		if (res.ok) {
+		const slug = (data.campaign.filename as string).replace(/\.json$/, '')
+		try {
+			await updateCampaign(data.tenant, slug, { ...campaign })
 			window.location.href = `/${data.tenant}/ads/google`;
-		} else {
-			const err = await res.json();
-			saveError = err.error || 'Failed to save';
+		} catch {
+			saveError = 'Failed to save';
+		} finally {
+			saving = false;
 		}
 	}
 </script>
