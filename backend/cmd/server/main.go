@@ -19,13 +19,45 @@ import (
 
 	"github.com/rush-maestro/rush-maestro/internal/api"
 	"github.com/rush-maestro/rush-maestro/internal/config"
+	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
 	"github.com/rush-maestro/rush-maestro/internal/domain"
+	mcpserver "github.com/rush-maestro/rush-maestro/internal/mcp"
+	mcpresources "github.com/rush-maestro/rush-maestro/internal/mcp/resources"
+	mcptools "github.com/rush-maestro/rush-maestro/internal/mcp/tools"
 	"github.com/rush-maestro/rush-maestro/internal/middleware"
 	"github.com/rush-maestro/rush-maestro/internal/repository"
+
+	// Register all integration provider schemas.
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/email"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/llm"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/meta"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/monitoring"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/storage"
 )
 
 //go:embed all:ui/dist
 var uiFS embed.FS
+
+func makeAdsFactory(tenantRepo *repository.TenantRepository, integrationRepo *repository.IntegrationRepository) mcptools.AdsClientFactory {
+	return func(ctx context.Context, tenantID string) (*googleads.Client, *domain.Tenant, error) {
+		tenant, err := tenantRepo.GetByID(ctx, tenantID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("tenant %q not found", tenantID)
+		}
+		if tenant.GoogleAdsID == nil || *tenant.GoogleAdsID == "" {
+			return nil, nil, fmt.Errorf("tenant %q has no google_ads_id", tenantID)
+		}
+		integration, err := integrationRepo.GetForTenant(ctx, tenantID, "google_ads")
+		if err != nil {
+			return nil, nil, fmt.Errorf("no connected Google Ads integration for tenant %q", tenantID)
+		}
+		creds := integration.GoogleAdsCredentials()
+		if creds == nil {
+			return nil, nil, fmt.Errorf("Google Ads integration for tenant %q is missing credentials", tenantID)
+		}
+		return googleads.NewClient(*tenant.GoogleAdsID, *creds), tenant, nil
+	}
+}
 
 func main() {
 	_ = godotenv.Load()
@@ -50,15 +82,39 @@ func main() {
 	}
 	slog.Info("database connected")
 
-	userRepo        := repository.NewUserRepository(pool)
-	rbacRepo        := repository.NewRBACRepository(pool)
-	tenantRepo      := repository.NewTenantRepository(pool)
-	postRepo        := repository.NewPostRepository(pool)
-	reportRepo      := repository.NewReportRepository(pool)
-	campaignRepo    := repository.NewCampaignRepository(pool)
-	alertRepo       := repository.NewAlertRepository(pool)
-	agentRunRepo    := repository.NewAgentRunRepository(pool)
+	userRepo           := repository.NewUserRepository(pool)
+	rbacRepo           := repository.NewRBACRepository(pool)
+	tenantRepo         := repository.NewTenantRepository(pool)
+	postRepo           := repository.NewPostRepository(pool)
+	reportRepo         := repository.NewReportRepository(pool)
+	campaignRepo       := repository.NewCampaignRepository(pool)
+	alertRepo          := repository.NewAlertRepository(pool)
+	agentRunRepo       := repository.NewAgentRunRepository(pool)
+	integrationRepo    := repository.NewIntegrationRepository(pool)
+	metricsRepo        := repository.NewMetricsRepository(pool)
 	jwtSvc := domain.NewJWTService(cfg.JWTSecret)
+
+	mcpSrv := mcpserver.NewServer("rush-maestro", "1.0.0")
+	adsFactory := makeAdsFactory(tenantRepo, integrationRepo)
+	mcptools.RegisterContentTools(mcpSrv, mcptools.ContentRepos{
+		Tenants:   tenantRepo,
+		Posts:     postRepo,
+		Reports:   reportRepo,
+		Campaigns: campaignRepo,
+		Alerts:    alertRepo,
+	})
+	mcptools.RegisterAdsTools(mcpSrv, adsFactory)
+	mcptools.RegisterMonitoringTools(mcpSrv, mcptools.MonitoringRepos{
+		Metrics:    metricsRepo,
+		Alerts:     alertRepo,
+		AgentRuns:  agentRunRepo,
+		AdsFactory: adsFactory,
+	})
+	mcpresources.RegisterTenantResources(mcpSrv, mcpresources.TenantResourceRepos{
+		Tenants: tenantRepo,
+		Posts:   postRepo,
+		Reports: reportRepo,
+	})
 
 	r := chi.NewRouter()
 	r.Use(chimw.RealIP)
@@ -70,10 +126,18 @@ func main() {
 
 	r.Post("/setup", api.NewSetupHandler(userRepo, tenantRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction()).Create)
 
-	authHandler := api.NewAuthHandler(
-		userRepo, rbacRepo, jwtSvc,
-		cfg.CookieDomain, cfg.IsProduction(),
-	)
+	authHandler         := api.NewAuthHandler(userRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction())
+	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo)
+	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
+	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo)
+	postsHandler        := api.NewAdminPostsHandler(postRepo)
+	reportsHandler      := api.NewAdminReportsHandler(reportRepo)
+	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
+	alertsHandler       := api.NewAdminAlertsHandler(alertRepo)
+	scheduleHandler     := api.NewAdminScheduleHandler(agentRunRepo)
+	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo)
+	oauthGoogleAds      := api.NewOAuthGoogleAdsHandler(integrationRepo, cfg.BaseURL)
+
 	r.Route("/auth", func(r chi.Router) {
 		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
 		r.Post("/login", authHandler.Login)
@@ -85,16 +149,10 @@ func main() {
 			r.Put("/me", authHandler.UpdateMe)
 			r.Post("/change-password", authHandler.ChangePassword)
 		})
+		// Google Ads OAuth — redirect-based flow, no auth middleware
+		r.Get("/google-ads/start", oauthGoogleAds.Start)
+		r.Get("/google-ads/callback", oauthGoogleAds.Callback)
 	})
-
-	usersHandler     := api.NewAdminUsersHandler(userRepo, rbacRepo)
-	rolesHandler     := api.NewAdminRolesHandler(rbacRepo)
-	tenantsHandler   := api.NewAdminTenantsHandler(tenantRepo, rbacRepo)
-	postsHandler     := api.NewAdminPostsHandler(postRepo)
-	reportsHandler   := api.NewAdminReportsHandler(reportRepo)
-	campaignsHandler := api.NewAdminCampaignsHandler(campaignRepo)
-	alertsHandler    := api.NewAdminAlertsHandler(alertRepo)
-	scheduleHandler  := api.NewAdminScheduleHandler(agentRunRepo)
 
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
@@ -113,6 +171,16 @@ func main() {
 		r.With(middleware.RequirePermission("update:role")).Put("/roles/{id}/permissions", rolesHandler.SetPermissions)
 		r.With(middleware.RequirePermission("delete:role")).Delete("/roles/{id}", rolesHandler.Delete)
 		r.With(middleware.RequirePermission("view:role")).Get("/permissions", rolesHandler.ListPermissions)
+
+		// integrations
+		r.Get("/integrations", integrationsHandler.List)
+		r.Get("/integrations/providers", integrationsHandler.ListProviders)
+		r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations", integrationsHandler.Create)
+		r.Get("/integrations/{id}", integrationsHandler.Get)
+		r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}", integrationsHandler.Update)
+		r.With(middleware.RequirePermission("manage:integrations")).Delete("/integrations/{id}", integrationsHandler.Delete)
+		r.Post("/integrations/{id}/test", integrationsHandler.Test)
+		r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}/tenants", integrationsHandler.SetTenants)
 
 		// tenants
 		r.With(middleware.RequirePermission("view-any:tenant")).Get("/tenants", tenantsHandler.List)
@@ -153,6 +221,13 @@ func main() {
 			// schedule / agent-runs
 			r.Get("/schedule", scheduleHandler.Get)
 		})
+	})
+
+	r.Route("/mcp", func(r chi.Router) {
+		r.Use(api.MCPAuthMiddleware(cfg.MCPAPIKey))
+		r.Post("/", mcpSrv.ServeHTTP)
+		r.Get("/", mcpSrv.ServeHTTP)
+		r.Delete("/", mcpSrv.ServeHTTP)
 	})
 
 	// Serve SvelteKit SPA — fall back to 200.html for client-side routing
