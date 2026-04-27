@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -24,7 +25,7 @@ func numToFloatPtr(n pgtype.Numeric) *float64 {
 
 func floatToNum(f float64) pgtype.Numeric {
 	var n pgtype.Numeric
-	_ = n.Scan(f)
+	_ = n.Scan(strconv.FormatFloat(f, 'f', -1, 64))
 	return n
 }
 
@@ -33,7 +34,7 @@ func floatPtrToNum(f *float64) pgtype.Numeric {
 		return pgtype.Numeric{}
 	}
 	var n pgtype.Numeric
-	_ = n.Scan(*f)
+	_ = n.Scan(strconv.FormatFloat(*f, 'f', -1, 64))
 	return n
 }
 
