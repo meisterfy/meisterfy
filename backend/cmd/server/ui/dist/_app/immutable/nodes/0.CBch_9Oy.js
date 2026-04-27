@@ -1,0 +1,1 @@
+import{F as e,N as t,S as n,Tt as r,tt as i}from"../chunks/DIOmaBGZ.js";import"../chunks/CCi4sbZS.js";var a=e(`<div class="h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col overflow-hidden print:h-auto print:overflow-visible print:block"><!></div>`);function o(e,o){var s=a();n(i(s),()=>o.children),r(s),t(e,s)}export{o as component};

@@ -1,0 +1,1 @@
+import{t as e}from"./DfWqKzjA.js";var t=(t,n)=>e(`/admin/tenants/${t}/reports`,{},n).then(e=>e.data),n=(t,n)=>e(`/admin/tenants/${t}/reports/${n}`).then(e=>e.data);export{t as n,n as t};

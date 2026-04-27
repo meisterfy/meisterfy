@@ -1,0 +1,1 @@
+import{Ot as e}from"../chunks/DIOmaBGZ.js";import"../chunks/CCi4sbZS.js";import{r as t}from"../chunks/Bc7k4SMG.js";var n=e({load:()=>r,ssr:()=>!1}),r=()=>{t(302,`/settings/integrations`)};function i(e){}export{i as component,n as universal};
