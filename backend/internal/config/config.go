@@ -14,6 +14,7 @@ type Config struct {
 	AppEnv           string
 	BaseURL          string
 	MCPAPIKey        string
+	StoragePath      string
 }
 
 func Load() (*Config, error) {
@@ -26,6 +27,7 @@ func Load() (*Config, error) {
 		AppEnv:           getEnv("APP_ENV", "development"),
 		BaseURL:          getEnv("BASE_URL", "http://localhost:8080"),
 		MCPAPIKey:        os.Getenv("MCP_API_KEY"),
+		StoragePath:      getEnv("STORAGE_PATH", "./storage/images"),
 	}
 
 	if cfg.DatabaseURL == "" {
