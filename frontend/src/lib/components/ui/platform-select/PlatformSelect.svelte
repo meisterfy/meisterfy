@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { SiInstagram, SiFacebook } from '@icons-pack/svelte-simple-icons';
 	import { Check, ChevronDown, X } from 'lucide-svelte';
-	import type { PostPlatform } from '$lib/server/db';
-	import { PLATFORM_CONFIG } from '$lib/social';
+	import { PLATFORM_CONFIG, type PostPlatform } from '$lib/social';
 
 	let {
 		value = $bindable<PostPlatform[]>([]),

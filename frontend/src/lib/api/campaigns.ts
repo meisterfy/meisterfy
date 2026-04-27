@@ -25,5 +25,11 @@ export const createCampaign = (tenantId: string, body: { slug: string; data: unk
 export const deleteCampaign = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/campaigns/${id}`, { method: 'DELETE' })
 
+export const updateCampaign = (tenantId: string, slug: string, data: unknown) =>
+	apiFetch<{ data: Campaign }>(`/admin/tenants/${tenantId}/campaigns/${slug}`, {
+		method: 'PUT',
+		body: JSON.stringify({ data }),
+	}).then(r => r.data)
+
 export const deployCampaign = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/campaigns/${id}/deploy`, { method: 'POST' })

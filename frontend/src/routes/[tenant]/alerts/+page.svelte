@@ -2,28 +2,29 @@
 	import { untrack } from 'svelte';
 	import { Bell, CheckCircle, EyeOff, AlertTriangle, AlertOctagon, Clock, Inbox } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import type { AlertEventRow } from '$db/alerts';
+	import type { Alert } from '$lib/api/alerts';
+	import { resolveAlert, ignoreAlert } from '$lib/api/alerts';
 
 	let { data } = $props<{ data: PageData }>();
 
-	let openAlerts = $state<AlertEventRow[]>(untrack(() => data.alerts));
+	let openAlerts = $state<Alert[]>(untrack(() => data.alerts));
 	$effect(() => { openAlerts = data.alerts; });
-	let busy = $state(new Set<number>());
+	let busy = $state(new Set<string>());
 
 	let criticals = $derived(openAlerts.filter(a => a.level === 'CRITICAL'));
 	let warns = $derived(openAlerts.filter(a => a.level === 'WARN'));
 
-	async function dismiss(id: number, action: 'resolved' | 'ignored') {
+	async function dismiss(id: string, action: 'resolved' | 'ignored') {
 		busy = new Set([...busy, id]);
 		try {
-			const res = await fetch(`/api/alerts/${data.tenant}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ id, action }),
-			});
-			if (res.ok) {
-				openAlerts = openAlerts.filter(a => a.id !== id);
+			if (action === 'resolved') {
+				await resolveAlert(data.tenant, id);
+			} else {
+				await ignoreAlert(data.tenant, id);
 			}
+			openAlerts = openAlerts.filter(a => a.id !== id);
+		} catch {
+			// ignore errors — alert stays visible
 		} finally {
 			const next = new Set(busy);
 			next.delete(id);
@@ -37,16 +38,14 @@
 		});
 	}
 
-	function formatCreatedAt(ts: string): string {
-		return new Date(ts).toLocaleString('en-GB', {
-			day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-		});
+	function resolvedLabel(alert: Alert): string {
+		if (alert.resolved_at) return 'Resolved';
+		if (alert.ignored_at) return 'Ignored';
+		return '';
 	}
 
-	function resolvedLabel(resolved: number): string {
-		if (resolved === 1) return 'Resolved';
-		if (resolved === 2) return 'Ignored';
-		return '';
+	function isResolved(alert: Alert): boolean {
+		return !!(alert.resolved_at || alert.ignored_at);
 	}
 
 	function typeLabel(type: string): string {
@@ -113,17 +112,17 @@
 												{typeLabel(alert.type)}
 											</span>
 											<span class="text-xs text-slate-400 dark:text-slate-500 tabular-nums">
-												{formatDate(alert.date)}
+												{formatDate(alert.created_at.slice(0, 10))}
 											</span>
 											<span class="text-xs text-slate-400 dark:text-slate-500 font-mono">
 												cmp. {alert.campaign_id}
 											</span>
 										</div>
 										<p class="text-sm font-semibold text-red-800 dark:text-red-200">{alert.message}</p>
-										{#if alert.action_suggested}
+										{#if (alert.details as any)?.action_suggested}
 											<p class="text-xs text-red-600 dark:text-red-400 mt-1 flex items-start gap-1">
 												<span class="shrink-0 mt-0.5">→</span>
-												<span>{alert.action_suggested}</span>
+												<span>{(alert.details as any).action_suggested}</span>
 											</p>
 										{/if}
 									</div>
@@ -169,17 +168,17 @@
 												{typeLabel(alert.type)}
 											</span>
 											<span class="text-xs text-slate-400 dark:text-slate-500 tabular-nums">
-												{formatDate(alert.date)}
+												{formatDate(alert.created_at.slice(0, 10))}
 											</span>
 											<span class="text-xs text-slate-400 dark:text-slate-500 font-mono">
 												cmp. {alert.campaign_id}
 											</span>
 										</div>
 										<p class="text-sm font-semibold text-amber-800 dark:text-amber-200">{alert.message}</p>
-										{#if alert.action_suggested}
+										{#if (alert.details as any)?.action_suggested}
 											<p class="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-start gap-1">
 												<span class="shrink-0 mt-0.5">→</span>
-												<span>{alert.action_suggested}</span>
+												<span>{(alert.details as any).action_suggested}</span>
 											</p>
 										{/if}
 									</div>
@@ -218,8 +217,8 @@
 				</div>
 				<div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
 					{#each data.history as alert (alert.id)}
-						{@const isOpen = alert.resolved === 0}
-						<div class="flex items-center gap-3 px-4 py-3 {isOpen ? '' : 'opacity-50'}">
+						{@const resolved = isResolved(alert)}
+						<div class="flex items-center gap-3 px-4 py-3 {resolved ? 'opacity-50' : ''}">
 							<!-- Level dot -->
 							<span class="w-2 h-2 rounded-full shrink-0 {alert.level === 'CRITICAL' ? 'bg-red-400' : 'bg-amber-400'}"></span>
 
@@ -233,13 +232,13 @@
 
 							<!-- Date -->
 							<span class="text-xs text-slate-400 dark:text-slate-500 tabular-nums shrink-0">
-								{formatDate(alert.date)}
+								{formatDate(alert.created_at.slice(0, 10))}
 							</span>
 
 							<!-- Status badge -->
-							{#if !isOpen}
-								<span class="text-xs px-2 py-0.5 rounded-full {alert.resolved === 1 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'} shrink-0">
-									{resolvedLabel(alert.resolved)}
+							{#if resolved}
+								<span class="text-xs px-2 py-0.5 rounded-full {alert.resolved_at ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'} shrink-0">
+									{resolvedLabel(alert)}
 								</span>
 							{:else}
 								<span class="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 shrink-0">

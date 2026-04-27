@@ -3,15 +3,23 @@
 	import { untrack } from 'svelte';
 	import { FileEdit, CalendarPlus, Check, Clock, Plus, Pencil, X, ImagePlus, Trash2 } from 'lucide-svelte';
 	import type { PageData } from './$types';
-	import type { PostWithMeta, PostPlatform } from '$lib/server/db';
-	import { PLATFORM_CONFIG as PLATFORM, normPlatforms } from '$lib/social';
+	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social';
+	import { updatePost, updatePostStatus, createPost as apiCreatePost, deletePost as apiDeletePost } from '$lib/api/posts';
+
+	type PostShape = {
+		id: string; status: string; title: string; content: string;
+		hashtags: string[]; media_type?: string | null;
+		platform: PostPlatform | PostPlatform[] | null;
+		client_id: string; filename: string; media_files: string[];
+		workflow: Record<string, unknown>;
+	};
 	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
 	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte';
 	import Drawer from '$lib/components/ui/drawer/Drawer.svelte';
 
 	let { data } = $props<{ data: PageData }>();
 
-	let drafts = $state<PostWithMeta[]>(untrack(() => [...data.drafts]));
+	let drafts = $state<PostShape[]>(untrack(() => [...data.drafts] as PostShape[]));
 
 	const STATUS_BADGE: Record<string, string> = {
 		draft: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
@@ -38,39 +46,33 @@
 		if (!newTitle.trim() || !newContent.trim()) return;
 		isCreating = true;
 		try {
-			const dateStr = new Date().toISOString().slice(0, 10);
-			const slug = newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-			const id = `${dateStr}_${slug || 'post'}`;
 			const tags = newHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
-			const res = await fetch(`/api/posts/${data.tenant}/import`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					workflow: {},
-					result: { id, status: 'draft', title: newTitle, content: newContent, hashtags: tags, media_type: 'image' },
-				}),
+			const newPost = await apiCreatePost(data.tenant, {
+				title: newTitle, content: newContent, hashtags: tags,
+				status: 'draft',
 			});
-			if (res.ok) {
-				const body = await res.json() as { success: boolean; filename: string };
-				const files = newMediaInput?.files;
-				let mediaFiles: string[] = [];
-				if (files && files.length > 0 && body.filename) {
-					const fd = new FormData();
-					for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-					const mr = await fetch(`/api/posts/${data.tenant}/${body.filename}/media`, { method: 'POST', body: fd });
-					if (mr.ok) {
-						const mb = await mr.json() as { media_files: string[] };
-						mediaFiles = mb.media_files ?? [];
-					}
+			const id = newPost.id;
+			const files = newMediaInput?.files;
+			let mediaFiles: string[] = [];
+			if (files && files.length > 0) {
+				const fd = new FormData();
+				for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
+				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
+				if (mr.ok) {
+					const mb = await mr.json() as { media_files: string[] };
+					mediaFiles = mb.media_files ?? [];
 				}
-				drafts = [{
-					id, status: 'draft', title: newTitle, content: newContent,
-					hashtags: tags, platform: [], media_type: 'image',
-					client_id: data.tenant, filename: body.filename,
-					media_files: mediaFiles, workflow: {},
-				}, ...drafts];
-				showCreate = false;
 			}
+			drafts = [{
+				id, status: 'draft',
+				title: newPost.title ?? newTitle,
+				content: newPost.content,
+				hashtags: newPost.hashtags ?? tags,
+				platform: null, media_type: null,
+				client_id: data.tenant, filename: id + '.json',
+				media_files: mediaFiles, workflow: {},
+			}, ...drafts];
+			showCreate = false;
 		} finally { isCreating = false; }
 	}
 
