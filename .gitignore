@@ -38,6 +38,9 @@ package-lock.json
 err*.html
 test-*.ts
 
+# Git worktrees
+.worktrees/
+
 # Editor
 .vscode/
 *.swp
