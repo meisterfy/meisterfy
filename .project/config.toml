@@ -1,11 +1,10 @@
 [project]
-name = "My Project"
-description = "Project description"
+name = "Rush Maestro"
+description = "Local marketing management system with multi-tenant support, AI-assisted content generation, and Ads manager"
 
-# Add team members below (optional — works as solo dev without this)
-# [[team]]
-# id = "alice"
-# name = "Alice Smith"
-# email = "alice@example.com"
-# role = "tech-lead"
-# areas = ["backend", "architecture"]
+[[team]]
+id = "rmarsigli"
+name = "Rafhael Marsigli"
+email = "rmarsigli@gmail.com"
+role = "lead-engineer"
+areas = ["backend", "frontend", "architecture", "ai"]
