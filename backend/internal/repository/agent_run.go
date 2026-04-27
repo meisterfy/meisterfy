@@ -6,6 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/rush-maestro/rush-maestro/internal/domain"
 )
 
 type AgentRun struct {
@@ -53,6 +55,22 @@ func (r *AgentRunRepository) ListRecent(ctx context.Context, tenantID string, li
 		runs = append(runs, run)
 	}
 	return runs, rows.Err()
+}
+
+// Log inserts a completed agent run record in a single statement.
+func (r *AgentRunRepository) Log(ctx context.Context, tenantID, agent, status, summary string) error {
+	now := time.Now()
+	id := domain.NewID()
+	var tenantIDPtr *string
+	if tenantID != "" {
+		tenantIDPtr = &tenantID
+	}
+	_, err := r.pool.Exec(ctx,
+		`INSERT INTO agent_runs (id, tenant_id, agent, status, started_at, finished_at, summary)
+		 VALUES ($1, $2, $3, $4, $5, $5, $6)`,
+		id, tenantIDPtr, agent, status, now, summary,
+	)
+	return err
 }
 
 func (r *AgentRunRepository) GetLast(ctx context.Context, tenantID, agent string) (*AgentRun, error) {
