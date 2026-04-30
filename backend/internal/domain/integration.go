@@ -13,6 +13,7 @@ const (
 	ProviderOpenAI    IntegrationProvider = "openai"
 	ProviderGroq      IntegrationProvider = "groq"
 	ProviderGemini    IntegrationProvider = "gemini"
+	ProviderKimi      IntegrationProvider = "kimi"
 	ProviderBrevo     IntegrationProvider = "brevo"
 	ProviderSendible  IntegrationProvider = "sendible"
 	ProviderSentry    IntegrationProvider = "sentry"
@@ -77,6 +78,14 @@ type GoogleAdsCreds struct {
 	DeveloperToken  string
 	LoginCustomerID string
 	RefreshToken    string
+}
+
+// LLMCredentials returns the API key for an LLM integration.
+func (i *Integration) LLMCredentials() *string {
+	if i.Group != GroupLLM || i.Status != StatusConnected {
+		return nil
+	}
+	return i.OAuthClientSecret
 }
 
 func derefStr(s *string) string {
