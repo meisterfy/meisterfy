@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -68,8 +69,30 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize Sentry if DSN is configured.
+	if cfg.SentryDSN != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.AppEnv,
+			Release:          "rush-maestro@1.0.0",
+			TracesSampleRate: 0.2,
+		})
+		if err != nil {
+			slog.Error("sentry init error", "err", err)
+		} else {
+			slog.Info("sentry initialized")
+			defer sentry.Flush(2 * time.Second)
+		}
+	}
+
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	poolCfg, err := pgxpool.ParseConfig(cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("db config parse error", "err", err)
+		os.Exit(1)
+	}
+	poolCfg.ConnConfig.Tracer = &middleware.QueryCounter{}
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		slog.Error("db connect error", "err", err)
 		os.Exit(1)
@@ -118,9 +141,12 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Use(chimw.RealIP)
+	r.Use(middleware.SentryHubMiddleware)
+	r.Use(middleware.SentryRecovery)
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.Timeout(30 * time.Second))
 	r.Use(middleware.RequestLogger)
+	r.Use(middleware.NPlus1Detector)
 
 	r.Get("/health", api.NewHealthHandler(userRepo).Handle)
 

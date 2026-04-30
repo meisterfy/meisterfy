@@ -15,6 +15,7 @@ type Config struct {
 	BaseURL          string
 	MCPAPIKey        string
 	StoragePath      string
+	SentryDSN        string
 }
 
 func Load() (*Config, error) {
@@ -28,6 +29,7 @@ func Load() (*Config, error) {
 		BaseURL:          getEnv("BASE_URL", "http://localhost:8080"),
 		MCPAPIKey:        os.Getenv("MCP_API_KEY"),
 		StoragePath:      getEnv("STORAGE_PATH", "./storage/images"),
+		SentryDSN:        os.Getenv("SENTRY_DSN"),
 	}
 
 	if cfg.DatabaseURL == "" {
