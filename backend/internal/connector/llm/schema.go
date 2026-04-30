@@ -50,9 +50,22 @@ func init() {
 			{Key: "oauth_client_secret", Label: "API Key", Type: connector.FieldTypePassword, Required: true},
 		},
 	})
+
+	connector.RegisterProvider(&connector.IntegrationSchema{
+		Provider:    domain.ProviderKimi,
+		Group:       domain.GroupLLM,
+		DisplayName: "Kimi (Moonshot)",
+		Description: "Generate content using Moonshot's Kimi models.",
+		LogoSVG:     kimiLogoSVG,
+		CredentialFields: []connector.FieldSchema{
+			{Key: "oauth_client_secret", Label: "API Key", Type: connector.FieldTypePassword, Required: true,
+				HelpText: "Found at platform.moonshot.cn → API Keys."},
+		},
+	})
 }
 
 const claudeLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#D97706"/><text x="24" y="33" font-size="16" font-weight="bold" text-anchor="middle" fill="white">AI</text></svg>`
 const openaiLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#10A37F"/><text x="24" y="33" font-size="16" font-weight="bold" text-anchor="middle" fill="white">AI</text></svg>`
 const groqLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#F55036"/><text x="24" y="33" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Groq</text></svg>`
 const geminiLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#4285F4"/><text x="24" y="33" font-size="12" font-weight="bold" text-anchor="middle" fill="white">Gemini</text></svg>`
+const kimiLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#8E44AD"/><text x="24" y="33" font-size="12" font-weight="bold" text-anchor="middle" fill="white">Kimi</text></svg>`
