@@ -8,7 +8,7 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
 		proxy: {
-			'^/(admin|auth|setup|health|mcp)': 'http://localhost:8181',
+			'^/(admin|auth|setup|health|mcp|ai)': 'http://localhost:8181',
 		}
 	},
 	resolve: {
