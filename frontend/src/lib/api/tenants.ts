@@ -18,7 +18,6 @@ export interface Tenant {
 	tone: string | null
 	instructions: string | null
 	hashtags: string[]
-	google_ads_id: string | null
 	ads_monitoring: AdsMonitoringConfig | null
 	created_at: string
 	updated_at: string
