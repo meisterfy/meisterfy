@@ -50,7 +50,6 @@ type tenantResponse struct {
 	Tone           *string                     `json:"tone"`
 	Instructions   *string                     `json:"instructions"`
 	Hashtags       []string                    `json:"hashtags"`
-	GoogleAdsID    *string                     `json:"google_ads_id"`
 	AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
 	CreatedAt      time.Time                   `json:"created_at"`
 	UpdatedAt      time.Time                   `json:"updated_at"`
@@ -71,7 +70,6 @@ func toTenantResponse(t *domain.Tenant) tenantResponse {
 		Tone:           t.Tone,
 		Instructions:   t.Instructions,
 		Hashtags:       hashtags,
-		GoogleAdsID:    t.GoogleAdsID,
 		AdsMonitoring:  t.AdsMonitoring,
 		CreatedAt:      t.CreatedAt,
 		UpdatedAt:      t.UpdatedAt,
@@ -108,17 +106,16 @@ func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.UserClaimsFromContext(r.Context())
 
 	var req struct {
-		ID           string                      `json:"id"`
-		Name         string                      `json:"name"`
-		Language     string                      `json:"language"`
-		Niche        *string                     `json:"niche"`
-		Location     *string                     `json:"location"`
-		PrimaryPersona *string                   `json:"primary_persona"`
-		Tone         *string                     `json:"tone"`
-		Instructions *string                     `json:"instructions"`
-		Hashtags     []string                    `json:"hashtags"`
-		GoogleAdsID  *string                     `json:"google_ads_id"`
-		AdsMonitoring *domain.AdsMonitoringConfig `json:"ads_monitoring"`
+		ID             string                      `json:"id"`
+		Name           string                      `json:"name"`
+		Language       string                      `json:"language"`
+		Niche          *string                     `json:"niche"`
+		Location       *string                     `json:"location"`
+		PrimaryPersona *string                     `json:"primary_persona"`
+		Tone           *string                     `json:"tone"`
+		Instructions   *string                     `json:"instructions"`
+		Hashtags       []string                    `json:"hashtags"`
+		AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		UnprocessableEntity(w, "invalid request body")
@@ -142,7 +139,6 @@ func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Tone:           req.Tone,
 		Instructions:   req.Instructions,
 		Hashtags:       req.Hashtags,
-		GoogleAdsID:    req.GoogleAdsID,
 		AdsMonitoring:  req.AdsMonitoring,
 	}
 	if err := h.tenantRepo.Create(r.Context(), t); err != nil {
@@ -179,15 +175,14 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Name          *string                     `json:"name"`
-		Language      *string                     `json:"language"`
-		Niche         *string                     `json:"niche"`
-		Location      *string                     `json:"location"`
-		PrimaryPersona *string                    `json:"primary_persona"`
-		Tone          *string                     `json:"tone"`
-		Instructions  *string                     `json:"instructions"`
-		Hashtags      []string                    `json:"hashtags"`
-		GoogleAdsID   *string                     `json:"google_ads_id"`
-		AdsMonitoring *domain.AdsMonitoringConfig `json:"ads_monitoring"`
+		Language       *string                     `json:"language"`
+		Niche          *string                     `json:"niche"`
+		Location       *string                     `json:"location"`
+		PrimaryPersona *string                     `json:"primary_persona"`
+		Tone           *string                     `json:"tone"`
+		Instructions   *string                     `json:"instructions"`
+		Hashtags       []string                    `json:"hashtags"`
+		AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		UnprocessableEntity(w, "invalid request body")
@@ -217,9 +212,6 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Hashtags != nil {
 		t.Hashtags = req.Hashtags
-	}
-	if req.GoogleAdsID != nil {
-		t.GoogleAdsID = req.GoogleAdsID
 	}
 	if req.AdsMonitoring != nil {
 		t.AdsMonitoring = req.AdsMonitoring

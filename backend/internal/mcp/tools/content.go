@@ -109,8 +109,7 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				"location":      map[string]any{"type": "string"},
 				"tone":          map[string]any{"type": "string"},
 				"instructions":  map[string]any{"type": "string"},
-				"hashtags":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
-				"google_ads_id": map[string]any{"type": "string"},
+				"hashtags":     map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 			},
 			"required": []string{"id", "name"},
 		},
@@ -124,7 +123,6 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Tone         *string  `json:"tone"`
 				Instructions *string  `json:"instructions"`
 				Hashtags     []string `json:"hashtags"`
-				GoogleAdsID  *string  `json:"google_ads_id"`
 			}
 			json.Unmarshal(args, &p)
 			if p.Language == "" {
@@ -139,7 +137,6 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Tone:         p.Tone,
 				Instructions: p.Instructions,
 				Hashtags:     p.Hashtags,
-				GoogleAdsID:  p.GoogleAdsID,
 			}
 			if err := repos.Tenants.Create(ctx, t); err != nil {
 				return mcp.ErrResult(err.Error())
@@ -160,8 +157,7 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				"location":      map[string]any{"type": "string"},
 				"tone":          map[string]any{"type": "string"},
 				"instructions":  map[string]any{"type": "string"},
-				"hashtags":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
-				"google_ads_id": map[string]any{"type": "string"},
+				"hashtags":     map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 			},
 			"required": []string{"id"},
 		},
@@ -175,7 +171,6 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Tone         *string  `json:"tone"`
 				Instructions *string  `json:"instructions"`
 				Hashtags     []string `json:"hashtags"`
-				GoogleAdsID  *string  `json:"google_ads_id"`
 			}
 			json.Unmarshal(args, &p)
 			t, err := repos.Tenants.GetByID(ctx, p.ID)
@@ -202,9 +197,6 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			}
 			if p.Hashtags != nil {
 				t.Hashtags = p.Hashtags
-			}
-			if p.GoogleAdsID != nil {
-				t.GoogleAdsID = p.GoogleAdsID
 			}
 			if err := repos.Tenants.Update(ctx, t); err != nil {
 				return mcp.ErrResult(err.Error())
