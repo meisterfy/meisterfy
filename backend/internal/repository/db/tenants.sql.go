@@ -12,8 +12,8 @@ import (
 
 const createTenant = `-- name: CreateTenant :exec
 INSERT INTO tenants (id, name, language, niche, location, primary_persona, tone,
-    instructions, hashtags, google_ads_id, ads_monitoring)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    instructions, hashtags, ads_monitoring)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateTenantParams struct {
@@ -26,7 +26,6 @@ type CreateTenantParams struct {
 	Tone           *string         `json:"tone"`
 	Instructions   *string         `json:"instructions"`
 	Hashtags       json.RawMessage `json:"hashtags"`
-	GoogleAdsID    *string         `json:"google_ads_id"`
 	AdsMonitoring  []byte          `json:"ads_monitoring"`
 }
 
@@ -41,7 +40,6 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) erro
 		arg.Tone,
 		arg.Instructions,
 		arg.Hashtags,
-		arg.GoogleAdsID,
 		arg.AdsMonitoring,
 	)
 	return err
@@ -57,7 +55,7 @@ func (q *Queries) DeleteTenant(ctx context.Context, id string) error {
 }
 
 const getTenantByID = `-- name: GetTenantByID :one
-SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, google_ads_id, ads_monitoring, created_at, updated_at FROM tenants WHERE id = $1 LIMIT 1
+SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at FROM tenants WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetTenantByID(ctx context.Context, id string) (Tenant, error) {
@@ -73,7 +71,6 @@ func (q *Queries) GetTenantByID(ctx context.Context, id string) (Tenant, error) 
 		&i.Tone,
 		&i.Instructions,
 		&i.Hashtags,
-		&i.GoogleAdsID,
 		&i.AdsMonitoring,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -82,7 +79,7 @@ func (q *Queries) GetTenantByID(ctx context.Context, id string) (Tenant, error) 
 }
 
 const listTenants = `-- name: ListTenants :many
-SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, google_ads_id, ads_monitoring, created_at, updated_at FROM tenants ORDER BY name
+SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at FROM tenants ORDER BY name
 `
 
 func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
@@ -104,7 +101,6 @@ func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
 			&i.Tone,
 			&i.Instructions,
 			&i.Hashtags,
-			&i.GoogleAdsID,
 			&i.AdsMonitoring,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -123,7 +119,7 @@ const updateTenant = `-- name: UpdateTenant :exec
 UPDATE tenants
 SET name = $2, language = $3, niche = $4, location = $5,
     primary_persona = $6, tone = $7, instructions = $8,
-    hashtags = $9, google_ads_id = $10, ads_monitoring = $11,
+    hashtags = $9, ads_monitoring = $10,
     updated_at = NOW()
 WHERE id = $1
 `
@@ -138,7 +134,6 @@ type UpdateTenantParams struct {
 	Tone           *string         `json:"tone"`
 	Instructions   *string         `json:"instructions"`
 	Hashtags       json.RawMessage `json:"hashtags"`
-	GoogleAdsID    *string         `json:"google_ads_id"`
 	AdsMonitoring  []byte          `json:"ads_monitoring"`
 }
 
@@ -153,7 +148,6 @@ func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) erro
 		arg.Tone,
 		arg.Instructions,
 		arg.Hashtags,
-		arg.GoogleAdsID,
 		arg.AdsMonitoring,
 	)
 	return err

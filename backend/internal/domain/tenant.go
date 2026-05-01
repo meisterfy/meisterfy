@@ -23,7 +23,6 @@ type Tenant struct {
 	Tone           *string
 	Instructions   *string
 	Hashtags       []string
-	GoogleAdsID    *string
 	AdsMonitoring  *AdsMonitoringConfig
 	CreatedAt      time.Time
 	UpdatedAt      time.Time

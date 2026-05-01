@@ -55,7 +55,6 @@ func (r *TenantRepository) Create(ctx context.Context, t *domain.Tenant) error {
 		Tone:           t.Tone,
 		Instructions:   t.Instructions,
 		Hashtags:       hashJSON,
-		GoogleAdsID:    t.GoogleAdsID,
 		AdsMonitoring:  adsJSON,
 	}))
 }
@@ -73,7 +72,6 @@ func (r *TenantRepository) Update(ctx context.Context, t *domain.Tenant) error {
 		Tone:           t.Tone,
 		Instructions:   t.Instructions,
 		Hashtags:       hashJSON,
-		GoogleAdsID:    t.GoogleAdsID,
 		AdsMonitoring:  adsJSON,
 	}))
 }
@@ -104,7 +102,6 @@ func mapTenant(row db.Tenant) (*domain.Tenant, error) {
 		Tone:           row.Tone,
 		Instructions:   row.Instructions,
 		Hashtags:       hashtags,
-		GoogleAdsID:    row.GoogleAdsID,
 		AdsMonitoring:  adsCfg,
 		CreatedAt:      row.CreatedAt,
 		UpdatedAt:      row.UpdatedAt,
