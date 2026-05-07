@@ -43,6 +43,10 @@ test/frontend:
 lint:
 	cd backend && golangci-lint run ./...
 	cd frontend && bun run lint
+lint/frontend: 
+	cd frontend && bun run lint
+lint/backend: 
+	cd backend && golangci-lint run ./...
 
 sqlc:
 	cd backend && sqlc generate

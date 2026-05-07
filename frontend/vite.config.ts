@@ -1,23 +1,23 @@
-import { defineConfig } from 'vitest/config';
-import { playwright } from '@vitest/browser-playwright';
-import tailwindcss from '@tailwindcss/vite';
-import { sveltekit } from '@sveltejs/kit/vite';
-import path from 'node:path';
+import { defineConfig } from 'vitest/config'
+import { playwright } from '@vitest/browser-playwright'
+import tailwindcss from '@tailwindcss/vite'
+import { sveltekit } from '@sveltejs/kit/vite'
+import path from 'node:path'
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	server: {
 		proxy: {
-			'^/(admin|auth|setup|health|mcp|ai)': 'http://localhost:8181',
+			'^/(admin|auth|setup|health|mcp|ai)': 'http://localhost:8181'
 		}
 	},
 	resolve: {
 		alias: {
-			'@': path.resolve('./src'),
+			'@': path.resolve('./src')
 		}
 	},
 	optimizeDeps: {
-		include: ['marked'],
+		include: ['marked']
 	},
 	test: {
 		expect: { requireAssertions: true },
@@ -46,4 +46,4 @@ export default defineConfig({
 			}
 		]
 	}
-});
+})

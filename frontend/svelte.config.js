@@ -1,5 +1,5 @@
-import adapter from '@sveltejs/adapter-static';
-import path from 'node:path';
+import adapter from '@sveltejs/adapter-static'
+import path from 'node:path'
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -11,12 +11,12 @@ const config = {
 			pages: '../backend/cmd/server/ui/dist',
 			assets: '../backend/cmd/server/ui/dist',
 			fallback: '200.html',
-			precompress: false,
+			precompress: false
 		}),
 		alias: {
-			'@': path.resolve('./src'),
+			'@': path.resolve('./src')
 		}
 	}
-};
+}
 
-export default config;
+export default config
