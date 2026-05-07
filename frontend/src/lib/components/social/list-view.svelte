@@ -1,3 +1,4 @@
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <script lang="ts">
 	import { FileEdit, CheckCircle, Trash2, Send, Image as ImageIcon } from 'lucide-svelte'
 
