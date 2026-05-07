@@ -2,7 +2,6 @@ import { getTenant } from '$lib/api/tenants'
 import { error } from '@sveltejs/kit'
 import type { PageLoad } from './$types'
 
-export const ssr = false
 
 export const load: PageLoad = async ({ params, fetch }) => {
 	const tenant = await getTenant(params.tenant, fetch).catch(() => null)

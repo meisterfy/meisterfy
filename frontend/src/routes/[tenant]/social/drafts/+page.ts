@@ -2,7 +2,6 @@ import { getPosts } from '$lib/api/posts'
 import { getConnectorResources } from '$lib/api/connector_resources'
 import type { PageLoad } from './$types'
 
-export const ssr = false
 
 export const load: PageLoad = async ({ params, fetch }) => {
 	const [all, metaAccounts] = await Promise.all([

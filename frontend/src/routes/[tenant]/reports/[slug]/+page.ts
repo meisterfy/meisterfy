@@ -5,7 +5,6 @@ import type { PageLoad } from './$types'
 
 marked.setOptions({ gfm: true })
 
-export const ssr = false
 
 export const load: PageLoad = async ({ params }) => {
 	const report = await getReport(params.tenant, params.slug).catch(() => null)
