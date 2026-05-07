@@ -8,6 +8,8 @@
 
 - **Backend:** Go (chi router, pgx/v5, goose migrations) - `backend/`
 - **Frontend:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `adapter-static` - `frontend/`
+  - Svelte, JS and TS files must be `kebab-case`
+  - Typescript (either in `.ts` files or `<script lang="ts">` blocks) must use single quotes and not end lines with semicolons
 - **Database:** PostgreSQL via pgx at `rush_maestro`. PostgreSQL is the source of truth for all content.
 - **MCP:** Streamable HTTP. Exposes two services, **AIPIM** (Project Manager at `http://localhost:3141/mcp`) and **Rush Maestro** (the Plataform at `http://localhost:5173/mcp`).
 - **Credentials:** Google Ads OAuth and other connections are stored in the `integrations` table (not `.env`). Client IDs, campaign IDs and tracking tags **never** go in committed files.
@@ -24,8 +26,7 @@ All agents can interact with this system exclusively through MCP tools. There ar
 
 ## Language Rules
 
-- **Files:** All files in `.project/` (tasks, ADRs, notes), code comments, and commit messages MUST be written in **English**. This ensures any agent can read them without ambiguity.
-- **Chat:** All conversational responses to the user MUST be in **Portuguese**.
+- **Files:** All files in `.project/` (tasks, ADRs, notes), code comments, and commit messages MUST be written in **English**.
 {{/SLOT:guidelines}}
 
 ## Directory Structure
