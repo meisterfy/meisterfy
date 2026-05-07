@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PostCard from './PostCard.svelte'
+	import PostCard from './post-card.svelte'
 	import { FileEdit, CheckCircle } from 'lucide-svelte'
 
 	let { posts, clientId, onUpdateStatus, onDelete, onUpload } = $props<{
