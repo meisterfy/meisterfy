@@ -18,6 +18,7 @@
 		X,
 		Loader2
 	} from 'lucide-svelte'
+	import Skeleton from '$lib/components/ui/skeleton.svelte'
 	import { createCampaign, deployCampaign as apiDeployCampaign } from '$lib/api/campaigns'
 
 	let { data } = $props<{ data: PageData }>()
@@ -143,17 +144,34 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-					{#await data.streamed.liveCampaigns}
-						<tr>
-							<td colspan="5" class="px-6 py-8 text-center text-slate-500">
-								<div class="flex items-center justify-center gap-2">
-									<Activity class="h-4 w-4 animate-spin text-indigo-500" />
-									Loading live campaigns from Google Ads...
-								</div>
-							</td>
-						</tr>
-					{:then liveCampaigns}
-						{#if data.campaigns.length === 0 && liveCampaigns.length === 0}
+					{#await Promise.all([data.campaigns, data.streamed.liveCampaigns])}
+						{#each Array(5) as _}
+							<tr class="animate-pulse">
+								<td class="px-6 py-4">
+									<div class="flex items-center gap-3">
+										<Skeleton class="h-8 w-8 rounded-full" />
+										<div class="space-y-2">
+											<Skeleton class="h-4 w-32" />
+											<Skeleton class="h-3 w-20" />
+										</div>
+									</div>
+								</td>
+								<td class="px-6 py-4">
+									<Skeleton class="h-6 w-20 rounded-full" />
+								</td>
+								<td class="px-6 py-4">
+									<Skeleton class="h-4 w-16" />
+								</td>
+								<td class="px-6 py-4">
+									<Skeleton class="h-4 w-32" />
+								</td>
+								<td class="px-6 py-4 text-right">
+									<Skeleton class="ml-auto h-8 w-8 rounded" />
+								</td>
+							</tr>
+						{/each}
+					{:then [localCampaigns, liveCampaigns]}
+						{#if localCampaigns.length === 0 && liveCampaigns.length === 0}
 							<tr>
 								<td colspan="5" class="px-6 py-8 text-center text-slate-500">
 									No campaigns found. <button class="font-medium text-indigo-600 hover:underline"
@@ -235,6 +253,94 @@
 								</td>
 							</tr>
 						{/each}
+
+						{#each localCampaigns as campaign (campaign.id)}
+							<tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+								<td class="px-6 py-4">
+									<div class="flex items-center gap-3">
+										<div
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30"
+										>
+											<Search class="h-4 w-4" />
+										</div>
+										<div>
+											<a
+												href="/{data.tenant}/ads/google/{campaign.filename}"
+												class="block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white"
+											>
+												{campaign.id}
+											</a>
+											<span class="text-xs text-slate-500">{campaign.objective}</span>
+										</div>
+									</div>
+								</td>
+								<td class="px-6 py-4">
+									{#if campaign.status === 'draft'}
+										<span
+											class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-400"
+										>
+											<AlertCircle class="h-3.5 w-3.5" /> Draft
+										</span>
+									{:else if campaign.status === 'approved'}
+										<span
+											class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400"
+										>
+											<CheckCircle class="h-3.5 w-3.5" /> Approved
+										</span>
+									{:else}
+										<span
+											class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-400"
+										>
+											<Activity class="h-3.5 w-3.5" /> Local Status: {campaign.status}
+										</span>
+									{/if}
+								</td>
+								<td class="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">
+									{campaign.budget_suggestion}
+								</td>
+								<td class="px-6 py-4">
+									<div class="flex items-center gap-2">
+										<Target class="h-4 w-4 text-slate-400" />
+										<span class="font-medium text-slate-700 dark:text-slate-300"
+											>{campaign.ad_groups?.length || 0} Ad Groups</span
+										>
+									</div>
+								</td>
+								<td class="px-6 py-4 text-right">
+									<div
+										class="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100"
+									>
+										{#if campaign.status === 'approved'}
+											<button
+												onclick={() => deployCampaign(campaign.filename)}
+												disabled={deployingFilename === campaign.filename}
+												class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-emerald-900/30"
+												title="Deploy to Google Ads"
+											>
+												{#if deployingFilename === campaign.filename}
+													<Loader2 class="h-4 w-4 animate-spin" />
+												{:else}
+													<Send class="h-4 w-4" />
+												{/if}
+											</button>
+										{/if}
+										<a
+											href="/{data.tenant}/ads/google/{campaign.filename}"
+											class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
+											title="Edit"
+										>
+											<FileEdit class="h-4 w-4" />
+										</a>
+										<button
+											class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-red-900/30"
+											title="Delete"
+										>
+											<Trash2 class="h-4 w-4" />
+										</button>
+									</div>
+								</td>
+							</tr>
+						{/each}
 					{:catch apiError}
 						<tr>
 							<td colspan="5" class="px-6 py-8 text-center">
@@ -269,94 +375,6 @@
 							</td>
 						</tr>
 					{/await}
-
-					{#each data.campaigns as campaign (campaign.id)}
-						<tr class="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
-							<td class="px-6 py-4">
-								<div class="flex items-center gap-3">
-									<div
-										class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30"
-									>
-										<Search class="h-4 w-4" />
-									</div>
-									<div>
-										<a
-											href="/{data.tenant}/ads/google/{campaign.filename}"
-											class="block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white"
-										>
-											{campaign.id}
-										</a>
-										<span class="text-xs text-slate-500">{campaign.objective}</span>
-									</div>
-								</div>
-							</td>
-							<td class="px-6 py-4">
-								{#if campaign.status === 'draft'}
-									<span
-										class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-400"
-									>
-										<AlertCircle class="h-3.5 w-3.5" /> Draft
-									</span>
-								{:else if campaign.status === 'approved'}
-									<span
-										class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-emerald-400"
-									>
-										<CheckCircle class="h-3.5 w-3.5" /> Approved
-									</span>
-								{:else}
-									<span
-										class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-400"
-									>
-										<Activity class="h-3.5 w-3.5" /> Local Status: {campaign.status}
-									</span>
-								{/if}
-							</td>
-							<td class="px-6 py-4 font-medium text-slate-600 dark:text-slate-300">
-								{campaign.budget_suggestion}
-							</td>
-							<td class="px-6 py-4">
-								<div class="flex items-center gap-2">
-									<Target class="h-4 w-4 text-slate-400" />
-									<span class="font-medium text-slate-700 dark:text-slate-300"
-										>{campaign.ad_groups?.length || 0} Ad Groups</span
-									>
-								</div>
-							</td>
-							<td class="px-6 py-4 text-right">
-								<div
-									class="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100"
-								>
-									{#if campaign.status === 'approved'}
-										<button
-											onclick={() => deployCampaign(campaign.filename)}
-											disabled={deployingFilename === campaign.filename}
-											class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-emerald-900/30"
-											title="Deploy to Google Ads"
-										>
-											{#if deployingFilename === campaign.filename}
-												<Loader2 class="h-4 w-4 animate-spin" />
-											{:else}
-												<Send class="h-4 w-4" />
-											{/if}
-										</button>
-									{/if}
-									<a
-										href="/{data.tenant}/ads/google/{campaign.filename}"
-										class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
-										title="Edit"
-									>
-										<FileEdit class="h-4 w-4" />
-									</a>
-									<button
-										class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-red-900/30"
-										title="Delete"
-									>
-										<Trash2 class="h-4 w-4" />
-									</button>
-								</div>
-							</td>
-						</tr>
-					{/each}
 				</tbody>
 			</table>
 		</div>
@@ -386,11 +404,11 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+		class="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
 	>
 		<div class="absolute inset-0" onclick={() => (isImportModalOpen = false)}></div>
 		<div
-			class="relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+			class="relative z-100 flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
 		>
 			<div
 				class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
