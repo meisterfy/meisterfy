@@ -9,7 +9,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	const id = params.filename.replace(/\.json$/, '')
 	const [post, brand] = await Promise.all([
 		getPost(params.tenant, id).catch(() => null),
-		getTenant(params.tenant, fetch).catch(() => null),
+		getTenant(params.tenant, fetch).catch(() => null)
 	])
 
 	if (!post) {
@@ -23,7 +23,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 			...post,
 			client_id: post.tenant_id,
 			filename: post.id + '.json',
-			media_files: post.media_path ? [post.media_path] : [],
-		},
+			media_files: post.media_path ? [post.media_path] : []
+		}
 	}
 }

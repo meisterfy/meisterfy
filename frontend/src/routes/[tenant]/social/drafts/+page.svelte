@@ -1,263 +1,331 @@
 <script lang="ts">
-	import { SiInstagram, SiFacebook } from '@icons-pack/svelte-simple-icons';
-	import { untrack } from 'svelte';
-	import { FileEdit, CalendarPlus, Check, Clock, Plus, Pencil, X, ImagePlus, Trash2, Send, AlertCircle } from 'lucide-svelte';
-	import type { PageData } from './$types';
-	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social';
-	import { updatePost, updatePostStatus, createPost as apiCreatePost, deletePost as apiDeletePost } from '$lib/api/posts';
-	import { publishToMeta, type ConnectorResource } from '$lib/api/connector_resources';
+	import ProviderIcon from '$lib/components/ui/ProviderIcon.svelte'
+	import { untrack } from 'svelte'
+	import {
+		FileEdit,
+		CalendarPlus,
+		Check,
+		Clock,
+		Plus,
+		Pencil,
+		X,
+		ImagePlus,
+		Trash2,
+		Send,
+		AlertCircle
+	} from 'lucide-svelte'
+	import type { PageData } from './$types'
+	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social'
+	import {
+		updatePost,
+		updatePostStatus,
+		createPost as apiCreatePost,
+		deletePost as apiDeletePost
+	} from '$lib/api/posts'
+	import { publishToMeta, type ConnectorResource } from '$lib/api/connector_resources'
 
 	type PostShape = {
-		id: string; status: string; title: string; content: string;
-		hashtags: string[]; media_type?: string | null;
-		platform: PostPlatform | PostPlatform[] | null;
-		client_id: string; filename: string; media_files: string[];
-		workflow: Record<string, unknown>;
-	};
-	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte';
-	import Drawer from '$lib/components/ui/drawer/Drawer.svelte';
+		id: string
+		status: string
+		title: string
+		content: string
+		hashtags: string[]
+		media_type?: string | null
+		platform: PostPlatform | PostPlatform[] | null
+		client_id: string
+		filename: string
+		media_files: string[]
+		workflow: Record<string, unknown>
+	}
+	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte'
+	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte'
+	import Drawer from '$lib/components/ui/drawer/Drawer.svelte'
 
-	let { data } = $props<{ data: PageData }>();
+	let { data } = $props<{ data: PageData }>()
 
-	let drafts = $state<PostShape[]>(untrack(() => [...data.drafts] as PostShape[]));
-	let metaAccounts = $state<ConnectorResource[]>(untrack(() => data.metaAccounts ?? []));
+	let drafts = $state<PostShape[]>(untrack(() => [...data.drafts] as PostShape[]))
+	let metaAccounts = $state<ConnectorResource[]>(untrack(() => data.metaAccounts ?? []))
 
-	$effect(() => { metaAccounts = data.metaAccounts ?? []; });
+	$effect(() => {
+		metaAccounts = data.metaAccounts ?? []
+	})
 
 	const STATUS_BADGE: Record<string, string> = {
 		draft: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-		approved: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
-	};
+		approved: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+	}
 
-	const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500';
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5';
+	const inputCls =
+		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
 
 	// ── Create drawer ─────────────────────────────────────────────────────────
-	let showCreate = $state(false);
-	let newTitle = $state('');
-	let newContent = $state('');
-	let newHashtags = $state('');
-	let newMediaInput = $state<HTMLInputElement | null>(null);
-	let isCreating = $state(false);
+	let showCreate = $state(false)
+	let newTitle = $state('')
+	let newContent = $state('')
+	let newHashtags = $state('')
+	let newMediaInput = $state<HTMLInputElement | null>(null)
+	let isCreating = $state(false)
 
 	function openCreate() {
-		newTitle = ''; newContent = ''; newHashtags = '';
-		showCreate = true;
+		newTitle = ''
+		newContent = ''
+		newHashtags = ''
+		showCreate = true
 	}
 
 	async function createDraft() {
-		if (!newTitle.trim() || !newContent.trim()) return;
-		isCreating = true;
+		if (!newTitle.trim() || !newContent.trim()) return
+		isCreating = true
 		try {
-			const tags = newHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
+			const tags = newHashtags
+				.split(/\s+/)
+				.map((t) => t.trim())
+				.filter(Boolean)
 			const newPost = await apiCreatePost(data.tenant, {
-				title: newTitle, content: newContent, hashtags: tags,
-				status: 'draft',
-			});
-			const id = newPost.id;
-			const files = newMediaInput?.files;
-			let mediaFiles: string[] = [];
+				title: newTitle,
+				content: newContent,
+				hashtags: tags,
+				status: 'draft'
+			})
+			const id = newPost.id
+			const files = newMediaInput?.files
+			let mediaFiles: string[] = []
 			if (files && files.length > 0) {
-				const fd = new FormData();
-				for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
+				const fd = new FormData()
+				for (let i = 0; i < files.length; i++) fd.append('file', files[i])
+				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd })
 				if (mr.ok) {
-					const mb = await mr.json() as { media_files: string[] };
-					mediaFiles = mb.media_files ?? [];
+					const mb = (await mr.json()) as { media_files: string[] }
+					mediaFiles = mb.media_files ?? []
 				}
 			}
-			drafts = [{
-				id, status: 'draft',
-				title: newPost.title ?? newTitle,
-				content: newPost.content,
-				hashtags: newPost.hashtags ?? tags,
-				platform: null, media_type: null,
-				client_id: data.tenant, filename: id + '.json',
-				media_files: mediaFiles, workflow: {},
-			}, ...drafts];
-			showCreate = false;
-		} finally { isCreating = false; }
+			drafts = [
+				{
+					id,
+					status: 'draft',
+					title: newPost.title ?? newTitle,
+					content: newPost.content,
+					hashtags: newPost.hashtags ?? tags,
+					platform: null,
+					media_type: null,
+					client_id: data.tenant,
+					filename: id + '.json',
+					media_files: mediaFiles,
+					workflow: {}
+				},
+				...drafts
+			]
+			showCreate = false
+		} finally {
+			isCreating = false
+		}
 	}
 
 	// ── Edit drawer ───────────────────────────────────────────────────────────
-	let showEdit = $state(false);
-	let editingPost = $state<PostShape | null>(null);
-	let editTitle = $state('');
-	let editContent = $state('');
-	let editHashtags = $state('');
-	let editPlatforms = $state<PostPlatform[]>([]);
-	let editMediaFiles = $state<string[]>([]);
-	let isSavingEdit = $state(false);
-	let isUploadingMedia = $state(false);
+	let showEdit = $state(false)
+	let editingPost = $state<PostShape | null>(null)
+	let editTitle = $state('')
+	let editContent = $state('')
+	let editHashtags = $state('')
+	let editPlatforms = $state<PostPlatform[]>([])
+	let editMediaFiles = $state<string[]>([])
+	let isSavingEdit = $state(false)
+	let isUploadingMedia = $state(false)
 
 	function openEdit(post: PostShape) {
-		editingPost = post;
-		editTitle = post.title;
-		editContent = post.content;
-		editHashtags = post.hashtags?.join(' ') ?? '';
-		editPlatforms = normPlatforms(post.platform);
-		editMediaFiles = [...(post.media_files ?? [])];
-		showEdit = true;
+		editingPost = post
+		editTitle = post.title
+		editContent = post.content
+		editHashtags = post.hashtags?.join(' ') ?? ''
+		editPlatforms = normPlatforms(post.platform)
+		editMediaFiles = [...(post.media_files ?? [])]
+		showEdit = true
 	}
 
-	$effect(() => { if (!showEdit) editingPost = null; });
+	$effect(() => {
+		if (!showEdit) editingPost = null
+	})
 
 	async function saveEdit() {
-		if (!editingPost || !editTitle.trim() || !editContent.trim()) return;
-		isSavingEdit = true;
+		if (!editingPost || !editTitle.trim() || !editContent.trim()) return
+		isSavingEdit = true
 		try {
-			const tags = editHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
+			const tags = editHashtags
+				.split(/\s+/)
+				.map((t) => t.trim())
+				.filter(Boolean)
 			await updatePost(data.tenant, editingPost.id, {
-				title: editTitle, content: editContent, hashtags: tags,
-				platforms: editPlatforms,
-			});
-			editingPost.title = editTitle;
-			editingPost.content = editContent;
-			editingPost.hashtags = tags;
-			editingPost.platform = editPlatforms;
-			drafts = [...drafts];
-			showEdit = false;
-		} finally { isSavingEdit = false; }
+				title: editTitle,
+				content: editContent,
+				hashtags: tags,
+				platforms: editPlatforms
+			})
+			editingPost.title = editTitle
+			editingPost.content = editContent
+			editingPost.hashtags = tags
+			editingPost.platform = editPlatforms
+			drafts = [...drafts]
+			showEdit = false
+		} finally {
+			isSavingEdit = false
+		}
 	}
 
 	async function handleMediaUpload(event: Event) {
-		if (!editingPost) return;
-		const input = event.target as HTMLInputElement;
-		const files = input.files;
-		if (!files || files.length === 0) return;
-		isUploadingMedia = true;
-		const fd = new FormData();
-		for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-		const res = await fetch(`/api/media/${data.tenant}/${editingPost.id}`, { method: 'POST', body: fd });
+		if (!editingPost) return
+		const input = event.target as HTMLInputElement
+		const files = input.files
+		if (!files || files.length === 0) return
+		isUploadingMedia = true
+		const fd = new FormData()
+		for (let i = 0; i < files.length; i++) fd.append('file', files[i])
+		const res = await fetch(`/api/media/${data.tenant}/${editingPost.id}`, {
+			method: 'POST',
+			body: fd
+		})
 		if (res.ok) {
-			const body = await res.json() as { media_files: string[] };
-			editMediaFiles = body.media_files ?? [];
-			editingPost.media_files = editMediaFiles;
+			const body = (await res.json()) as { media_files: string[] }
+			editMediaFiles = body.media_files ?? []
+			editingPost.media_files = editMediaFiles
 		}
-		input.value = '';
-		isUploadingMedia = false;
+		input.value = ''
+		isUploadingMedia = false
 	}
 
 	async function removeMedia() {
-		if (!editingPost) return;
-		await fetch(`/api/media/${data.tenant}/${editingPost.id}`, { method: 'DELETE' });
-		editMediaFiles = [];
-		editingPost.media_files = [];
+		if (!editingPost) return
+		await fetch(`/api/media/${data.tenant}/${editingPost.id}`, { method: 'DELETE' })
+		editMediaFiles = []
+		editingPost.media_files = []
 	}
 
 	// ── Delete confirm ────────────────────────────────────────────────────────
-	let postToDelete = $state<PostShape | null>(null);
-	let showDeleteConfirm = $state(false);
-	let isDeletingPost = $state(false);
+	let postToDelete = $state<PostShape | null>(null)
+	let showDeleteConfirm = $state(false)
+	let isDeletingPost = $state(false)
 
 	function requestDelete(post: PostShape) {
-		postToDelete = post;
-		showDeleteConfirm = true;
+		postToDelete = post
+		showDeleteConfirm = true
 	}
 
 	async function confirmDelete() {
-		if (!postToDelete) return;
-		isDeletingPost = true;
+		if (!postToDelete) return
+		isDeletingPost = true
 		try {
-			await apiDeletePost(data.tenant, postToDelete.id);
-			drafts = drafts.filter((p) => p.id !== postToDelete!.id);
-			if (editingPost?.id === postToDelete.id) showEdit = false;
-			postToDelete = null;
-			showDeleteConfirm = false;
-		} finally { isDeletingPost = false; }
+			await apiDeletePost(data.tenant, postToDelete.id)
+			drafts = drafts.filter((p) => p.id !== postToDelete!.id)
+			if (editingPost?.id === postToDelete.id) showEdit = false
+			postToDelete = null
+			showDeleteConfirm = false
+		} finally {
+			isDeletingPost = false
+		}
 	}
 
 	// ── Schedule drawer ───────────────────────────────────────────────────────
-	let showSchedule = $state(false);
-	let schedulingPost = $state<PostShape | null>(null);
-	let schedDate = $state('');
-	let schedTime = $state('10:00');
-	let schedPlatforms = $state<PostPlatform[]>(['instagram_feed']);
-	let isSavingSched = $state(false);
+	let showSchedule = $state(false)
+	let schedulingPost = $state<PostShape | null>(null)
+	let schedDate = $state('')
+	let schedTime = $state('10:00')
+	let schedPlatforms = $state<PostPlatform[]>(['instagram_feed'])
+	let isSavingSched = $state(false)
 
 	function openSchedule(post: PostShape) {
-		schedulingPost = post;
-		schedDate = '';
-		schedTime = '10:00';
-		schedPlatforms = normPlatforms(post.platform).length > 0 ? normPlatforms(post.platform) : ['instagram_feed'];
-		showSchedule = true;
+		schedulingPost = post
+		schedDate = ''
+		schedTime = '10:00'
+		schedPlatforms =
+			normPlatforms(post.platform).length > 0 ? normPlatforms(post.platform) : ['instagram_feed']
+		showSchedule = true
 	}
 
-	$effect(() => { if (!showSchedule) schedulingPost = null; });
+	$effect(() => {
+		if (!showSchedule) schedulingPost = null
+	})
 
 	async function saveSchedule() {
-		if (!schedulingPost || !schedDate) return;
-		isSavingSched = true;
+		if (!schedulingPost || !schedDate) return
+		isSavingSched = true
 		try {
 			await updatePostStatus(data.tenant, schedulingPost.id, 'scheduled', {
 				scheduled_date: schedDate,
-				scheduled_time: schedTime || undefined,
-			});
-			await updatePost(data.tenant, schedulingPost.id, { platforms: schedPlatforms });
-			drafts = drafts.filter((p) => p.id !== schedulingPost!.id);
-			showSchedule = false;
-		} finally { isSavingSched = false; }
+				scheduled_time: schedTime || undefined
+			})
+			await updatePost(data.tenant, schedulingPost.id, { platforms: schedPlatforms })
+			drafts = drafts.filter((p) => p.id !== schedulingPost!.id)
+			showSchedule = false
+		} finally {
+			isSavingSched = false
+		}
 	}
 
 	// ── Approve toggle ────────────────────────────────────────────────────────
-	let approvingId = $state<string | null>(null);
+	let approvingId = $state<string | null>(null)
 
 	async function toggleApprove(post: PostShape) {
-		approvingId = post.id;
+		approvingId = post.id
 		const newStatus = post.status === 'approved' ? 'draft' : 'approved'
 		try {
-			await updatePostStatus(data.tenant, post.id, newStatus as import('$lib/api/posts').PostStatus);
-			post.status = newStatus;
-			drafts = [...drafts];
-		} finally { approvingId = null; }
+			await updatePostStatus(data.tenant, post.id, newStatus as import('$lib/api/posts').PostStatus)
+			post.status = newStatus
+			drafts = [...drafts]
+		} finally {
+			approvingId = null
+		}
 	}
 
 	// ── Publish to Meta drawer ────────────────────────────────────────────────
-	let showPublish = $state(false);
-	let publishingPost = $state<PostShape | null>(null);
-	let publishAccountId = $state('');
-	let publishPlatform = $state<'instagram' | 'facebook'>('instagram');
-	let isPublishing = $state(false);
-	let publishError = $state<string | null>(null);
+	let showPublish = $state(false)
+	let publishingPost = $state<PostShape | null>(null)
+	let publishAccountId = $state('')
+	let publishPlatform = $state<'instagram' | 'facebook'>('instagram')
+	let isPublishing = $state(false)
+	let publishError = $state<string | null>(null)
 
 	function openPublish(post: PostShape) {
-		publishingPost = post;
-		publishAccountId = metaAccounts[0]?.id ?? '';
-		publishPlatform = 'instagram';
-		publishError = null;
-		showPublish = true;
+		publishingPost = post
+		publishAccountId = metaAccounts[0]?.id ?? ''
+		publishPlatform = 'instagram'
+		publishError = null
+		showPublish = true
 	}
 
-	$effect(() => { if (!showPublish) publishingPost = null; });
+	$effect(() => {
+		if (!showPublish) publishingPost = null
+	})
 
 	async function doPublish() {
-		if (!publishingPost || !publishAccountId) return;
-		isPublishing = true;
-		publishError = null;
+		if (!publishingPost || !publishAccountId) return
+		isPublishing = true
+		publishError = null
 		try {
 			await publishToMeta(data.tenant, {
 				post_id: publishingPost.id,
 				account_id: publishAccountId,
-				platform: publishPlatform,
-			});
-			drafts = drafts.filter(p => p.id !== publishingPost!.id);
-			showPublish = false;
+				platform: publishPlatform
+			})
+			drafts = drafts.filter((p) => p.id !== publishingPost!.id)
+			showPublish = false
 		} catch (err) {
-			publishError = err instanceof Error ? err.message : 'Publish failed';
-		} finally { isPublishing = false; }
+			publishError = err instanceof Error ? err.message : 'Publish failed'
+		} finally {
+			isPublishing = false
+		}
 	}
 </script>
 
 <div class="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<div class="mb-0.5 flex items-center gap-2">
 				<FileEdit class="h-5 w-5 text-slate-400" />
 				<h2 class="text-xl font-bold text-slate-900 dark:text-white">Drafts</h2>
-				<span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800">
+				<span
+					class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800"
+				>
 					{drafts.length}
 				</span>
 			</div>
@@ -274,38 +342,60 @@
 	</div>
 
 	{#if drafts.length === 0}
-		<div class="rounded-xl border-2 border-dashed border-slate-300 p-16 text-center dark:border-slate-700">
+		<div
+			class="rounded-xl border-2 border-dashed border-slate-300 p-16 text-center dark:border-slate-700"
+		>
 			<FileEdit class="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
 			<p class="mb-3 text-sm text-slate-500 dark:text-slate-400">No drafts yet.</p>
-			<button onclick={openCreate} class="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+			<button
+				onclick={openCreate}
+				class="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+			>
 				Create your first draft
 			</button>
 		</div>
 	{:else}
 		<div class="flex flex-col gap-3">
 			{#each drafts as post (post.id)}
-				<div class="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+				<div
+					class="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+				>
 					<!-- Thumbnail -->
 					{#if post.media_files?.length > 0}
-						<div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700">
+						<div
+							class="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700"
+						>
 							{#if post.media_files[0].match(/\.(mp4|webm)$/i)}
-								<video src="/api/media/{data.tenant}/{post.media_files[0]}" class="h-full w-full object-contain"><track kind="captions" /></video>
+								<video
+									src="/api/media/{data.tenant}/{post.media_files[0]}"
+									class="h-full w-full object-contain"><track kind="captions" /></video
+								>
 							{:else}
-								<img src="/api/media/{data.tenant}/{post.media_files[0]}" alt="" class="h-full w-full object-contain" />
+								<img
+									src="/api/media/{data.tenant}/{post.media_files[0]}"
+									alt=""
+									class="h-full w-full object-contain"
+								/>
 							{/if}
 						</div>
 					{:else}
-						<div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50">
+						<div
+							class="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50"
+						>
 							<ImagePlus class="h-5 w-5 text-slate-300 dark:text-slate-600" />
 						</div>
 					{/if}
 
 					<div class="min-w-0 flex-1">
 						<div class="mb-2 flex flex-wrap items-center gap-2">
-							<span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide {STATUS_BADGE[post.status] ?? STATUS_BADGE.draft}">
+							<span
+								class="rounded-full px-2 py-0.5 text-xs font-bold tracking-wide uppercase {STATUS_BADGE[
+									post.status
+								] ?? STATUS_BADGE.draft}"
+							>
 								{post.status}
 							</span>
-							{#each normPlatforms(post.platform) as plt}
+							{#each normPlatforms(post.platform) as plt (plt)}
 								{@render PlatformBadge({ platform: plt })}
 							{/each}
 							<span class="truncate font-mono text-xs text-slate-400">{post.id}</span>
@@ -324,7 +414,8 @@
 						<button
 							onclick={() => toggleApprove(post)}
 							disabled={approvingId === post.id}
-							class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 {post.status === 'approved'
+							class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 {post.status ===
+							'approved'
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400'
 								: 'border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}"
 						>
@@ -334,7 +425,8 @@
 						<button
 							onclick={() => openSchedule(post)}
 							disabled={post.status !== 'approved'}
-							class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {post.status === 'approved'
+							class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors {post.status ===
+							'approved'
 								? 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400'
 								: 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 opacity-50 dark:border-slate-700 dark:bg-slate-800'}"
 						>
@@ -373,9 +465,14 @@
 <!-- ── Create drawer ─────────────────────────────────────────────────────────── -->
 <Drawer bind:open={showCreate}>
 	<div class="flex h-full flex-col">
-		<div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+		<div
+			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+		>
 			<h2 class="text-lg font-bold text-slate-900 dark:text-white">New Draft</h2>
-			<button onclick={() => (showCreate = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+			<button
+				onclick={() => (showCreate = false)}
+				class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+			>
 				<X class="h-5 w-5" />
 			</button>
 		</div>
@@ -383,22 +480,47 @@
 			<div class="flex flex-col gap-4">
 				<div>
 					<label for="create-title" class={labelCls}>Title</label>
-					<input id="create-title" bind:value={newTitle} type="text" placeholder="Post title" class={inputCls} />
+					<input
+						id="create-title"
+						bind:value={newTitle}
+						type="text"
+						placeholder="Post title"
+						class={inputCls}
+					/>
 				</div>
 				<div>
 					<label for="create-content" class={labelCls}>Content</label>
-					<textarea id="create-content" bind:value={newContent} rows="5" placeholder="Post copy…" class="{inputCls} resize-none"></textarea>
+					<textarea
+						id="create-content"
+						bind:value={newContent}
+						rows="5"
+						placeholder="Post copy…"
+						class="{inputCls} resize-none"
+					></textarea>
 				</div>
 				<div>
-					<label for="create-hashtags" class={labelCls}>Hashtags <span class="font-normal normal-case text-slate-400">(space separated)</span></label>
-					<input id="create-hashtags" bind:value={newHashtags} type="text" placeholder="#hashtag1 #hashtag2" class={inputCls} />
+					<label for="create-hashtags" class={labelCls}
+						>Hashtags <span class="font-normal text-slate-400 normal-case">(space separated)</span
+						></label
+					>
+					<input
+						id="create-hashtags"
+						bind:value={newHashtags}
+						type="text"
+						placeholder="#hashtag1 #hashtag2"
+						class={inputCls}
+					/>
 				</div>
 				<div>
-					<label for="create-image" class={labelCls}>Image <span class="font-normal normal-case text-slate-400">(optional)</span></label>
+					<label for="create-image" class={labelCls}
+						>Image <span class="font-normal text-slate-400 normal-case">(optional)</span></label
+					>
 					<input
 						id="create-image"
 						bind:this={newMediaInput}
-						type="file" accept="image/*,video/*" multiple
+						type="file"
+						accept="image/*,video/*"
+						multiple
 						class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
 					/>
 				</div>
@@ -426,17 +548,29 @@
 <Drawer bind:open={showEdit}>
 	<div class="flex h-full flex-col">
 		{#if editingPost}
-			<div class="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+			<div
+				class="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+			>
 				<div class="min-w-0 flex-1 pr-4">
 					<div class="mb-1 flex flex-wrap items-center gap-2">
-						<span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide {STATUS_BADGE[editingPost.status] ?? STATUS_BADGE.draft}">
+						<span
+							class="rounded-full px-2 py-0.5 text-xs font-bold tracking-wide uppercase {STATUS_BADGE[
+								editingPost.status
+							] ?? STATUS_BADGE.draft}"
+						>
 							{editingPost.status}
 						</span>
 						{#if editingPost.media_type}
-							<span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium uppercase text-slate-500 dark:bg-slate-800">{editingPost.media_type}</span>
+							<span
+								class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 uppercase dark:bg-slate-800"
+								>{editingPost.media_type}</span
+							>
 						{/if}
 						{#if (editingPost.workflow as any)?.strategy?.framework}
-							<span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400">{(editingPost.workflow as any).strategy.framework}</span>
+							<span
+								class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400"
+								>{(editingPost.workflow as any).strategy.framework}</span
+							>
 						{/if}
 					</div>
 					<p class="truncate font-mono text-xs text-slate-400">{editingPost.id}</p>
@@ -448,7 +582,10 @@
 					>
 						<Trash2 class="h-3.5 w-3.5" /> Delete
 					</button>
-					<button onclick={() => (showEdit = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+					<button
+						onclick={() => (showEdit = false)}
+						class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+					>
 						<X class="h-5 w-5" />
 					</button>
 				</div>
@@ -456,9 +593,15 @@
 
 			<div class="flex-1 overflow-y-auto px-6 py-5">
 				{#if (editingPost.workflow as any)?.strategy?.reasoning}
-					<div class="mb-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50">
-						<p class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Strategy Reasoning</p>
-						<p class="text-sm italic leading-relaxed text-slate-600 dark:text-slate-400">{(editingPost.workflow as any).strategy.reasoning}</p>
+					<div
+						class="mb-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50"
+					>
+						<p class="mb-1 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+							Strategy Reasoning
+						</p>
+						<p class="text-sm leading-relaxed text-slate-600 italic dark:text-slate-400">
+							{(editingPost.workflow as any).strategy.reasoning}
+						</p>
 					</div>
 				{/if}
 
@@ -469,14 +612,24 @@
 					</div>
 					<div>
 						<label for="edit-content" class={labelCls}>Content</label>
-						<textarea id="edit-content" bind:value={editContent} rows="8" class="{inputCls} resize-y"></textarea>
+						<textarea
+							id="edit-content"
+							bind:value={editContent}
+							rows="8"
+							class="{inputCls} resize-y"
+						></textarea>
 					</div>
 					<div>
-						<label for="edit-hashtags" class={labelCls}>Hashtags <span class="font-normal normal-case text-slate-400">(space separated)</span></label>
+						<label for="edit-hashtags" class={labelCls}
+							>Hashtags <span class="font-normal text-slate-400 normal-case">(space separated)</span
+							></label
+						>
 						<input id="edit-hashtags" bind:value={editHashtags} type="text" class={inputCls} />
 						{#if editHashtags}
 							<p class="mt-1.5 flex flex-wrap gap-1 text-xs text-indigo-500 dark:text-indigo-400">
-								{#each editHashtags.split(/\s+/).filter(Boolean) as tag}<span>{tag}</span>{/each}
+								{#each editHashtags.split(/\s+/).filter(Boolean) as tag (tag)}
+									<span>{tag}</span>
+								{/each}
 							</p>
 						{/if}
 					</div>
@@ -490,35 +643,58 @@
 						<div class="mb-1.5 flex items-center justify-between">
 							<p class={labelCls}>Image</p>
 							{#if editMediaFiles.length > 0}
-								<button onclick={removeMedia} class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700">
+								<button
+									onclick={removeMedia}
+									class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700"
+								>
 									<Trash2 class="h-3 w-3" /> Remove all
 								</button>
 							{/if}
 						</div>
 						{#if editMediaFiles.length > 0}
-							<div class="mb-3 grid gap-2 {editMediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}">
-								{#each editMediaFiles as f}
-									<div class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700">
+							<div
+								class="mb-3 grid gap-2 {editMediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}"
+							>
+								{#each editMediaFiles as f (f)}
+									<div
+										class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700"
+									>
 										{#if f.match(/\.(mp4|webm)$/i)}
-											<video src="/api/media/{data.tenant}/{f}" controls class="max-h-full max-w-full object-contain"><track kind="captions" /></video>
+											<video
+												src="/api/media/{data.tenant}/{f}"
+												controls
+												class="max-h-full max-w-full object-contain"
+												><track kind="captions" /></video
+											>
 										{:else}
-											<img src="/api/media/{data.tenant}/{f}" alt="Media" class="max-h-full max-w-full object-contain" />
+											<img
+												src="/api/media/{data.tenant}/{f}"
+												alt="Media"
+												class="max-h-full max-w-full object-contain"
+											/>
 										{/if}
 									</div>
 								{/each}
 							</div>
 						{:else}
-							<div class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50">
+							<div
+								class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50"
+							>
 								<ImagePlus class="mr-2 h-4 w-4" /> No image attached
 							</div>
 						{/if}
 						<input
-							type="file" accept="image/*,video/*" multiple
-							onchange={handleMediaUpload} disabled={isUploadingMedia}
+							type="file"
+							accept="image/*,video/*"
+							multiple
+							onchange={handleMediaUpload}
+							disabled={isUploadingMedia}
 							class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
 						/>
 						{#if isUploadingMedia}
-							<p class="mt-1 animate-pulse text-xs text-indigo-600 dark:text-indigo-400">Uploading…</p>
+							<p class="mt-1 animate-pulse text-xs text-indigo-600 dark:text-indigo-400">
+								Uploading…
+							</p>
 						{/if}
 					</div>
 				</div>
@@ -547,12 +723,17 @@
 <Drawer bind:open={showSchedule}>
 	<div class="flex h-full flex-col">
 		{#if schedulingPost}
-			<div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+			<div
+				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+			>
 				<div class="min-w-0 flex-1 pr-4">
 					<h2 class="text-lg font-bold text-slate-900 dark:text-white">Schedule Post</h2>
 					<p class="truncate text-sm text-slate-500">{schedulingPost.title}</p>
 				</div>
-				<button onclick={() => (showSchedule = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+				<button
+					onclick={() => (showSchedule = false)}
+					class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+				>
 					<X class="h-5 w-5" />
 				</button>
 			</div>
@@ -565,10 +746,18 @@
 					<div class="grid grid-cols-2 gap-3">
 						<div>
 							<label for="sched-date" class={labelCls}>Date</label>
-							<input id="sched-date" type="date" bind:value={schedDate} min={new Date().toISOString().slice(0, 10)} class={inputCls} />
+							<input
+								id="sched-date"
+								type="date"
+								bind:value={schedDate}
+								min={new Date().toISOString().slice(0, 10)}
+								class={inputCls}
+							/>
 						</div>
 						<div>
-							<label for="sched-time" class={labelCls}>Time <span class="font-normal normal-case text-slate-400">(opt.)</span></label>
+							<label for="sched-time" class={labelCls}
+								>Time <span class="font-normal text-slate-400 normal-case">(opt.)</span></label
+							>
 							<input id="sched-time" type="time" bind:value={schedTime} class={inputCls} />
 						</div>
 					</div>
@@ -598,25 +787,35 @@
 <Drawer bind:open={showPublish}>
 	<div class="flex h-full flex-col">
 		{#if publishingPost}
-			<div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+			<div
+				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+			>
 				<div class="min-w-0 flex-1 pr-4">
 					<h2 class="text-lg font-bold text-slate-900 dark:text-white">Publish to Meta</h2>
 					<p class="truncate text-sm text-slate-500">{publishingPost.title}</p>
 				</div>
-				<button onclick={() => (showPublish = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+				<button
+					onclick={() => (showPublish = false)}
+					class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+				>
 					<X class="h-5 w-5" />
 				</button>
 			</div>
 			<div class="flex-1 overflow-y-auto px-6 py-5">
 				<div class="flex flex-col gap-4">
 					{#if metaAccounts.length === 0}
-						<div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+						<div
+							class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20"
+						>
 							<div class="flex items-start gap-2">
 								<AlertCircle class="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
 								<div>
-									<p class="text-sm font-medium text-amber-800 dark:text-amber-200">No Meta accounts found</p>
-									<p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-										Connect a Meta integration in Settings → Integrations and authorize it to discover pages.
+									<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+										No Meta accounts found
+									</p>
+									<p class="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
+										Connect a Meta integration in Settings → Integrations and authorize it to
+										discover pages.
 									</p>
 								</div>
 							</div>
@@ -625,7 +824,7 @@
 						<div>
 							<p class={labelCls}>Account</p>
 							<select bind:value={publishAccountId} class={inputCls}>
-								{#each metaAccounts as acc}
+								{#each metaAccounts as acc (acc.id)}
 									{@const igUsername = (acc.metadata?.ig_username as string | undefined) ?? ''}
 									<option value={acc.id}>
 										{acc.resource_name ?? acc.resource_id}
@@ -640,16 +839,18 @@
 							<p class={labelCls}>Platform</p>
 							<div class="flex gap-2">
 								<button
-									onclick={() => publishPlatform = 'instagram'}
-									class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {publishPlatform === 'instagram'
+									onclick={() => (publishPlatform = 'instagram')}
+									class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {publishPlatform ===
+									'instagram'
 										? 'border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-900/20 dark:text-pink-400'
 										: 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}"
 								>
 									Instagram
 								</button>
 								<button
-									onclick={() => publishPlatform = 'facebook'}
-									class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {publishPlatform === 'facebook'
+									onclick={() => (publishPlatform = 'facebook')}
+									class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors {publishPlatform ===
+									'facebook'
 										? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
 										: 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'}"
 								>
@@ -658,7 +859,9 @@
 							</div>
 						</div>
 						{#if publishError}
-							<div class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+							<div
+								class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+							>
 								{publishError}
 							</div>
 						{/if}
@@ -689,17 +892,25 @@
 {#snippet PlatformBadge(props: { platform: PostPlatform })}
 	{@const plt = props.platform}
 	{@const cfg = PLATFORM[plt]}
-	<span class="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+	<span
+		class="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400"
+	>
 		{#if plt === 'linkedin'}
 			<svg width="11" height="11" viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true">
-				<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+				<path
+					d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+				/>
 			</svg>
 		{:else if plt === 'facebook'}
 			<SiFacebook size={11} color="#1877F2" />
 		{:else}
 			<SiInstagram
 				size={11}
-				color={plt === 'instagram_feed' ? '#E1306C' : plt === 'instagram_stories' ? '#C13584' : '#FF0000'}
+				color={plt === 'instagram_feed'
+					? '#E1306C'
+					: plt === 'instagram_stories'
+						? '#C13584'
+						: '#FF0000'}
 			/>
 		{/if}
 		{cfg?.label ?? plt}

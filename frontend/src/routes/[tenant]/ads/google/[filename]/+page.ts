@@ -21,7 +21,7 @@ export const load: PageLoad = async ({ params }) => {
 			...result,
 			client_id: c.tenant_id,
 			filename: c.slug + '.json',
-			workflow: (data.workflow ?? {}) as Record<string, unknown>,
-		},
+			workflow: (data.workflow ?? {}) as Record<string, unknown>
+		}
 	}
 }
