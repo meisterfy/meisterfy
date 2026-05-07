@@ -13,6 +13,8 @@
 	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte'
 	import Drawer from '$lib/components/ui/drawer/Drawer.svelte'
 
+	import Skeleton from '$lib/components/ui/skeleton.svelte'
+
 	type PostShape = {
 		id: string
 		status: string
@@ -22,7 +24,7 @@
 		media_type?: string | null
 		scheduled_date?: string | null
 		scheduled_time?: string | null
-		platform: PostPlatform | PostPlatform[] | null
+		platform: PostPlatform | PostPlatform[] | undefined
 		client_id: string
 		filename: string
 		media_files: string[]
@@ -52,21 +54,26 @@
 	]
 	const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-	let scheduled = $state<PostShape[]>(untrack(() => data.scheduled as PostShape[]))
+	let scheduled = $state<PostShape[]>([])
+	let isLoading = $state(true)
+
 	$effect(() => {
-		scheduled = data.scheduled as PostShape[]
+		data.scheduled.then((p: any) => {
+			scheduled = p as PostShape[]
+			isLoading = false
+		})
 	})
 
 	const calendarCells = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay()
 		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
-		const byDate = new Map<string, PostWithMeta[]>()
+		const byDate = new Map<string, PostShape[]>()
 		for (const p of scheduled) {
 			if (!p.scheduled_date) continue
 			if (!byDate.has(p.scheduled_date)) byDate.set(p.scheduled_date, [])
 			byDate.get(p.scheduled_date)!.push(p)
 		}
-		const cells: Array<{ date: string | null; day: number | null; posts: PostWithMeta[] }> = []
+		const cells: Array<{ date: string | null; day: number | null; posts: PostShape[] }> = []
 		for (let i = 0; i < firstDay; i++) cells.push({ date: null, day: null, posts: [] })
 		for (let d = 1; d <= daysInMonth; d++) {
 			const mm = String(viewMonth + 1).padStart(2, '0')
@@ -261,7 +268,7 @@
 					media_type: newPost.media_type,
 					scheduled_date: newPost.scheduled_date ?? newPostDate,
 					scheduled_time: newPost.scheduled_time,
-					platform: (newPost.platforms?.[0] as PostPlatform | undefined) ?? null,
+					platform: (newPost.platforms?.[0] as PostPlatform | undefined) ?? undefined,
 					client_id: newPost.tenant_id,
 					filename: id + '.json',
 					media_files: mediaFiles,
@@ -335,28 +342,37 @@
 						>
 						<button
 							onclick={() => openNewPostDrawer(cell.date!)}
-							class="flex h-5 w-5 items-center justify-center rounded text-slate-400 opacity-0 transition-opacity group-hover/cell:opacity-100 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
+							class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover:bg-indigo-50 dark:bg-slate-800 dark:group-hover:bg-indigo-900/20"
 						>
 							<Plus class="h-3.5 w-3.5" />
 						</button>
 					</div>
 					<div class="flex flex-col gap-0.5">
-						{#each cell.posts.slice(0, 3) as post (post.id)}
-							<button
-								onclick={() => openPostDrawer(post)}
-								class="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left opacity-100 transition-opacity hover:opacity-80"
-								style="background: {post.status === 'published'
-									? 'rgb(220 252 231)'
-									: 'rgb(254 243 199)'}"
-							>
-								{#each normPlatforms(post.platform).slice(0, 2) as plt (plt)}
-									{@render PlatformDot({ platform: plt })}
-								{/each}
-								<span class="truncate text-[10px] font-medium text-slate-700">{post.title}</span>
-							</button>
-						{/each}
-						{#if cell.posts.length > 3}
-							<span class="pl-1 text-[10px] text-slate-400">+{cell.posts.length - 3} more</span>
+						{#if isLoading}
+							<div class="space-y-1.5 px-0.5 pt-1">
+								<Skeleton class="h-3 w-full rounded-sm" />
+								<Skeleton class="h-3 w-[85%] rounded-sm" />
+							</div>
+						{:else}
+							{#each cell.posts.slice(0, 3) as post (post.id)}
+								<button
+									onclick={() => openPostDrawer(post)}
+									class="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left opacity-100 transition-opacity hover:opacity-80"
+									style="background: {post.status === 'published'
+										? 'rgb(220 252 231)'
+										: 'rgb(254 243 199)'}"
+								>
+									{#each normPlatforms(post.platform).slice(0, 2) as plt (plt)}
+										{@render PlatformDot({ platform: plt })}
+									{/each}
+									<span class="truncate text-[10px] font-medium text-slate-700"
+										>{post.title}</span
+									>
+								</button>
+							{/each}
+							{#if cell.posts.length > 3}
+								<span class="pl-1 text-[10px] text-slate-400">+{cell.posts.length - 3} more</span>
+							{/if}
 						{/if}
 					</div>
 				{/if}

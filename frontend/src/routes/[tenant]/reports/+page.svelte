@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { FileText } from 'lucide-svelte'
+	import Skeleton from '$lib/components/ui/skeleton.svelte'
 	import type { PageData } from './$types'
 
 	let { data } = $props<{ data: PageData }>()
@@ -40,62 +41,86 @@
 			<h2 class="text-2xl font-bold text-slate-900 dark:text-white">Reports</h2>
 		</div>
 		<p class="ml-9 text-sm text-slate-500 dark:text-slate-400">
-			{data.reports.length}
-			{data.reports.length === 1 ? 'report' : 'reports'} available
+			{#await data.reports}
+				...
+			{:then reports}
+				{reports.length}
+				{reports.length === 1 ? 'report' : 'reports'} available
+			{/await}
 		</p>
 	</div>
 
-	{#if data.reports.length === 0}
-		<div
-			class="rounded-xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-700"
-		>
-			<FileText class="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
-			<p class="text-sm text-slate-500 dark:text-slate-400">No reports found for this client.</p>
-		</div>
-	{:else}
+	{#await data.reports}
 		<div class="grid gap-3 sm:grid-cols-2">
-			{#each data.reports as report}
-				{@const colors = COLOR_CLASSES[report.color] ?? COLOR_CLASSES.slate}
-				<a
-					href="/{data.tenant}/reports/{report.slug}"
-					class="group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-700"
+			{#each Array(6) as _}
+				<div
+					class="flex animate-pulse items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
 				>
-					<!-- Icon dot -->
-					<div
-						class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover:bg-indigo-50 dark:bg-slate-800 dark:group-hover:bg-indigo-900/20"
-					>
-						<span class="h-2.5 w-2.5 rounded-full {colors.dot}"></span>
-					</div>
-
-					<!-- Content -->
-					<div class="min-w-0 flex-1">
-						<div class="mb-1 flex flex-wrap items-center gap-2">
-							<span class="rounded-full px-2 py-0.5 text-xs font-semibold {colors.badge}">
-								{report.label}
-							</span>
-							{#if report.date}
-								<time class="text-xs text-slate-400 tabular-nums dark:text-slate-500"
-									>{report.date}</time
-								>
-							{/if}
+					<Skeleton class="h-8 w-8 shrink-0 rounded-lg" />
+					<div class="flex-1 space-y-2">
+						<div class="flex gap-2">
+							<Skeleton class="h-4 w-16 rounded-full" />
+							<Skeleton class="h-4 w-12" />
 						</div>
-						<p
-							class="truncate text-sm font-semibold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400"
-						>
-							{report.title || report.slug}
-						</p>
-						<p class="mt-0.5 truncate font-mono text-xs text-slate-400 dark:text-slate-500">
-							{report.slug}
-						</p>
+						<Skeleton class="h-5 w-3/4" />
+						<Skeleton class="h-3 w-1/2" />
 					</div>
-
-					<!-- Arrow -->
-					<span
-						class="mt-1 text-lg leading-none text-slate-300 transition-colors group-hover:text-indigo-400 dark:text-slate-600"
-						>›</span
-					>
-				</a>
+				</div>
 			{/each}
 		</div>
-	{/if}
+	{:then reports}
+		{#if reports.length === 0}
+			<div
+				class="rounded-xl border border-dashed border-slate-300 p-12 text-center dark:border-slate-700"
+			>
+				<FileText class="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+				<p class="text-sm text-slate-500 dark:text-slate-400">No reports found for this client.</p>
+			</div>
+		{:else}
+			<div class="grid gap-3 sm:grid-cols-2">
+				{#each reports as report}
+					{@const colors = COLOR_CLASSES[report.color] ?? COLOR_CLASSES.slate}
+					<a
+						href="/{data.tenant}/reports/{report.slug}"
+						class="group flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-700"
+					>
+						<!-- Icon dot -->
+						<div
+							class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover:bg-indigo-50 dark:bg-slate-800 dark:group-hover:bg-indigo-900/20"
+						>
+							<span class="h-2.5 w-2.5 rounded-full {colors.dot}"></span>
+						</div>
+
+						<!-- Content -->
+						<div class="min-w-0 flex-1">
+							<div class="mb-1 flex flex-wrap items-center gap-2">
+								<span class="rounded-full px-2 py-0.5 text-xs font-semibold {colors.badge}">
+									{report.label}
+								</span>
+								{#if report.date}
+									<time class="text-xs text-slate-400 tabular-nums dark:text-slate-500"
+										>{report.date}</time
+									>
+								{/if}
+							</div>
+							<p
+								class="truncate text-sm font-semibold text-slate-800 transition-colors group-hover:text-indigo-600 dark:text-slate-100 dark:group-hover:text-indigo-400"
+							>
+								{report.title || report.slug}
+							</p>
+							<p class="mt-0.5 truncate font-mono text-xs text-slate-400 dark:text-slate-500">
+								{report.slug}
+							</p>
+						</div>
+
+						<!-- Arrow -->
+						<span
+							class="mt-1 text-lg leading-none text-slate-300 transition-colors group-hover:text-indigo-400 dark:text-slate-600"
+							>›</span
+						>
+					</a>
+				{/each}
+			</div>
+		{/if}
+	{/await}
 </div>
