@@ -10,11 +10,14 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
 	return {
 		tenant: params.tenant,
-		client: { id: tenant.id, brand: { name: tenant.name, niche: tenant.niche, google_ads_id: tenant.google_ads_id } },
+		client: {
+			id: tenant.id,
+			brand: { name: tenant.name, niche: tenant.niche, google_ads_id: tenant.google_ads_id }
+		},
 		brand: {
 			name: tenant.name,
 			niche: tenant.niche ?? '',
-			google_ads_id: tenant.google_ads_id ?? '',
-		},
+			google_ads_id: tenant.google_ads_id ?? ''
+		}
 	}
 }

@@ -21,6 +21,6 @@ export const load: PageLoad = async ({ params }) => {
 		tenant: params.tenant,
 		slug: params.slug,
 		date: dateMatch?.[1] ?? null,
-		html,
+		html
 	}
 }

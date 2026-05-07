@@ -3,10 +3,10 @@
 	import { auth } from '$lib/stores/auth.svelte'
 	import { setToken } from '$lib/api/client'
 
-	let email    = $state('')
+	let email = $state('')
 	let password = $state('')
-	let error    = $state<string | null>(null)
-	let loading  = $state(false)
+	let error = $state<string | null>(null)
+	let loading = $state(false)
 
 	async function submit(e: SubmitEvent) {
 		e.preventDefault()
@@ -17,7 +17,7 @@
 				method: 'POST',
 				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password }),
+				body: JSON.stringify({ email, password })
 			})
 			const data = await res.json()
 			if (!res.ok) {
@@ -37,7 +37,9 @@
 </script>
 
 <div class="flex h-full items-center justify-center">
-	<div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+	<div
+		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+	>
 		<h1 class="mb-6 text-xl font-bold text-slate-900 dark:text-white">Sign in</h1>
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -59,7 +61,11 @@
 				/>
 			</label>
 			{#if error}
-				<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{error}</p>
+				<p
+					class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+				>
+					{error}
+				</p>
 			{/if}
 			<button
 				type="submit"

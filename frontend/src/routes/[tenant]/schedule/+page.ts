@@ -7,12 +7,12 @@ export const load: PageLoad = async ({ params, fetch }) => {
 	const data = await getSchedule(params.tenant, fetch).catch(() => ({
 		last_run: null,
 		runs: [],
-		cron_command: '',
+		cron_command: ''
 	}))
 	return {
 		tenant: params.tenant,
 		lastRun: data.last_run,
 		runs: data.runs,
-		cronCommand: data.cron_command,
+		cronCommand: data.cron_command
 	}
 }

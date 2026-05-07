@@ -1,250 +1,341 @@
 <script lang="ts">
-	import { SiInstagram, SiFacebook } from '@icons-pack/svelte-simple-icons';
-	import { untrack } from 'svelte';
-	import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2, ImagePlus } from 'lucide-svelte';
-	import type { PageData } from './$types';
-	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social';
-	import { updatePost, createPost as apiCreatePost, deletePost as apiDeletePost } from '$lib/api/posts';
-	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
-	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte';
-	import Drawer from '$lib/components/ui/drawer/Drawer.svelte';
+	import ProviderIcon from '$lib/components/ui/ProviderIcon.svelte'
+	import { untrack } from 'svelte'
+	import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2, ImagePlus } from 'lucide-svelte'
+	import type { PageData } from './$types'
+	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostPlatform } from '$lib/social'
+	import {
+		updatePost,
+		createPost as apiCreatePost,
+		deletePost as apiDeletePost
+	} from '$lib/api/posts'
+	import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte'
+	import PlatformSelect from '$lib/components/ui/platform-select/PlatformSelect.svelte'
+	import Drawer from '$lib/components/ui/drawer/Drawer.svelte'
 
 	type PostShape = {
-		id: string; status: string; title: string; content: string;
-		hashtags: string[]; media_type?: string | null;
-		scheduled_date?: string | null; scheduled_time?: string | null;
-		platform: PostPlatform | PostPlatform[] | null;
-		client_id: string; filename: string; media_files: string[];
-		workflow: Record<string, unknown>;
-	};
-
-	let { data } = $props<{ data: PageData }>();
-
-	// ── Calendar state ────────────────────────────────────────────────────────
-	const today = new Date();
-	let viewYear = $state(today.getFullYear());
-	let viewMonth = $state(today.getMonth());
-
-	const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-	const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-	let scheduled = $state<PostShape[]>(untrack(() => data.scheduled as PostShape[]));
-	$effect(() => { scheduled = data.scheduled as PostShape[]; });
-
-	const calendarCells = $derived.by(() => {
-		const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-		const byDate = new Map<string, PostWithMeta[]>();
-		for (const p of scheduled) {
-			if (!p.scheduled_date) continue;
-			if (!byDate.has(p.scheduled_date)) byDate.set(p.scheduled_date, []);
-			byDate.get(p.scheduled_date)!.push(p);
-		}
-		const cells: Array<{ date: string | null; day: number | null; posts: PostWithMeta[] }> = [];
-		for (let i = 0; i < firstDay; i++) cells.push({ date: null, day: null, posts: [] });
-		for (let d = 1; d <= daysInMonth; d++) {
-			const mm = String(viewMonth + 1).padStart(2, '0');
-			const dd = String(d).padStart(2, '0');
-			const date = `${viewYear}-${mm}-${dd}`;
-			cells.push({ date, day: d, posts: byDate.get(date) ?? [] });
-		}
-		while (cells.length % 7 !== 0) cells.push({ date: null, day: null, posts: [] });
-		return cells;
-	});
-
-	function prevMonth() { if (viewMonth === 0) { viewMonth = 11; viewYear--; } else viewMonth--; }
-	function nextMonth() { if (viewMonth === 11) { viewMonth = 0; viewYear++; } else viewMonth++; }
-	function isToday(date: string | null) { return date === today.toISOString().slice(0, 10); }
-
-	// ── Post edit drawer ──────────────────────────────────────────────────────
-	let showEditDrawer = $state(false);
-	let selectedPost = $state<PostShape | null>(null);
-	let editTitle = $state('');
-	let editContent = $state('');
-	let editHashtags = $state('');
-	let editPlatforms = $state<PostPlatform[]>([]);
-	let editDate = $state('');
-	let editTime = $state('');
-	let editMediaFiles = $state<string[]>([]);
-	let isSavingPost = $state(false);
-	let isUploadingMedia = $state(false);
-
-	function openPostDrawer(post: PostShape) {
-		selectedPost = post;
-		editTitle = post.title;
-		editContent = post.content;
-		editHashtags = post.hashtags?.join(' ') ?? '';
-		editPlatforms = normPlatforms(post.platform);
-		editDate = post.scheduled_date ?? '';
-		editTime = post.scheduled_time ?? '';
-		editMediaFiles = [...(post.media_files ?? [])];
-		showEditDrawer = true;
+		id: string
+		status: string
+		title: string
+		content: string
+		hashtags: string[]
+		media_type?: string | null
+		scheduled_date?: string | null
+		scheduled_time?: string | null
+		platform: PostPlatform | PostPlatform[] | null
+		client_id: string
+		filename: string
+		media_files: string[]
+		workflow: Record<string, unknown>
 	}
 
-	$effect(() => { if (!showEditDrawer) selectedPost = null; });
+	let { data } = $props<{ data: PageData }>()
+
+	// ── Calendar state ────────────────────────────────────────────────────────
+	const today = new Date()
+	let viewYear = $state(today.getFullYear())
+	let viewMonth = $state(today.getMonth())
+
+	const MONTHS = [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	]
+	const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+	let scheduled = $state<PostShape[]>(untrack(() => data.scheduled as PostShape[]))
+	$effect(() => {
+		scheduled = data.scheduled as PostShape[]
+	})
+
+	const calendarCells = $derived.by(() => {
+		const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+		const byDate = new Map<string, PostWithMeta[]>()
+		for (const p of scheduled) {
+			if (!p.scheduled_date) continue
+			if (!byDate.has(p.scheduled_date)) byDate.set(p.scheduled_date, [])
+			byDate.get(p.scheduled_date)!.push(p)
+		}
+		const cells: Array<{ date: string | null; day: number | null; posts: PostWithMeta[] }> = []
+		for (let i = 0; i < firstDay; i++) cells.push({ date: null, day: null, posts: [] })
+		for (let d = 1; d <= daysInMonth; d++) {
+			const mm = String(viewMonth + 1).padStart(2, '0')
+			const dd = String(d).padStart(2, '0')
+			const date = `${viewYear}-${mm}-${dd}`
+			cells.push({ date, day: d, posts: byDate.get(date) ?? [] })
+		}
+		while (cells.length % 7 !== 0) cells.push({ date: null, day: null, posts: [] })
+		return cells
+	})
+
+	function prevMonth() {
+		if (viewMonth === 0) {
+			viewMonth = 11
+			viewYear--
+		} else viewMonth--
+	}
+	function nextMonth() {
+		if (viewMonth === 11) {
+			viewMonth = 0
+			viewYear++
+		} else viewMonth++
+	}
+	function isToday(date: string | null) {
+		return date === today.toISOString().slice(0, 10)
+	}
+
+	// ── Post edit drawer ──────────────────────────────────────────────────────
+	let showEditDrawer = $state(false)
+	let selectedPost = $state<PostShape | null>(null)
+	let editTitle = $state('')
+	let editContent = $state('')
+	let editHashtags = $state('')
+	let editPlatforms = $state<PostPlatform[]>([])
+	let editDate = $state('')
+	let editTime = $state('')
+	let editMediaFiles = $state<string[]>([])
+	let isSavingPost = $state(false)
+	let isUploadingMedia = $state(false)
+
+	function openPostDrawer(post: PostShape) {
+		selectedPost = post
+		editTitle = post.title
+		editContent = post.content
+		editHashtags = post.hashtags?.join(' ') ?? ''
+		editPlatforms = normPlatforms(post.platform)
+		editDate = post.scheduled_date ?? ''
+		editTime = post.scheduled_time ?? ''
+		editMediaFiles = [...(post.media_files ?? [])]
+		showEditDrawer = true
+	}
+
+	$effect(() => {
+		if (!showEditDrawer) selectedPost = null
+	})
 
 	async function savePost() {
-		if (!selectedPost || !editTitle.trim() || !editContent.trim()) return;
-		isSavingPost = true;
+		if (!selectedPost || !editTitle.trim() || !editContent.trim()) return
+		isSavingPost = true
 		try {
-			const tags = editHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
-			const id = selectedPost.filename.replace(/\.json$/, '');
+			const tags = editHashtags
+				.split(/\s+/)
+				.map((t) => t.trim())
+				.filter(Boolean)
+			const id = selectedPost.filename.replace(/\.json$/, '')
 			await updatePost(data.tenant, id, {
-				title: editTitle, content: editContent, hashtags: tags,
+				title: editTitle,
+				content: editContent,
+				hashtags: tags,
 				platforms: editPlatforms,
 				scheduled_date: editDate || undefined,
-				scheduled_time: editTime || undefined,
-			});
-			selectedPost.title = editTitle;
-			selectedPost.content = editContent;
-			selectedPost.hashtags = tags;
-			selectedPost.platform = editPlatforms;
-			selectedPost.scheduled_date = editDate || undefined;
-			selectedPost.scheduled_time = editTime || undefined;
-			scheduled = [...scheduled];
-			showEditDrawer = false;
-		} finally { isSavingPost = false; }
+				scheduled_time: editTime || undefined
+			})
+			selectedPost.title = editTitle
+			selectedPost.content = editContent
+			selectedPost.hashtags = tags
+			selectedPost.platform = editPlatforms
+			selectedPost.scheduled_date = editDate || undefined
+			selectedPost.scheduled_time = editTime || undefined
+			scheduled = [...scheduled]
+			showEditDrawer = false
+		} finally {
+			isSavingPost = false
+		}
 	}
 
 	async function handleMediaUpload(event: Event) {
-		if (!selectedPost) return;
-		const input = event.target as HTMLInputElement;
-		const files = input.files;
-		if (!files || files.length === 0) return;
-		isUploadingMedia = true;
-		const fd = new FormData();
-		for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-		const id = selectedPost.filename.replace(/\.json$/, '');
-		const res = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
+		if (!selectedPost) return
+		const input = event.target as HTMLInputElement
+		const files = input.files
+		if (!files || files.length === 0) return
+		isUploadingMedia = true
+		const fd = new FormData()
+		for (let i = 0; i < files.length; i++) fd.append('file', files[i])
+		const id = selectedPost.filename.replace(/\.json$/, '')
+		const res = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd })
 		if (res.ok) {
-			const body = await res.json() as { media_files: string[] };
-			editMediaFiles = body.media_files ?? [];
-			selectedPost.media_files = editMediaFiles;
+			const body = (await res.json()) as { media_files: string[] }
+			editMediaFiles = body.media_files ?? []
+			selectedPost.media_files = editMediaFiles
 		}
-		input.value = '';
-		isUploadingMedia = false;
+		input.value = ''
+		isUploadingMedia = false
 	}
 
 	async function removeMedia() {
-		if (!selectedPost) return;
-		const id = selectedPost.filename.replace(/\.json$/, '');
-		await fetch(`/api/media/${data.tenant}/${id}`, { method: 'DELETE', credentials: 'include' });
-		editMediaFiles = [];
-		selectedPost.media_files = [];
+		if (!selectedPost) return
+		const id = selectedPost.filename.replace(/\.json$/, '')
+		await fetch(`/api/media/${data.tenant}/${id}`, { method: 'DELETE', credentials: 'include' })
+		editMediaFiles = []
+		selectedPost.media_files = []
 	}
 
 	// ── Delete confirm ────────────────────────────────────────────────────────
-	let showDeleteConfirm = $state(false);
-	let isDeletingPost = $state(false);
+	let showDeleteConfirm = $state(false)
+	let isDeletingPost = $state(false)
 
 	async function confirmDelete() {
-		if (!selectedPost) return;
-		isDeletingPost = true;
+		if (!selectedPost) return
+		isDeletingPost = true
 		try {
-			const id = selectedPost.filename.replace(/\.json$/, '');
-			await apiDeletePost(data.tenant, id);
-			scheduled = scheduled.filter((p) => p.id !== selectedPost!.id);
-			showEditDrawer = false;
-			showDeleteConfirm = false;
+			const id = selectedPost.filename.replace(/\.json$/, '')
+			await apiDeletePost(data.tenant, id)
+			scheduled = scheduled.filter((p) => p.id !== selectedPost!.id)
+			showEditDrawer = false
+			showDeleteConfirm = false
 		} catch {
 			// ignore
-		} finally { isDeletingPost = false; }
+		} finally {
+			isDeletingPost = false
+		}
 	}
 
 	// ── New post drawer ───────────────────────────────────────────────────────
-	let showNewPostDrawer = $state(false);
-	let newPostDate = $state('');
-	let newTitle = $state('');
-	let newContent = $state('');
-	let newHashtags = $state('');
-	let newTime = $state('10:00');
-	let newPlatforms = $state<PostPlatform[]>(['instagram_feed']);
-	let newMediaInput = $state<HTMLInputElement | null>(null);
-	let isCreating = $state(false);
+	let showNewPostDrawer = $state(false)
+	let newPostDate = $state('')
+	let newTitle = $state('')
+	let newContent = $state('')
+	let newHashtags = $state('')
+	let newTime = $state('10:00')
+	let newPlatforms = $state<PostPlatform[]>(['instagram_feed'])
+	let newMediaInput = $state<HTMLInputElement | null>(null)
+	let isCreating = $state(false)
 
 	function openNewPostDrawer(date: string) {
-		newPostDate = date;
-		newTitle = ''; newContent = ''; newHashtags = '';
-		newTime = '10:00'; newPlatforms = ['instagram_feed'];
-		showNewPostDrawer = true;
+		newPostDate = date
+		newTitle = ''
+		newContent = ''
+		newHashtags = ''
+		newTime = '10:00'
+		newPlatforms = ['instagram_feed']
+		showNewPostDrawer = true
 	}
 
 	async function createPost() {
-		if (!newPostDate || !newTitle.trim() || !newContent.trim()) return;
-		isCreating = true;
+		if (!newPostDate || !newTitle.trim() || !newContent.trim()) return
+		isCreating = true
 		try {
-			const tags = newHashtags.split(/\s+/).map((t) => t.trim()).filter(Boolean);
+			const tags = newHashtags
+				.split(/\s+/)
+				.map((t) => t.trim())
+				.filter(Boolean)
 			const newPost = await apiCreatePost(data.tenant, {
-				title: newTitle, content: newContent, hashtags: tags,
+				title: newTitle,
+				content: newContent,
+				hashtags: tags,
 				platforms: newPlatforms,
 				status: 'scheduled',
 				scheduled_date: newPostDate,
-				scheduled_time: newTime || undefined,
-			});
-			const id = newPost.id;
-			const files = newMediaInput?.files;
-			let mediaFiles: string[] = [];
+				scheduled_time: newTime || undefined
+			})
+			const id = newPost.id
+			const files = newMediaInput?.files
+			let mediaFiles: string[] = []
 			if (files && files.length > 0) {
-				const fd = new FormData();
-				for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
-				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd });
+				const fd = new FormData()
+				for (let i = 0; i < files.length; i++) fd.append('file', files[i])
+				const mr = await fetch(`/api/media/${data.tenant}/${id}`, { method: 'POST', body: fd })
 				if (mr.ok) {
-					const mb = await mr.json() as { media_files: string[] };
-					mediaFiles = mb.media_files ?? [];
+					const mb = (await mr.json()) as { media_files: string[] }
+					mediaFiles = mb.media_files ?? []
 				}
 			}
-			scheduled = [...scheduled, {
-				...newPost,
-				status: newPost.status,
-				title: newPost.title ?? newTitle,
-				content: newPost.content,
-				hashtags: newPost.hashtags ?? [],
-				media_type: newPost.media_type,
-				scheduled_date: newPost.scheduled_date ?? newPostDate,
-				scheduled_time: newPost.scheduled_time,
-				platform: (newPost.platforms?.[0] as PostPlatform | undefined) ?? null,
-				client_id: newPost.tenant_id,
-				filename: id + '.json',
-				media_files: mediaFiles,
-				workflow: {},
-			}];
-			showNewPostDrawer = false;
-		} finally { isCreating = false; }
+			scheduled = [
+				...scheduled,
+				{
+					...newPost,
+					status: newPost.status,
+					title: newPost.title ?? newTitle,
+					content: newPost.content,
+					hashtags: newPost.hashtags ?? [],
+					media_type: newPost.media_type,
+					scheduled_date: newPost.scheduled_date ?? newPostDate,
+					scheduled_time: newPost.scheduled_time,
+					platform: (newPost.platforms?.[0] as PostPlatform | undefined) ?? null,
+					client_id: newPost.tenant_id,
+					filename: id + '.json',
+					media_files: mediaFiles,
+					workflow: {}
+				}
+			]
+			showNewPostDrawer = false
+		} finally {
+			isCreating = false
+		}
 	}
 
-	const inputCls = 'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500';
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5';
+	const inputCls =
+		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
 </script>
 
 <div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-
 	<!-- Calendar header -->
 	<div class="mb-6 flex items-center justify-between">
 		<h2 class="text-xl font-bold text-slate-900 dark:text-white">{MONTHS[viewMonth]} {viewYear}</h2>
 		<div class="flex items-center gap-1">
-			<button onclick={prevMonth} class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"><ChevronLeft class="h-5 w-5" /></button>
-			<button onclick={() => { viewYear = today.getFullYear(); viewMonth = today.getMonth(); }} class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">Today</button>
-			<button onclick={nextMonth} class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"><ChevronRight class="h-5 w-5" /></button>
+			<button
+				onclick={prevMonth}
+				class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+				><ChevronLeft class="h-5 w-5" /></button
+			>
+			<button
+				onclick={() => {
+					viewYear = today.getFullYear()
+					viewMonth = today.getMonth()
+				}}
+				class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+				>Today</button
+			>
+			<button
+				onclick={nextMonth}
+				class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+				><ChevronRight class="h-5 w-5" /></button
+			>
 		</div>
 	</div>
 
 	<!-- Day headers -->
 	<div class="mb-1 grid grid-cols-7">
-		{#each DAYS as d}
-			<div class="py-2 text-center text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{d}</div>
+		{#each DAYS as d (d)}
+			<div
+				class="py-2 text-center text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500"
+			>
+				{d}
+			</div>
 		{/each}
 	</div>
 
 	<!-- Calendar grid -->
-	<div class="grid grid-cols-7 border-l border-t border-slate-200 dark:border-slate-800">
-		{#each calendarCells as cell}
-			<div class="group/cell relative min-h-[110px] border-b border-r border-slate-200 p-1.5 dark:border-slate-800 {cell.date ? 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40' : 'bg-slate-50 dark:bg-slate-950'}">
+	<div class="grid grid-cols-7 border-t border-l border-slate-200 dark:border-slate-800">
+		{#each calendarCells as cell, i (cell.date || 'empty-' + i)}
+			<div
+				class="group/cell relative min-h-[110px] border-r border-b border-slate-200 p-1.5 dark:border-slate-800 {cell.date
+					? 'bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/40'
+					: 'bg-slate-50 dark:bg-slate-950'}"
+			>
 				{#if cell.day}
 					<div class="mb-1 flex items-center justify-between px-0.5">
-						<span class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold {isToday(cell.date) ? 'bg-indigo-500 text-white' : 'text-slate-500 dark:text-slate-400'}">{cell.day}</span>
+						<span
+							class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold {isToday(
+								cell.date
+							)
+								? 'bg-indigo-500 text-white'
+								: 'text-slate-500 dark:text-slate-400'}">{cell.day}</span
+						>
 						<button
 							onclick={() => openNewPostDrawer(cell.date!)}
-							class="flex h-5 w-5 items-center justify-center rounded text-slate-400 opacity-0 transition-opacity hover:bg-indigo-50 hover:text-indigo-600 group-hover/cell:opacity-100 dark:hover:bg-indigo-900/30"
+							class="flex h-5 w-5 items-center justify-center rounded text-slate-400 opacity-0 transition-opacity group-hover/cell:opacity-100 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
 						>
 							<Plus class="h-3.5 w-3.5" />
 						</button>
@@ -254,9 +345,11 @@
 							<button
 								onclick={() => openPostDrawer(post)}
 								class="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left opacity-100 transition-opacity hover:opacity-80"
-								style="background: {post.status === 'published' ? 'rgb(220 252 231)' : 'rgb(254 243 199)'}"
+								style="background: {post.status === 'published'
+									? 'rgb(220 252 231)'
+									: 'rgb(254 243 199)'}"
 							>
-								{#each normPlatforms(post.platform).slice(0, 2) as plt}
+								{#each normPlatforms(post.platform).slice(0, 2) as plt (plt)}
 									{@render PlatformDot({ platform: plt })}
 								{/each}
 								<span class="truncate text-[10px] font-medium text-slate-700">{post.title}</span>
@@ -273,20 +366,22 @@
 
 	<!-- Legend -->
 	<div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-		<span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm border border-amber-300 bg-amber-100"></span> Scheduled</span>
-		<span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm border border-emerald-300 bg-emerald-100"></span> Published</span>
+		<span class="flex items-center gap-1.5"
+			><span class="h-2 w-2 rounded-sm border border-amber-300 bg-amber-100"></span> Scheduled</span
+		>
+		<span class="flex items-center gap-1.5"
+			><span class="h-2 w-2 rounded-sm border border-emerald-300 bg-emerald-100"></span> Published</span
+		>
 		<span class="flex items-center gap-1.5">
-			<SiInstagram size={12} color="#E1306C" />
+			<ProviderIcon provider="instagram" class="h-3 w-3 text-[#E1306C]" />
 			Instagram
 		</span>
 		<span class="flex items-center gap-1.5">
-			<SiFacebook size={12} color="#1877F2" />
+			<ProviderIcon provider="facebook" class="h-3 w-3 text-[#1877F2]" />
 			Facebook
 		</span>
 		<span class="flex items-center gap-1.5">
-			<svg width="12" height="12" viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true">
-				<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-			</svg>
+			<ProviderIcon provider="linkedin" class="h-3 w-3 text-[#0A66C2]" />
 			LinkedIn
 		</span>
 	</div>
@@ -304,14 +399,19 @@
 <!-- ── New post drawer ───────────────────────────────────────────────────────── -->
 <Drawer bind:open={showNewPostDrawer}>
 	<div class="flex h-full flex-col">
-		<div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+		<div
+			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+		>
 			<div>
 				<h2 class="text-lg font-bold text-slate-900 dark:text-white">New Post</h2>
 				{#if newPostDate}
 					<p class="font-mono text-xs text-slate-400">{newPostDate}</p>
 				{/if}
 			</div>
-			<button onclick={() => (showNewPostDrawer = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+			<button
+				onclick={() => (showNewPostDrawer = false)}
+				class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+			>
 				<X class="h-5 w-5" />
 			</button>
 		</div>
@@ -324,29 +424,69 @@
 				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<div>
-						<label for="new-date" class={labelCls}>Date <span class="font-normal normal-case text-slate-400">(fixed)</span></label>
-						<input id="new-date" type="date" value={newPostDate} disabled class="{inputCls} cursor-not-allowed opacity-60" />
+						<label for="new-date" class={labelCls}
+							>Date <span class="font-normal text-slate-400 normal-case">(fixed)</span></label
+						>
+						<input
+							id="new-date"
+							type="date"
+							value={newPostDate}
+							disabled
+							class="{inputCls} cursor-not-allowed opacity-60"
+						/>
 					</div>
 					<div>
-						<label for="new-time" class={labelCls}>Time <span class="font-normal normal-case text-slate-400">(opt.)</span></label>
+						<label for="new-time" class={labelCls}
+							>Time <span class="font-normal text-slate-400 normal-case">(opt.)</span></label
+						>
 						<input id="new-time" type="time" bind:value={newTime} class={inputCls} />
 					</div>
 				</div>
 				<div>
 					<label for="new-title" class={labelCls}>Title</label>
-					<input id="new-title" bind:value={newTitle} type="text" placeholder="Post title" class={inputCls} />
+					<input
+						id="new-title"
+						bind:value={newTitle}
+						type="text"
+						placeholder="Post title"
+						class={inputCls}
+					/>
 				</div>
 				<div>
 					<label for="new-content" class={labelCls}>Content</label>
-					<textarea id="new-content" bind:value={newContent} rows="5" placeholder="Post copy…" class="{inputCls} resize-none"></textarea>
+					<textarea
+						id="new-content"
+						bind:value={newContent}
+						rows="5"
+						placeholder="Post copy…"
+						class="{inputCls} resize-none"
+					></textarea>
 				</div>
 				<div>
-					<label for="new-hashtags" class={labelCls}>Hashtags <span class="font-normal normal-case text-slate-400">(space separated)</span></label>
-					<input id="new-hashtags" bind:value={newHashtags} type="text" placeholder="#hashtag1 #hashtag2" class={inputCls} />
+					<label for="new-hashtags" class={labelCls}
+						>Hashtags <span class="font-normal text-slate-400 normal-case">(space separated)</span
+						></label
+					>
+					<input
+						id="new-hashtags"
+						bind:value={newHashtags}
+						type="text"
+						placeholder="#hashtag1 #hashtag2"
+						class={inputCls}
+					/>
 				</div>
 				<div>
-					<label for="new-image" class={labelCls}>Image <span class="font-normal normal-case text-slate-400">(optional)</span></label>
-					<input id="new-image" bind:this={newMediaInput} type="file" accept="image/*,video/*" multiple class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400" />
+					<label for="new-image" class={labelCls}
+						>Image <span class="font-normal text-slate-400 normal-case">(optional)</span></label
+					>
+					<input
+						id="new-image"
+						bind:this={newMediaInput}
+						type="file"
+						accept="image/*,video/*"
+						multiple
+						class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
+					/>
 				</div>
 			</div>
 		</div>
@@ -357,7 +497,8 @@
 				disabled={!newTitle.trim() || !newContent.trim() || isCreating}
 				class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
 			>
-				<Clock class="h-4 w-4" /> {isCreating ? 'Saving…' : 'Add to Planner'}
+				<Clock class="h-4 w-4" />
+				{isCreating ? 'Saving…' : 'Add to Planner'}
 			</button>
 			<button
 				onclick={() => (showNewPostDrawer = false)}
@@ -374,11 +515,18 @@
 	<div class="flex h-full flex-col">
 		{#if selectedPost}
 			<!-- Header -->
-			<div class="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+			<div
+				class="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+			>
 				<div class="min-w-0 flex-1 pr-4">
 					<div class="mb-1 flex flex-wrap items-center gap-2">
-						<span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase {selectedPost.status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">{selectedPost.status}</span>
-						{#each normPlatforms(selectedPost.platform) as plt}
+						<span
+							class="rounded-full px-2 py-0.5 text-xs font-bold uppercase {selectedPost.status ===
+							'published'
+								? 'bg-emerald-100 text-emerald-700'
+								: 'bg-amber-100 text-amber-700'}">{selectedPost.status}</span
+						>
+						{#each normPlatforms(selectedPost.platform) as plt (plt)}
 							{#if PLATFORM[plt]}
 								<span class="flex items-center gap-1 text-xs text-slate-500">
 									{@render PlatformDot({ platform: plt })}
@@ -398,7 +546,10 @@
 							<Trash2 class="h-3.5 w-3.5" /> Delete
 						</button>
 					{/if}
-					<button onclick={() => (showEditDrawer = false)} class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+					<button
+						onclick={() => (showEditDrawer = false)}
+						class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+					>
 						<X class="h-5 w-5" />
 					</button>
 				</div>
@@ -409,28 +560,49 @@
 					<!-- Read-only view -->
 					<p class="mb-2 font-bold text-slate-900 dark:text-white">{selectedPost.title}</p>
 					{#if selectedPost.scheduled_date}
-						<p class="mb-3 text-xs text-slate-400">{selectedPost.scheduled_date}{selectedPost.scheduled_time ? ' · ' + selectedPost.scheduled_time : ''}</p>
+						<p class="mb-3 text-xs text-slate-400">
+							{selectedPost.scheduled_date}{selectedPost.scheduled_time
+								? ' · ' + selectedPost.scheduled_time
+								: ''}
+						</p>
 					{/if}
 					{#if editMediaFiles.length > 0}
-						<div class="mb-4 grid gap-2 {editMediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}">
-							{#each editMediaFiles as f}
-								<div class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700">
+						<div
+							class="mb-4 grid gap-2 {editMediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}"
+						>
+							{#each editMediaFiles as f (f)}
+								<div
+									class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700"
+								>
 									{#if f.match(/\.(mp4|webm)$/i)}
-										<video src="/api/media/{data.tenant}/{f}" controls class="max-h-full max-w-full object-contain"><track kind="captions" /></video>
+										<video
+											src="/api/media/{data.tenant}/{f}"
+											controls
+											class="max-h-full max-w-full object-contain"><track kind="captions" /></video
+										>
 									{:else}
-										<img src="/api/media/{data.tenant}/{f}" alt="Media" class="max-h-full max-w-full object-contain" />
+										<img
+											src="/api/media/{data.tenant}/{f}"
+											alt="Media"
+											class="max-h-full max-w-full object-contain"
+										/>
 									{/if}
 								</div>
 							{/each}
 						</div>
 					{/if}
-					<p class="mb-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{selectedPost.content}</p>
+					<p
+						class="mb-4 text-sm leading-relaxed whitespace-pre-wrap text-slate-700 dark:text-slate-300"
+					>
+						{selectedPost.content}
+					</p>
 					{#if selectedPost.hashtags?.length}
 						<p class="flex flex-wrap gap-1 text-xs text-indigo-500 dark:text-indigo-400">
-							{#each selectedPost.hashtags as tag}<span>{tag}</span>{/each}
+							{#each selectedPost.hashtags as tag (tag)}
+								<span>{tag}</span>
+							{/each}
 						</p>
 					{/if}
-
 				{:else}
 					<!-- Editable form -->
 					<div class="flex flex-col gap-4">
@@ -444,7 +616,9 @@
 								<input id="edit-date" type="date" bind:value={editDate} class={inputCls} />
 							</div>
 							<div>
-								<label for="edit-time" class={labelCls}>Time <span class="font-normal normal-case text-slate-400">(opt.)</span></label>
+								<label for="edit-time" class={labelCls}
+									>Time <span class="font-normal text-slate-400 normal-case">(opt.)</span></label
+								>
 								<input id="edit-time" type="time" bind:value={editTime} class={inputCls} />
 							</div>
 						</div>
@@ -454,14 +628,25 @@
 						</div>
 						<div>
 							<label for="edit-content" class={labelCls}>Content</label>
-							<textarea id="edit-content" bind:value={editContent} rows="7" class="{inputCls} resize-y"></textarea>
+							<textarea
+								id="edit-content"
+								bind:value={editContent}
+								rows="7"
+								class="{inputCls} resize-y"
+							></textarea>
 						</div>
 						<div>
-							<label for="edit-hashtags" class={labelCls}>Hashtags <span class="font-normal normal-case text-slate-400">(space separated)</span></label>
+							<label for="edit-hashtags" class={labelCls}
+								>Hashtags <span class="font-normal text-slate-400 normal-case"
+									>(space separated)</span
+								></label
+							>
 							<input id="edit-hashtags" bind:value={editHashtags} type="text" class={inputCls} />
 							{#if editHashtags}
 								<p class="mt-1.5 flex flex-wrap gap-1 text-xs text-indigo-500 dark:text-indigo-400">
-									{#each editHashtags.split(/\s+/).filter(Boolean) as tag}<span>{tag}</span>{/each}
+									{#each editHashtags.split(/\s+/).filter(Boolean) as tag (tag)}
+										<span>{tag}</span>
+									{/each}
 								</p>
 							{/if}
 						</div>
@@ -470,35 +655,60 @@
 							<div class="mb-1.5 flex items-center justify-between">
 								<p class={labelCls}>Image</p>
 								{#if editMediaFiles.length > 0}
-									<button onclick={removeMedia} class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700">
+									<button
+										onclick={removeMedia}
+										class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700"
+									>
 										<Trash2 class="h-3 w-3" /> Remove all
 									</button>
 								{/if}
 							</div>
 							{#if editMediaFiles.length > 0}
-								<div class="mb-3 grid gap-2 {editMediaFiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}">
-									{#each editMediaFiles as f}
-										<div class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700">
+								<div
+									class="mb-3 grid gap-2 {editMediaFiles.length > 1
+										? 'grid-cols-2'
+										: 'grid-cols-1'}"
+								>
+									{#each editMediaFiles as f (f)}
+										<div
+											class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-900 dark:border-slate-700"
+										>
 											{#if f.match(/\.(mp4|webm)$/i)}
-												<video src="/api/media/{data.tenant}/{f}" controls class="max-h-full max-w-full object-contain"><track kind="captions" /></video>
+												<video
+													src="/api/media/{data.tenant}/{f}"
+													controls
+													class="max-h-full max-w-full object-contain"
+													><track kind="captions" /></video
+												>
 											{:else}
-												<img src="/api/media/{data.tenant}/{f}" alt="Media" class="max-h-full max-w-full object-contain" />
+												<img
+													src="/api/media/{data.tenant}/{f}"
+													alt="Media"
+													class="max-h-full max-w-full object-contain"
+												/>
 											{/if}
 										</div>
 									{/each}
 								</div>
 							{:else}
-								<div class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50">
+								<div
+									class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50"
+								>
 									<ImagePlus class="mr-2 h-4 w-4" /> No image attached
 								</div>
 							{/if}
 							<input
-								type="file" accept="image/*,video/*" multiple
-								onchange={handleMediaUpload} disabled={isUploadingMedia}
+								type="file"
+								accept="image/*,video/*"
+								multiple
+								onchange={handleMediaUpload}
+								disabled={isUploadingMedia}
 								class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 disabled:opacity-50 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
 							/>
 							{#if isUploadingMedia}
-								<p class="mt-1 animate-pulse text-xs text-indigo-600 dark:text-indigo-400">Uploading…</p>
+								<p class="mt-1 animate-pulse text-xs text-indigo-600 dark:text-indigo-400">
+									Uploading…
+								</p>
 							{/if}
 						</div>
 					</div>
@@ -529,17 +739,16 @@
 <!-- Inline platform dot snippet used in the calendar cells -->
 {#snippet PlatformDot(props: { platform: PostPlatform })}
 	{@const plt = props.platform}
-	{#if plt === 'instagram_feed' || plt === 'instagram_stories' || plt === 'instagram_reels'}
-		<SiInstagram
-			size={10}
-			color={plt === 'instagram_feed' ? '#E1306C' : plt === 'instagram_stories' ? '#C13584' : '#FF0000'}
-			class="shrink-0"
-		/>
-	{:else if plt === 'facebook'}
-		<SiFacebook size={10} color="#1877F2" class="shrink-0" />
-	{:else if plt === 'linkedin'}
-		<svg width="10" height="10" viewBox="0 0 24 24" fill="#0A66C2" class="shrink-0" aria-hidden="true">
-			<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-		</svg>
-	{/if}
+	<ProviderIcon
+		provider={plt}
+		class="h-2.5 w-2.5 shrink-0 {plt === 'instagram_feed'
+			? 'text-[#E1306C]'
+			: plt === 'instagram_stories'
+				? 'text-[#C13584]'
+				: plt === 'instagram_reels'
+					? 'text-[#FF0000]'
+					: plt === 'facebook'
+						? 'text-[#1877F2]'
+						: 'text-[#0A66C2]'}"
+	/>
 {/snippet}
