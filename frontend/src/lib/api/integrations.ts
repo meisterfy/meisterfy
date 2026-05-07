@@ -48,10 +48,12 @@ export const getIntegrations = (fetchFn?: typeof fetch) =>
 	apiFetch<IntegrationsPageData>('/admin/integrations', {}, fetchFn)
 
 export const getIntegration = (id: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Integration }>(`/admin/integrations/${id}`, {}, fetchFn).then(r => r.data)
+	apiFetch<{ data: Integration }>(`/admin/integrations/${id}`, {}, fetchFn).then((r) => r.data)
 
 export const listProviders = (fetchFn?: typeof fetch) =>
-	apiFetch<{ data: ProviderSchema[] }>('/admin/integrations/providers', {}, fetchFn).then(r => r.data)
+	apiFetch<{ data: ProviderSchema[] }>('/admin/integrations/providers', {}, fetchFn).then(
+		(r) => r.data
+	)
 
 export interface CreateIntegrationBody {
 	name: string
@@ -66,14 +68,14 @@ export interface CreateIntegrationBody {
 export const createIntegration = (body: CreateIntegrationBody) =>
 	apiFetch<{ data: Integration }>('/admin/integrations', {
 		method: 'POST',
-		body: JSON.stringify(body),
-	}).then(r => r.data)
+		body: JSON.stringify(body)
+	}).then((r) => r.data)
 
 export const updateIntegration = (id: string, body: Partial<CreateIntegrationBody>) =>
 	apiFetch<{ data: Integration }>(`/admin/integrations/${id}`, {
 		method: 'PUT',
-		body: JSON.stringify(body),
-	}).then(r => r.data)
+		body: JSON.stringify(body)
+	}).then((r) => r.data)
 
 export const deleteIntegration = (id: string) =>
 	apiFetch<void>(`/admin/integrations/${id}`, { method: 'DELETE' })
@@ -84,5 +86,5 @@ export const testIntegration = (id: string) =>
 export const setIntegrationTenants = (id: string, tenantIds: string[]) =>
 	apiFetch<void>(`/admin/integrations/${id}/tenants`, {
 		method: 'PUT',
-		body: JSON.stringify({ tenant_ids: tenantIds }),
+		body: JSON.stringify({ tenant_ids: tenantIds })
 	})

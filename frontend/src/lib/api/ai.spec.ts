@@ -7,27 +7,32 @@ function makeSSEStream(lines: string[]): ReadableStream<Uint8Array> {
 		start(controller) {
 			controller.enqueue(new TextEncoder().encode(body))
 			controller.close()
-		},
+		}
 	})
 }
 
 describe('streamGenerate', () => {
-	afterEach(() => { vi.restoreAllMocks() })
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
 
 	it('delivers text chunks from SSE stream', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-			ok: true,
-			body: makeSSEStream([
-				'data: {"content":"Hello","done":false}\n\n',
-				'data: {"content":", world","done":false}\n\n',
-				'data: [DONE]\n\n',
-			]),
-		}))
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: true,
+				body: makeSSEStream([
+					'data: {"content":"Hello","done":false}\n\n',
+					'data: {"content":", world","done":false}\n\n',
+					'data: [DONE]\n\n'
+				])
+			})
+		)
 
 		const collected: string[] = []
 		await streamGenerate(
 			{ tenant_id: 't1', messages: [{ role: 'user', content: 'hi' }] },
-			chunk => collected.push(chunk.content),
+			(chunk) => collected.push(chunk.content)
 		)
 
 		expect(collected).toEqual(['Hello', ', world'])
@@ -36,13 +41,13 @@ describe('streamGenerate', () => {
 	it('sends correct headers and payload', async () => {
 		const mockFetch = vi.fn().mockResolvedValue({
 			ok: true,
-			body: makeSSEStream(['data: [DONE]\n\n']),
+			body: makeSSEStream(['data: [DONE]\n\n'])
 		})
 		vi.stubGlobal('fetch', mockFetch)
 
 		await streamGenerate(
 			{ tenant_id: 't1', messages: [{ role: 'user', content: 'hi' }], system: 'be brief' },
-			() => {},
+			() => {}
 		)
 
 		const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
@@ -54,14 +59,17 @@ describe('streamGenerate', () => {
 	})
 
 	it('throws on non-ok response', async () => {
-		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-			ok: false,
-			status: 503,
-			json: async () => ({ error: 'no provider available' }),
-		}))
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: false,
+				status: 503,
+				json: async () => ({ error: 'no provider available' })
+			})
+		)
 
 		await expect(
-			streamGenerate({ tenant_id: 't1', messages: [{ role: 'user', content: 'hi' }] }, () => {}),
+			streamGenerate({ tenant_id: 't1', messages: [{ role: 'user', content: 'hi' }] }, () => {})
 		).rejects.toThrow('no provider available')
 	})
 })

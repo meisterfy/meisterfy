@@ -24,17 +24,20 @@ export type ChunkCallback = (chunk: AIChunk) => void
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
-export async function streamGenerate(req: AIGenerateRequest, onChunk: ChunkCallback): Promise<void> {
+export async function streamGenerate(
+	req: AIGenerateRequest,
+	onChunk: ChunkCallback
+): Promise<void> {
 	const token = getToken()
 	const res = await fetch(`${BASE_URL}/ai/generate`, {
 		method: 'POST',
 		credentials: 'include',
 		headers: {
 			'Content-Type': 'application/json',
-			'Accept': 'text/event-stream',
-			...(token ? { Authorization: `Bearer ${token}` } : {}),
+			Accept: 'text/event-stream',
+			...(token ? { Authorization: `Bearer ${token}` } : {})
 		},
-		body: JSON.stringify(req),
+		body: JSON.stringify(req)
 	})
 
 	if (!res.ok) {

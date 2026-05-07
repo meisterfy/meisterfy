@@ -15,13 +15,15 @@ export interface Alert {
 }
 
 export const getAlerts = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts`, {}, fetchFn).then(r => r.data)
+	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts`, {}, fetchFn).then((r) => r.data)
 
 export const getAlertCount = (tenantId: string) =>
 	apiFetch<{ count: number }>(`/admin/tenants/${tenantId}/alerts/count`)
 
 export const getAlertHistory = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts/history`, {}, fetchFn).then(r => r.data)
+	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts/history`, {}, fetchFn).then(
+		(r) => r.data
+	)
 
 export const resolveAlert = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/alerts/${id}/resolve`, { method: 'POST' })
