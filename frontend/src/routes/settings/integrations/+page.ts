@@ -2,13 +2,11 @@ import { getTenants } from '$lib/api/tenants'
 import { getIntegrations } from '$lib/api/integrations'
 import type { PageLoad } from './$types'
 
-export const ssr = false
+export const ssr = true
 
-export const load: PageLoad = async ({ fetch }) => {
-	const [data, tenants] = await Promise.all([
-		getIntegrations(fetch).catch(() => ({ integrations: [], providers: [] })),
-		getTenants(fetch).catch(() => []),
-	])
-	const tenantOptions = tenants.map(t => ({ value: t.id, label: t.name }))
-	return { ...data, tenantOptions }
+export const load: PageLoad = ({ fetch }) => {
+	return {
+		data: getIntegrations(fetch).catch(() => ({ integrations: [], providers: [] })),
+		tenants: getTenants(fetch).catch(() => [])
+	}
 }
