@@ -2,9 +2,15 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 let accessToken: string | null = null
 
-export function setToken(token: string) { accessToken = token }
-export function clearToken() { accessToken = null }
-export function getToken() { return accessToken }
+export function setToken(token: string) {
+	accessToken = token
+}
+export function clearToken() {
+	accessToken = null
+}
+export function getToken() {
+	return accessToken
+}
 
 export async function apiFetch<T>(
 	path: string,
@@ -17,8 +23,8 @@ export async function apiFetch<T>(
 		headers: {
 			'Content-Type': 'application/json',
 			...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-			...(options.headers ?? {}),
-		},
+			...(options.headers ?? {})
+		}
 	})
 
 	if (res.status === 401) {
@@ -42,7 +48,7 @@ export async function apiFetch<T>(
 async function tryRefresh(): Promise<boolean> {
 	const res = await fetch(`${BASE_URL}/auth/refresh`, {
 		method: 'POST',
-		credentials: 'include',
+		credentials: 'include'
 	})
 	if (!res.ok) return false
 	const data = await res.json()

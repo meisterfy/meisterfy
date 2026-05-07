@@ -9,12 +9,18 @@ export interface AuthUser {
 }
 
 let _token = $state<string | null>(null)
-let _user  = $state<AuthUser | null>(null)
+let _user = $state<AuthUser | null>(null)
 
 export const auth = {
-	get token()           { return _token },
-	get user()            { return _user },
-	get isAuthenticated() { return _token !== null },
+	get token() {
+		return _token
+	},
+	get user() {
+		return _user
+	},
+	get isAuthenticated() {
+		return _token !== null
+	},
 
 	setToken(t: string) {
 		_token = t
@@ -38,7 +44,7 @@ export const auth = {
 		try {
 			const res = await fetch('/auth/me', {
 				credentials: 'include',
-				headers: _token ? { Authorization: `Bearer ${_token}` } : {},
+				headers: _token ? { Authorization: `Bearer ${_token}` } : {}
 			})
 			if (!res.ok) return false
 			const data = await res.json()
@@ -47,5 +53,5 @@ export const auth = {
 		} catch {
 			return false
 		}
-	},
+	}
 }

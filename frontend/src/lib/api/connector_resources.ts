@@ -23,7 +23,7 @@ export const getConnectorResources = (
 		`/admin/tenants/${tenantId}/connectors?provider=${encodeURIComponent(provider)}&resource_type=${encodeURIComponent(resourceType)}`,
 		{},
 		fetchFn
-	).then(r => r.data)
+	).then((r) => r.data)
 
 export interface PublishToMetaBody {
 	post_id: string
@@ -32,7 +32,15 @@ export interface PublishToMetaBody {
 }
 
 export const publishToMeta = (tenantId: string, body: PublishToMetaBody) =>
-	apiFetch<{ data: { post_id: string; status: string; meta_post_id: string; platform: string; published_at: string } }>(
-		`/admin/tenants/${tenantId}/meta/publish`,
-		{ method: 'POST', body: JSON.stringify(body) }
-	).then(r => r.data)
+	apiFetch<{
+		data: {
+			post_id: string
+			status: string
+			meta_post_id: string
+			platform: string
+			published_at: string
+		}
+	}>(`/admin/tenants/${tenantId}/meta/publish`, {
+		method: 'POST',
+		body: JSON.stringify(body)
+	}).then((r) => r.data)
