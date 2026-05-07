@@ -10,18 +10,21 @@ const TYPE_MAP: Record<string, { label: string; color: string }> = {
 	report: { label: 'Report', color: 'slate' }
 }
 
-export const ssr = false
 
-export const load: PageLoad = async ({ params, fetch }) => {
-	const rows = await getReports(params.tenant, fetch).catch(() => [])
-	const reports = rows.map((r) => {
-		const dateMatch = r.slug.match(/(\d{4}-\d{2}-\d{2})/)
-		return {
-			slug: r.slug,
-			date: dateMatch?.[1] ?? null,
-			title: r.title ?? r.slug,
-			...(TYPE_MAP[r.type] ?? TYPE_MAP.report)
-		}
-	})
+export const load: PageLoad = ({ params, fetch }) => {
+	const reports = getReports(params.tenant, fetch)
+		.then((rows) =>
+			rows.map((r) => {
+				const dateMatch = r.slug.match(/(\d{4}-\d{2}-\d{2})/)
+				return {
+					slug: r.slug,
+					date: dateMatch?.[1] ?? null,
+					title: r.title ?? r.slug,
+					...(TYPE_MAP[r.type] ?? TYPE_MAP.report)
+				}
+			})
+		)
+		.catch(() => [])
+
 	return { tenant: params.tenant, reports }
 }

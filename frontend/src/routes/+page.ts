@@ -3,7 +3,6 @@ import { getIntegrations } from '$lib/api/integrations'
 import { redirect, isRedirect } from '@sveltejs/kit'
 import type { PageLoad } from './$types'
 
-export const ssr = false
 
 export const load: PageLoad = async ({ fetch }) => {
 	try {
