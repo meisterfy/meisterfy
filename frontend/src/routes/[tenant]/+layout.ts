@@ -2,7 +2,7 @@ import { getTenants, getTenant } from '$lib/api/tenants'
 import { error } from '@sveltejs/kit'
 import type { LayoutLoad } from './$types'
 
-export const ssr = false
+export const ssr = true
 
 const toClient = (t: Awaited<ReturnType<typeof getTenant>>) => ({
 	id: t.id,
@@ -10,14 +10,14 @@ const toClient = (t: Awaited<ReturnType<typeof getTenant>>) => ({
 		name: t.name,
 		niche: t.niche,
 		google_ads_id: t.google_ads_id,
-		ads_monitoring: t.ads_monitoring,
-	},
+		ads_monitoring: t.ads_monitoring
+	}
 })
 
 export const load: LayoutLoad = async ({ params, fetch }) => {
 	const [tenant, tenants] = await Promise.all([
 		getTenant(params.tenant, fetch).catch(() => null),
-		getTenants(fetch).catch(() => []),
+		getTenants(fetch).catch(() => [])
 	])
 
 	if (!tenant) {
@@ -27,6 +27,6 @@ export const load: LayoutLoad = async ({ params, fetch }) => {
 	return {
 		tenant: params.tenant,
 		client: toClient(tenant),
-		clients: tenants.map(toClient),
+		clients: tenants.map(toClient)
 	}
 }
