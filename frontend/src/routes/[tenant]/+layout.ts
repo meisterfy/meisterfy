@@ -2,7 +2,6 @@ import { getTenants, getTenant } from '$lib/api/tenants'
 import { error } from '@sveltejs/kit'
 import type { LayoutLoad } from './$types'
 
-export const ssr = true
 
 const toClient = (t: Awaited<ReturnType<typeof getTenant>>) => ({
 	id: t.id,
