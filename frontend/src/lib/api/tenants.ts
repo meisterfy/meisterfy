@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchData } from './client'
 
 export interface AdsMonitoringConfig {
 	target_cpa_brl: number
@@ -24,21 +24,19 @@ export interface Tenant {
 }
 
 export const getTenants = (fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Tenant[] }>('/admin/tenants', {}, fetchFn).then((r) => r.data)
+	apiFetchData<Tenant[]>('/admin/tenants', {}, fetchFn)
 
 export const getTenant = (id: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Tenant }>(`/admin/tenants/${id}`, {}, fetchFn).then((r) => r.data)
+	apiFetchData<Tenant>(`/admin/tenants/${id}`, {}, fetchFn)
 
 export const createTenant = (body: Partial<Tenant>) =>
-	apiFetch<{ data: Tenant }>('/admin/tenants', { method: 'POST', body: JSON.stringify(body) }).then(
-		(r) => r.data
-	)
+	apiFetchData<Tenant>('/admin/tenants', { method: 'POST', body: JSON.stringify(body) })
 
 export const updateTenant = (id: string, body: Partial<Tenant>) =>
-	apiFetch<{ data: Tenant }>(`/admin/tenants/${id}`, {
+	apiFetchData<Tenant>(`/admin/tenants/${id}`, {
 		method: 'PUT',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const deleteTenant = (id: string) =>
 	apiFetch<void>(`/admin/tenants/${id}`, { method: 'DELETE' })

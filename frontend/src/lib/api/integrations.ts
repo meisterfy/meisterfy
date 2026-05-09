@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchData } from './client'
 
 export type IntegrationProvider = string
 export type IntegrationStatus = 'pending' | 'connected' | 'error'
@@ -19,6 +19,7 @@ export interface ProviderSchema {
 	display_name: string
 	description: string
 	logo_svg: string
+	logo_png: string
 	config_fields: FieldSchema[]
 	credential_fields: FieldSchema[]
 	oauth_flow: boolean
@@ -48,12 +49,10 @@ export const getIntegrations = (fetchFn?: typeof fetch) =>
 	apiFetch<IntegrationsPageData>('/admin/integrations', {}, fetchFn)
 
 export const getIntegration = (id: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Integration }>(`/admin/integrations/${id}`, {}, fetchFn).then((r) => r.data)
+	apiFetchData<Integration>(`/admin/integrations/${id}`, {}, fetchFn)
 
 export const listProviders = (fetchFn?: typeof fetch) =>
-	apiFetch<{ data: ProviderSchema[] }>('/admin/integrations/providers', {}, fetchFn).then(
-		(r) => r.data
-	)
+	apiFetchData<ProviderSchema[]>('/admin/integrations/providers', {}, fetchFn)
 
 export interface CreateIntegrationBody {
 	name: string
@@ -66,16 +65,16 @@ export interface CreateIntegrationBody {
 }
 
 export const createIntegration = (body: CreateIntegrationBody) =>
-	apiFetch<{ data: Integration }>('/admin/integrations', {
+	apiFetchData<Integration>('/admin/integrations', {
 		method: 'POST',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const updateIntegration = (id: string, body: Partial<CreateIntegrationBody>) =>
-	apiFetch<{ data: Integration }>(`/admin/integrations/${id}`, {
+	apiFetchData<Integration>(`/admin/integrations/${id}`, {
 		method: 'PUT',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const deleteIntegration = (id: string) =>
 	apiFetch<void>(`/admin/integrations/${id}`, { method: 'DELETE' })

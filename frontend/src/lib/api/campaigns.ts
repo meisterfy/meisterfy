@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchData } from './client'
 
 export interface CampaignListItem {
 	id: string
@@ -7,31 +7,29 @@ export interface CampaignListItem {
 }
 
 export interface Campaign extends CampaignListItem {
-	data: Record<string, unknown>
+	data: Record<string, string | number | boolean | null | object>
 }
 
 export const getCampaigns = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: CampaignListItem[] }>(`/admin/tenants/${tenantId}/campaigns`, {}, fetchFn).then(
-		(r) => r.data
-	)
+	apiFetchData<Campaign[]>(`/admin/tenants/${tenantId}/campaigns`, {}, fetchFn)
 
 export const getCampaign = (tenantId: string, slug: string) =>
-	apiFetch<{ data: Campaign }>(`/admin/tenants/${tenantId}/campaigns/${slug}`).then((r) => r.data)
+	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns/${slug}`)
 
-export const createCampaign = (tenantId: string, body: { slug: string; data: unknown }) =>
-	apiFetch<{ data: Campaign }>(`/admin/tenants/${tenantId}/campaigns`, {
+export const createCampaign = (tenantId: string, body: { slug: string; data: Record<string, string | number | boolean | null | object> }) =>
+	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns`, {
 		method: 'POST',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const deleteCampaign = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/campaigns/${id}`, { method: 'DELETE' })
 
-export const updateCampaign = (tenantId: string, slug: string, data: unknown) =>
-	apiFetch<{ data: Campaign }>(`/admin/tenants/${tenantId}/campaigns/${slug}`, {
+export const updateCampaign = (tenantId: string, slug: string, data: Record<string, string | number | boolean | null | object>) =>
+	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns/${slug}`, {
 		method: 'PUT',
 		body: JSON.stringify({ data })
-	}).then((r) => r.data)
+	})
 
 export const deployCampaign = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/campaigns/${id}/deploy`, { method: 'POST' })

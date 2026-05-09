@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchData } from './client'
 
 export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published'
 
@@ -28,25 +28,23 @@ export interface Post {
 
 export const getPosts = (tenantId: string, status?: string, fetchFn?: typeof fetch) => {
 	const qs = status ? `?status=${status}` : ''
-	return apiFetch<{ data: Post[] }>(`/admin/tenants/${tenantId}/posts${qs}`, {}, fetchFn).then(
-		(r) => r.data
-	)
+	return apiFetchData<Post[]>(`/admin/tenants/${tenantId}/posts${qs}`, {}, fetchFn)
 }
 
 export const getPost = (tenantId: string, id: string) =>
-	apiFetch<{ data: Post }>(`/admin/tenants/${tenantId}/posts/${id}`).then((r) => r.data)
+	apiFetchData<Post>(`/admin/tenants/${tenantId}/posts/${id}`)
 
 export const createPost = (tenantId: string, body: Partial<Post>) =>
-	apiFetch<{ data: Post }>(`/admin/tenants/${tenantId}/posts`, {
+	apiFetchData<Post>(`/admin/tenants/${tenantId}/posts`, {
 		method: 'POST',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const updatePost = (tenantId: string, id: string, body: Partial<Post>) =>
-	apiFetch<{ data: Post }>(`/admin/tenants/${tenantId}/posts/${id}`, {
+	apiFetchData<Post>(`/admin/tenants/${tenantId}/posts/${id}`, {
 		method: 'PUT',
 		body: JSON.stringify(body)
-	}).then((r) => r.data)
+	})
 
 export const updatePostStatus = (
 	tenantId: string,
@@ -54,10 +52,10 @@ export const updatePostStatus = (
 	status: PostStatus,
 	opts?: { scheduled_date?: string; scheduled_time?: string }
 ) =>
-	apiFetch<{ data: Post }>(`/admin/tenants/${tenantId}/posts/${id}/status`, {
+	apiFetchData<Post>(`/admin/tenants/${tenantId}/posts/${id}/status`, {
 		method: 'PATCH',
 		body: JSON.stringify({ status, ...opts })
-	}).then((r) => r.data)
+	})
 
 export const deletePost = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/posts/${id}`, { method: 'DELETE' })
