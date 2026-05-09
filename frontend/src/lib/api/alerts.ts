@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchData } from './client'
 
 export interface Alert {
 	id: string
@@ -8,22 +8,23 @@ export interface Alert {
 	campaign_id: string | null
 	campaign_name: string | null
 	message: string
-	details: Record<string, unknown> | null
+	details: {
+        action_suggested?: string;
+        [key: string]: string | number | boolean | null | undefined;
+    } | null
 	resolved_at: string | null
 	ignored_at: string | null
 	created_at: string
 }
 
 export const getAlerts = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts`, {}, fetchFn).then((r) => r.data)
+	apiFetchData<Alert[]>(`/admin/tenants/${tenantId}/alerts`, {}, fetchFn)
 
 export const getAlertCount = (tenantId: string) =>
 	apiFetch<{ count: number }>(`/admin/tenants/${tenantId}/alerts/count`)
 
 export const getAlertHistory = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetch<{ data: Alert[] }>(`/admin/tenants/${tenantId}/alerts/history`, {}, fetchFn).then(
-		(r) => r.data
-	)
+	apiFetchData<Alert[]>(`/admin/tenants/${tenantId}/alerts/history`, {}, fetchFn)
 
 export const resolveAlert = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/alerts/${id}/resolve`, { method: 'POST' })

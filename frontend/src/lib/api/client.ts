@@ -59,4 +59,13 @@ async function tryRefresh(): Promise<boolean> {
 	return false
 }
 
+export async function apiFetchData<T>(
+	path: string,
+	options: RequestInit = {},
+	fetchFn?: typeof fetch
+): Promise<T> {
+	const response = await apiFetch<{ data: T }>(path, options, fetchFn)
+	return response.data
+}
+
 export { tryRefresh }
