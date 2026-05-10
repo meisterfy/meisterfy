@@ -1,13 +1,14 @@
 import { getReport } from '$lib/api/reports'
 import { error } from '@sveltejs/kit'
 import { marked } from 'marked'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
 marked.setOptions({ gfm: true })
 
 
 export const load: PageLoad = async ({ params }) => {
-	const report = await getReport(params.tenant, params.slug).catch(() => null)
+	const report = await withFallback(getReport(params.tenant, params.slug), null)
 
 	if (!report) {
 		error(404, `Report "${params.slug}" not found`)

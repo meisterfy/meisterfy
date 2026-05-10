@@ -1,11 +1,12 @@
 import { getAlerts, getAlertHistory } from '$lib/api/alerts'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
 
 export const load: PageLoad = async ({ params, fetch }) => {
 	const [alerts, history] = await Promise.all([
-		getAlerts(params.tenant, fetch).catch(() => []),
-		getAlertHistory(params.tenant, fetch).catch(() => [])
+		withFallback(getAlerts(params.tenant, fetch), []),
+		withFallback(getAlertHistory(params.tenant, fetch), [])
 	])
 	return { alerts, history }
 }
