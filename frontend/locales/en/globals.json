@@ -1,0 +1,13 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "loading": "Loading...",
+  "error_generic": "Something went wrong. Please try again.",
+  "confirm_delete": "Are you sure you want to delete this?",
+  "back_to_app": "Back to dashboard",
+  "no_options": "No options found",
+  "alerts": "Alerts",
+  "no_alerts_yet": "No alerts yet",
+  "reports": "Reports",
+  "no_reports_found": "No reports found for this client."
+}

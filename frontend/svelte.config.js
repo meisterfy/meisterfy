@@ -13,6 +13,9 @@ const config = {
 			fallback: '200.html',
 			precompress: false
 		}),
+		paths: {
+			relative: false
+		},
 		alias: {
 			'@': path.resolve('./src')
 		}

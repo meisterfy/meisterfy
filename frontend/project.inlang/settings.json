@@ -1,0 +1,19 @@
+{
+    "$schema": "https://inlang.com/schema/project-settings",
+    "baseLocale": "en",
+    "locales": ["en", "pt-BR"],
+    "modules": [
+        "https://cdn.jsdelivr.net/npm/@inlang/plugin-json@latest/dist/index.js"
+    ],
+    "plugin.inlang.json": {
+        "pathPattern": {
+            "globals": "./locales/{languageTag}/globals.json",
+            "auth": "./locales/{languageTag}/auth.json",
+            "settings": "./locales/{languageTag}/settings.json",
+            "integrations": "./locales/{languageTag}/integrations.json",
+            "tenants": "./locales/{languageTag}/tenants.json",
+            "advertising": "./locales/{languageTag}/advertising.json",
+            "social-media": "./locales/{languageTag}/social-media.json"
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Integrações",
+  "description": "Gerencie conexões com plataformas externas",
+  "status_connected": "Conectado",
+  "status_disconnected": "Desconectado",
+  "status_error": "Erro",
+  "connect": "Conectar",
+  "disconnect": "Desconectar",
+  "test": "Testar conexão",
+  "configure": "Configurar",
+  "empty": "Nenhuma integração disponível."
+}

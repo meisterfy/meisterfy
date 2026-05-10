@@ -1,0 +1,12 @@
+{
+  "title": "Integrations",
+  "description": "Manage connections to external platforms",
+  "status_connected": "Connected",
+  "status_disconnected": "Disconnected",
+  "status_error": "Error",
+  "connect": "Connect",
+  "disconnect": "Disconnect",
+  "test": "Test connection",
+  "configure": "Configure",
+  "empty": "No integrations available."
+}
