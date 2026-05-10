@@ -2,18 +2,9 @@
 	import { CalendarClock, CheckCircle2, XCircle, Clock, Terminal, RefreshCw } from 'lucide-svelte'
 	import type { PageData } from './$types'
 	import type { AgentRun } from '$lib/api/schedule'
+	import { formatTimestamp } from '$lib/utils/date'
 
 	let { data } = $props<{ data: PageData }>()
-
-	function formatTs(ts: string): string {
-		return new Date(ts).toLocaleString('en-GB', {
-			day: '2-digit',
-			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		})
-	}
 
 	function timeAgo(ts: string): string {
 		const diff = Date.now() - new Date(ts).getTime()
@@ -114,7 +105,7 @@
 									: 'Last run failed'}
 						</p>
 						<span class="text-xs text-slate-500 tabular-nums"
-							>{formatTs(lastRun.started_at)} ({timeAgo(lastRun.started_at)})</span
+							>{formatTimestamp(lastRun.started_at)} ({timeAgo(lastRun.started_at)})</span
 						>
 					</div>
 					<div class="mt-2 flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
@@ -206,7 +197,7 @@
 
 						<!-- Timestamp -->
 						<span class="shrink-0 text-xs text-slate-400 tabular-nums dark:text-slate-500">
-							{formatTs(run.started_at)}
+							{formatTimestamp(run.started_at)}
 						</span>
 					</div>
 				{/each}

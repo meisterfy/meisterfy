@@ -12,6 +12,7 @@
 	import type { PageData } from './$types'
 	import type { Alert } from '$lib/api/alerts'
 	import { resolveAlert, ignoreAlert } from '$lib/api/alerts'
+	import { formatDateStr } from '$lib/utils/date'
 
 	let { data } = $props<{ data: PageData }>()
 
@@ -40,14 +41,6 @@
 			next.delete(id)
 			busy = next
 		}
-	}
-
-	function formatDate(dateStr: string): string {
-		return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-GB', {
-			day: '2-digit',
-			month: 'short',
-			year: 'numeric'
-		})
 	}
 
 	function resolvedLabel(alert: Alert): string {
@@ -136,7 +129,7 @@
 												{typeLabel(alert.type)}
 											</span>
 											<span class="text-xs text-slate-400 tabular-nums dark:text-slate-500">
-												{formatDate(alert.created_at.slice(0, 10))}
+												{formatDateStr(alert.created_at.slice(0, 10))}
 											</span>
 											<span class="font-mono text-xs text-slate-400 dark:text-slate-500">
 												cmp. {alert.campaign_id}
@@ -145,10 +138,10 @@
 										<p class="text-sm font-semibold text-red-800 dark:text-red-200">
 											{alert.message}
 										</p>
-										{#if (alert.details as any)?.action_suggested}
+										{#if alert.details?.action_suggested}
 											<p class="mt-1 flex items-start gap-1 text-xs text-red-600 dark:text-red-400">
 												<span class="mt-0.5 shrink-0">→</span>
-												<span>{(alert.details as any).action_suggested}</span>
+												<span>{alert.details.action_suggested}</span>
 											</p>
 										{/if}
 									</div>
@@ -200,7 +193,7 @@
 												{typeLabel(alert.type)}
 											</span>
 											<span class="text-xs text-slate-400 tabular-nums dark:text-slate-500">
-												{formatDate(alert.created_at.slice(0, 10))}
+												{formatDateStr(alert.created_at.slice(0, 10))}
 											</span>
 											<span class="font-mono text-xs text-slate-400 dark:text-slate-500">
 												cmp. {alert.campaign_id}
@@ -209,12 +202,12 @@
 										<p class="text-sm font-semibold text-amber-800 dark:text-amber-200">
 											{alert.message}
 										</p>
-										{#if (alert.details as any)?.action_suggested}
+										{#if alert.details?.action_suggested}
 											<p
 												class="mt-1 flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400"
 											>
 												<span class="mt-0.5 shrink-0">→</span>
-												<span>{(alert.details as any).action_suggested}</span>
+												<span>{alert.details.action_suggested}</span>
 											</p>
 										{/if}
 									</div>
@@ -278,7 +271,7 @@
 
 							<!-- Date -->
 							<span class="shrink-0 text-xs text-slate-400 tabular-nums dark:text-slate-500">
-								{formatDate(alert.created_at.slice(0, 10))}
+								{formatDateStr(alert.created_at.slice(0, 10))}
 							</span>
 
 							<!-- Status badge -->

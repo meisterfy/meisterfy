@@ -1,0 +1,1 @@
+function e(e){return new Date(e).toLocaleString(`en-GB`,{day:`2-digit`,month:`short`,year:`numeric`,hour:`2-digit`,minute:`2-digit`})}function t(e){return new Date(e+`T12:00:00`).toLocaleDateString(`en-GB`,{day:`2-digit`,month:`short`,year:`numeric`})}export{e as n,t};
