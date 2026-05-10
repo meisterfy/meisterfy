@@ -16,9 +16,8 @@
 	async function saveCampaign() {
 		saving = true
 		saveError = ''
-		const slug = (data.campaign.filename as string).replace(/\.json$/, '')
 		try {
-			await updateCampaign(data.tenant, slug, { ...campaign })
+			await updateCampaign(data.tenant, data.campaign.slug as string, { ...campaign })
 			window.location.href = `/${data.tenant}/ads/google`
 		} catch {
 			saveError = 'Failed to save'
