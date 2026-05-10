@@ -2,6 +2,12 @@
 	import { goto } from '$app/navigation'
 	import { auth } from '$lib/stores/auth.svelte'
 	import { setToken } from '$lib/api/client'
+	import { Input } from '$lib/components/ui/input'
+	import { Label } from '$lib/components/ui/label'
+	import { Button } from '$lib/components/ui/button'
+	import { Alert } from '$lib/components/ui/alert'
+	import * as m from '$lib/paraglide/messages.js'
+	import Seo from '$lib/components/seo.svelte'
 
 	let email = $state('')
 	let password = $state('')
@@ -21,7 +27,7 @@
 			})
 			const data = await res.json()
 			if (!res.ok) {
-				error = data.error ?? 'Login failed'
+				error = data.error ?? m['auth:login_failed']()
 				return
 			}
 			auth.setToken(data.access_token)
@@ -29,51 +35,63 @@
 			if (data.user) auth.setUser(data.user)
 			goto(data.needs_tenant ? '/tenants/new' : '/')
 		} catch {
-			error = 'Network error'
+			error = m['auth:network_error']()
 		} finally {
 			loading = false
 		}
 	}
 </script>
 
-<div class="flex h-full items-center justify-center">
+<Seo title={m['auth:title']()} description={m['auth:description']?.()} />
+
+<div class="flex flex-col h-full items-center justify-center">
+	<div class="absolute top-4 right-4 flex gap-2">
+	</div>
 	<div
-		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+		class="relative w-full flex flex-col items-center overflow-hidden justify-center 
+			gap-4 lg:gap-6 max-w-sm lg:max-w-lg px-8 py-12 rounded-2xl shadow-lg border-2 
+			border-primary/20 bg-linear-to-t from-transparent to-primary-700/10 z-10"
 	>
-		<h1 class="mb-6 text-xl font-bold text-slate-900 dark:text-white">Sign in</h1>
-		<form onsubmit={submit} class="flex flex-col gap-4">
-			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-				Email
-				<input
+		<div class="w-28">
+			<img
+				src="/logo.svg"
+				class="w-full h-full object-contain"
+				alt={m['auth:description']()}
+			/>
+		</div>
+		<form onsubmit={submit} class="w-xs max-w-full flex flex-col gap-4 lg:gap-6">
+			<Label class="flex flex-col gap-1">
+				{m['auth:email']()}
+				<Input
 					type="email"
+					placeholder={m['auth:email_placeholder']()}
 					bind:value={email}
 					required
-					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
 				/>
-			</label>
-			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-				Password
-				<input
+			</Label>
+			<Label class="flex flex-col gap-1">
+				{m['auth:password']()}
+				<Input
 					type="password"
 					bind:value={password}
 					required
-					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
 				/>
-			</label>
+			</Label>
 			{#if error}
-				<p
-					class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
-				>
+				<Alert variant="destructive">
 					{error}
-				</p>
+				</Alert>
 			{/if}
-			<button
-				type="submit"
-				disabled={loading}
-				class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-			>
-				{loading ? 'Signing in…' : 'Sign in'}
-			</button>
+			<Button type="submit" disabled={loading}>
+				{loading ? m['auth:signing_in']() : m['auth:sign_in']()}
+			</Button>
 		</form>
+		<div class="absolute w-full h-full top-0 left-0 bg-linear-to-tr from-transparent 
+			via-60% via-transparent to-white/5 -z-10"></div>
+		<div class="absolute w-full h-full top-0 left-0 bg-primary/5 backdrop-blur-lg 
+			rounded-[inherit] -z-10"></div>
 	</div>
+	<div class="fixed w-[512px] h-[512px] xl:w-[1024px] xl:h-[1024px] bg-primary blur-3xl 
+		opacity-10 lg:opacity-5 rounded-full top-1/2 left-1/2 ml-[-256px] mt-[-256px] 
+		lg:ml-[-512px] lg:mt-[-512px] z-0"></div>
 </div>
