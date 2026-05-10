@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/connector/media"
 	"github.com/rush-maestro/rush-maestro/internal/connector/meta"
 	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/rush-maestro/rush-maestro/internal/service/media"
 )
 
 type MetaPublishHandler struct {

@@ -21,9 +21,9 @@ import (
 	"github.com/rush-maestro/rush-maestro/internal/api"
 	"github.com/rush-maestro/rush-maestro/internal/config"
 	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
-	"github.com/rush-maestro/rush-maestro/internal/connector/llm"
-	"github.com/rush-maestro/rush-maestro/internal/connector/media"
 	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
+	"github.com/rush-maestro/rush-maestro/internal/service/media"
 	mcpserver "github.com/rush-maestro/rush-maestro/internal/mcp"
 	mcpresources "github.com/rush-maestro/rush-maestro/internal/mcp/resources"
 	mcptools "github.com/rush-maestro/rush-maestro/internal/mcp/tools"
@@ -31,11 +31,18 @@ import (
 	"github.com/rush-maestro/rush-maestro/internal/repository"
 
 	// Register all integration provider schemas.
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/email"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/llm"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/anthropic"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/brevo"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/gemini"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/googleads"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/groq"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/kimi"
 	_ "github.com/rush-maestro/rush-maestro/internal/connector/meta"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/monitoring"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/storage"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/openai"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/r2"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/s3"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/resend"
+	_ "github.com/rush-maestro/rush-maestro/internal/connector/sentry"
 )
 
 //go:embed all:ui/dist

@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector/llm"
+	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
 )
 
 // AIGenerateHandler handles POST /ai/generate with SSE streaming.
@@ -21,13 +22,13 @@ func NewAIGenerateHandler(selector *llm.ProviderSelector) *AIGenerateHandler {
 }
 
 type aiGenerateRequest struct {
-	TenantID    string        `json:"tenant_id"`
-	TaskType    string        `json:"task_type"`
-	Model       string        `json:"model,omitempty"`
-	Messages    []llm.Message `json:"messages"`
-	Temperature float64       `json:"temperature,omitempty"`
-	MaxTokens   int           `json:"max_tokens,omitempty"`
-	System      string        `json:"system,omitempty"`
+	TenantID    string           `json:"tenant_id"`
+	TaskType    string           `json:"task_type"`
+	Model       string           `json:"model,omitempty"`
+	Messages    []domain.Message `json:"messages"`
+	Temperature float64          `json:"temperature,omitempty"`
+	MaxTokens   int              `json:"max_tokens,omitempty"`
+	System      string           `json:"system,omitempty"`
 }
 
 func (h *AIGenerateHandler) Generate(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +53,7 @@ func (h *AIGenerateHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	llmReq := llm.LLMRequest{
+	llmReq := domain.LLMRequest{
 		TenantID:    req.TenantID,
 		TaskType:    req.TaskType,
 		Model:       req.Model,
@@ -78,7 +79,7 @@ func (h *AIGenerateHandler) Generate(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, resp)
 }
 
-func (h *AIGenerateHandler) tryGenerate(ctx context.Context, candidates []llm.ProviderCandidate, req llm.LLMRequest, stream llm.StreamFunc) (*llm.LLMResponse, error) {
+func (h *AIGenerateHandler) tryGenerate(ctx context.Context, candidates []llm.ProviderCandidate, req domain.LLMRequest, stream domain.StreamFunc) (*domain.LLMResponse, error) {
 	var lastErr error
 	for _, c := range candidates {
 		apiKey := c.Integration.LLMCredentials()
@@ -104,7 +105,7 @@ func (h *AIGenerateHandler) tryGenerate(ctx context.Context, candidates []llm.Pr
 	return nil, fmt.Errorf("all llm providers failed")
 }
 
-func (h *AIGenerateHandler) streamSSE(ctx context.Context, w http.ResponseWriter, candidates []llm.ProviderCandidate, req llm.LLMRequest) {
+func (h *AIGenerateHandler) streamSSE(ctx context.Context, w http.ResponseWriter, candidates []llm.ProviderCandidate, req domain.LLMRequest) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -117,7 +118,7 @@ func (h *AIGenerateHandler) streamSSE(ctx context.Context, w http.ResponseWriter
 	}
 
 	var firstChunk bool
-	_, err := h.tryGenerate(ctx, candidates, req, func(chunk llm.LLMChunk) error {
+	_, err := h.tryGenerate(ctx, candidates, req, func(chunk domain.LLMChunk) error {
 		firstChunk = true
 		data, _ := json.Marshal(chunk)
 		fmt.Fprintf(w, "data: %s\n\n", data)
