@@ -6,7 +6,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./tmp/server ./cmd/server"
   delay = 500
   exclude_dir = ["tmp", "vendor", "testutil"]
-  include_ext = ["go"]
+  include_ext = ["go", "svg", "png"]
   kill_delay = "0s"
 
 [log]
