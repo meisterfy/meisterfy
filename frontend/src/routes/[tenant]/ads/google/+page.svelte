@@ -27,7 +27,7 @@
 	let jsonInput = $state('')
 	let importError = $state('')
 	let isImporting = $state(false)
-	let deployingFilename = $state<string | null>(null)
+	let deployingSlug = $state<string | null>(null)
 	let deployResult = $state<{ success: boolean; message: string } | null>(null)
 
 	async function importCampaign() {
@@ -64,10 +64,9 @@
 		}
 	}
 
-	async function deployCampaign(filename: string) {
-		deployingFilename = filename
+	async function deployCampaign(slug: string) {
+		deployingSlug = slug
 		deployResult = null
-		const slug = filename.replace(/\.json$/, '')
 		try {
 			await apiDeployCampaign(data.tenant, slug)
 			deployResult = {
@@ -78,7 +77,7 @@
 		} catch {
 			deployResult = { success: false, message: 'Deploy failed.' }
 		} finally {
-			deployingFilename = null
+			deployingSlug = null
 		}
 	}
 </script>
@@ -265,7 +264,7 @@
 										</div>
 										<div>
 											<a
-												href="/{data.tenant}/ads/google/{campaign.filename}"
+												href="/{data.tenant}/ads/google/{campaign.slug}"
 												class="block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white"
 											>
 												{campaign.id}
@@ -312,12 +311,12 @@
 									>
 										{#if campaign.status === 'approved'}
 											<button
-												onclick={() => deployCampaign(campaign.filename)}
-												disabled={deployingFilename === campaign.filename}
+												onclick={() => deployCampaign(campaign.slug)}
+												disabled={deployingSlug === campaign.slug}
 												class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-emerald-900/30"
 												title="Deploy to Google Ads"
 											>
-												{#if deployingFilename === campaign.filename}
+												{#if deployingSlug === campaign.slug}
 													<Loader2 class="h-4 w-4 animate-spin" />
 												{:else}
 													<Send class="h-4 w-4" />
@@ -325,7 +324,7 @@
 											</button>
 										{/if}
 										<a
-											href="/{data.tenant}/ads/google/{campaign.filename}"
+											href="/{data.tenant}/ads/google/{campaign.slug}"
 											class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
 											title="Edit"
 										>
