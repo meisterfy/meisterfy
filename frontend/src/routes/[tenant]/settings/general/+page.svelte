@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte'
 	import { CheckCircle2, Settings } from 'lucide-svelte'
 	import { updateTenant } from '$lib/api/tenants'
+	import { parseHashtags } from '$lib/utils/hashtags'
 	import type { PageData } from './$types'
 
 	let { data } = $props<{ data: PageData }>()
@@ -36,12 +37,7 @@
 				primary_persona: primary_persona.trim() || null,
 				tone: tone.trim() || null,
 				instructions: instructions.trim() || null,
-				hashtags: hashtags_raw.trim()
-					? hashtags_raw
-							.trim()
-							.split(/\s+/)
-							.map((t) => t.replace(/^#/, ''))
-					: []
+				hashtags: parseHashtags(hashtags_raw)
 			})
 			saved = true
 			setTimeout(() => (saved = false), 2500)
