@@ -5,6 +5,8 @@
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import SubToolbar from '$lib/components/ui/toolbar/sub-toolbar.svelte'
 	import SubToolbarLink from '$lib/components/ui/toolbar/sub-toolbar-link.svelte'
+	import LocaleSwitcher from '$lib/components/ui/locale-switcher/locale-switcher.svelte'
+	import * as m from '$lib/paraglide/messages.js'
 
 	let { children } = $props<{ children: Snippet }>()
 	let currentPath = $derived(page.url.pathname)
@@ -22,7 +24,13 @@
 			</a>
 			<div class="flex items-center gap-2">
 				<Link2 class="h-5 w-5 text-indigo-500" />
-				<span class="text-base font-bold text-slate-900 dark:text-white">App Settings</span>
+				<span class="text-base font-bold text-slate-900 dark:text-white">
+					{m['settings:title']()}
+				</span>
+			</div>
+
+			<div class="ml-auto">
+				<LocaleSwitcher />
 			</div>
 		{/snippet}
 	</Toolbar>
@@ -30,7 +38,7 @@
 		<div class="flex items-center gap-1">
 			<SubToolbarLink
 				href="/settings/integrations"
-				label="Integrations"
+				label={m['integrations:title']()}
 				icon={Link2}
 				active={currentPath.includes('/integrations')}
 			/>
