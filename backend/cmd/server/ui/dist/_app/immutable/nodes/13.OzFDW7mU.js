@@ -1,1 +1,0 @@
-import{Ot as e}from"../chunks/DIOmaBGZ.js";import"../chunks/CCi4sbZS.js";import{r as t}from"../chunks/Bc7k4SMG.js";var n=e({load:()=>r,ssr:()=>!1}),r=({params:e})=>{t(302,`/${e.tenant}/settings/general`)};function i(e){}export{i as component,n as universal};

@@ -1,0 +1,1 @@
+import{t as e}from"../chunks/BkSki5kb.js";import{r as t}from"../chunks/BSVovfdK.js";var n=e({load:()=>r}),r=()=>{t(302,`/settings/integrations`)};export{n as universal};

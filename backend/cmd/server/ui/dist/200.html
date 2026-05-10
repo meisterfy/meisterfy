@@ -1,40 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
-		<link href="/_app/immutable/entry/start.BZspbnEW.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/BkWk5gpw.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/DIOmaBGZ.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/DNy7uMfh.js" rel="modulepreload">
-		<link href="/_app/immutable/entry/app.BprUCsFF.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/C3H0jj1q.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/CCi4sbZS.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/DAWZ85XK.js" rel="modulepreload">
-		<link href="/_app/immutable/chunks/DfWqKzjA.js" rel="modulepreload">
-		<link href="/_app/immutable/nodes/0.BQabi88m.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/start.Cezwq5YC.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/CmsiaGcq.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Y3fWux4g.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/G16IiM4E.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/BkSki5kb.js" rel="modulepreload">
+		<link href="/_app/immutable/entry/app.BVlYWEsw.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Cy6qXeAK.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/Cs5QDfgy.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/x4RNw-M2.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/By6smvCO.js" rel="modulepreload">
+		<link href="/_app/immutable/chunks/DDc4R8eZ.js" rel="modulepreload">
+		<link href="/_app/immutable/nodes/0.D2iJL8c2.js" rel="modulepreload">
 		
-		<link href="/_app/immutable/assets/0.BbzLVfTy.css" rel="stylesheet">
+		<link href="/_app/immutable/assets/0.C8L42p6m.css" rel="stylesheet">
+		<style>
+			#app-loading {
+				position: fixed;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 20px;
+				background: #020617;
+				z-index: 9999;
+				opacity: 1;
+				transition: opacity 0.2s ease;
+			}
+			#app-loading.done {
+				opacity: 0;
+				pointer-events: none;
+			}
+			.loader-ring {
+				width: 44px;
+				height: 44px;
+				border-radius: 50%;
+				border: 3px solid rgba(99, 102, 241, 0.15);
+				border-top-color: #6366f1;
+				animation: spin 0.7s linear infinite;
+			}
+			@keyframes spin {
+				to { transform: rotate(360deg); }
+			}
+		</style>
 	</head>
 	<body data-sveltekit-preload-data="hover">
+		<div id="app-loading" aria-hidden="true">
+			<div class="loader-ring"></div>
+		</div>
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_hq7lmd = {
+					__sveltekit_1evessy = {
 						base: ""
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("/_app/immutable/entry/start.BZspbnEW.js"),
-						import("/_app/immutable/entry/app.BprUCsFF.js")
+						import("/_app/immutable/entry/start.Cezwq5YC.js"),
+						import("/_app/immutable/entry/app.BVlYWEsw.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});
 				}
 			</script>
 		</div>
+		<script>
+			const overlay = document.getElementById('app-loading')
+			const observer = new MutationObserver(() => {
+				const ready = document.querySelector('[data-sveltekit-hydrated]') || document.body.children.length > 1
+				if (ready) {
+					overlay.classList.add('done')
+					setTimeout(() => overlay.remove(), 220)
+					observer.disconnect()
+				}
+			})
+			observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-sveltekit-hydrated'] })
+		</script>
 	</body>
 </html>

@@ -1,0 +1,1 @@
+function e(e){return{...e,client_id:e.tenant_id,media_files:e.media_path?[e.media_path]:[],platform:e.platforms?.[0]??null,scheduled_date:e.scheduled_date??e.id.slice(0,10)}}function t(e,t){let n=e.data??{};return{...n.result??{},client_id:t,slug:e.slug,workflow:n.workflow??{}}}export{e as n,t};
