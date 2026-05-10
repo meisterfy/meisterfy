@@ -1,6 +1,23 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/** Custom Tailwind variables */
+@theme {
+	--color-primary: var(--primary-base);
+	--color-text: var(--text-base);
+}
+:root {
+	--primary-base: var(--color-indigo-700);
+	--text-base: var(--color-slate-700);
+}
+.dark {
+	--primary-base: var(--color-indigo-600);
+	--text-base: var(--color-slate-300);
+}
+
+
 /* Fix calendar/clock picker icons in dark mode */
 .dark input[type='date']::-webkit-calendar-picker-indicator,
 .dark input[type='time']::-webkit-calendar-picker-indicator {
