@@ -33,7 +33,7 @@
 			// Refresh token: now the user has role_owner on the new tenant.
 			await auth.restoreSession()
 			goto('/')
-		} catch (err: unknown) {
+		} catch (err) {
 			error = (err as { message?: string })?.message ?? 'Failed to create client'
 		} finally {
 			loading = false

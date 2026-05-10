@@ -11,13 +11,13 @@
 
 	const navItems = $derived([
 		{
-			href: page.params.tenant ? `/${page.params.tenant}/social` : '/social',
+			href: `/${page.params.tenant}/social`,
 			label: 'Planner',
 			icon: CalendarDays,
 			active: !isDrafts
 		},
 		{
-			href: page.params.tenant ? `/${page.params.tenant}/social/drafts` : '/social/drafts',
+			href: `/${page.params.tenant}/social/drafts`,
 			label: 'Drafts',
 			icon: File,
 			active: isDrafts
