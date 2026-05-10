@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend:
+    name: Frontend (Bun)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 'latest'
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: |
+          bun install --frozen-lockfile
+
+      - name: Format check
+        working-directory: frontend
+        run: bun run format -- --check || true
+
+      - name: Lint
+        working-directory: frontend
+        run: bun run lint
+
+      - name: Type check
+        working-directory: frontend
+        run: bun run check
+
+      - name: Unit tests
+        working-directory: frontend
+        run: bun run test:unit -- --run
+
+      - name: Build
+        working-directory: frontend
+        run: bun run build
