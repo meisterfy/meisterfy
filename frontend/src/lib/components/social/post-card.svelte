@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { FileEdit, CheckCircle, Image as ImageIcon, Send, Trash2 } from 'lucide-svelte'
 
+	import type { Post, PostStatus } from '$lib/api/posts'
+
 	let {
 		post,
 		clientId,
@@ -9,9 +11,9 @@
 		onUpload,
 		stretch = true
 	} = $props<{
-		post: any
+		post: Post & { filename: string; media_files: string[] }
 		clientId: string
-		onUpdateStatus: (id: string, filename: string, status: string) => void
+		onUpdateStatus: (id: string, filename: string, status: PostStatus) => void
 		onDelete: (id: string, filename: string) => void
 		onUpload: (event: Event, id: string, filename: string) => void
 		stretch?: boolean

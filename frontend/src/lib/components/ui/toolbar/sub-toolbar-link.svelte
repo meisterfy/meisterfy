@@ -1,9 +1,12 @@
 <script lang="ts">
 
+	import type { Component } from 'svelte'
+    import type { IconProps } from 'lucide-svelte'
+
 	interface Props {
 		href: string
 		label: string
-		icon: any
+		icon: Component<IconProps>
 		active: boolean
 	}
 

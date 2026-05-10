@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte'
-	import ProviderIcon from '$lib/components/ui/ProviderIcon.svelte'
+	import ProviderIcon from '@/lib/components/ui/provider-icon.svelte'
 	import { normPlatforms, type PostPlatform, type PostShape } from '$lib/social'
 
 	let {
