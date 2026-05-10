@@ -1,15 +1,6 @@
 import { getReports } from '$lib/api/reports'
+import { REPORT_TYPE_MAP } from '$lib/constants/type-maps'
 import type { PageLoad } from './$types'
-
-const TYPE_MAP: Record<string, { label: string; color: string }> = {
-	audit: { label: 'Audit', color: 'amber' },
-	search: { label: 'Search Campaign', color: 'blue' },
-	weekly: { label: 'Weekly', color: 'emerald' },
-	monthly: { label: 'Monthly', color: 'violet' },
-	alert: { label: 'Alert', color: 'red' },
-	report: { label: 'Report', color: 'slate' }
-}
-
 
 export const load: PageLoad = ({ params, fetch }) => {
 	const reports = getReports(params.tenant, fetch)
@@ -20,7 +11,7 @@ export const load: PageLoad = ({ params, fetch }) => {
 					slug: r.slug,
 					date: dateMatch?.[1] ?? null,
 					title: r.title ?? r.slug,
-					...(TYPE_MAP[r.type] ?? TYPE_MAP.report)
+					...(REPORT_TYPE_MAP[r.type] ?? REPORT_TYPE_MAP.report)
 				}
 			})
 		)
