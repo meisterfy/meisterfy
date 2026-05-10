@@ -1,5 +1,5 @@
 import { getPosts } from '$lib/api/posts'
-import { getConnectorResources } from '$lib/api/connector_resources'
+import { getConnectorResources } from '$lib/api/connector-resources'
 import { normalizePost } from '$lib/utils/transforms'
 import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
