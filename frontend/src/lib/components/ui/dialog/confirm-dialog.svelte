@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui'
-	import { AlertTriangle } from 'lucide-svelte'
+	import { TriangleAlert } from 'lucide-svelte'
 
 	let {
 		open = $bindable(false),
@@ -31,7 +31,7 @@
 				<div
 					class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30"
 				>
-					<AlertTriangle class="h-5 w-5 text-red-600 dark:text-red-400" />
+					<TriangleAlert class="h-5 w-5 text-red-600 dark:text-red-400" />
 				</div>
 				<div>
 					<Dialog.Title class="text-base font-bold text-slate-900 dark:text-white"

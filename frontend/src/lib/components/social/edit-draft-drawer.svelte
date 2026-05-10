@@ -7,7 +7,7 @@
 	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
 	import PlatformSelect from '@/lib/components/ui/platform-select/platform-select.svelte'
 	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts'
-	import { uploadMedia } from '$lib/api/media'
+	import { uploadMedia, deleteMedia } from '$lib/api/media'
 	import { parseHashtags } from '$lib/utils/hashtags'
 
 	let {
@@ -83,7 +83,7 @@
 
 	async function removeMedia() {
 		if (!draft) return
-		await fetch(`/api/media/${tenant}/${draft.id}`, { method: 'DELETE' })
+		await deleteMedia(tenant, draft.id)
 		editMediaFiles = []
 	}
 

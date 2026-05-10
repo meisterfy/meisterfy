@@ -8,7 +8,7 @@
 	import PlatformSelect from '@/lib/components/ui/platform-select/platform-select.svelte'
 	import ProviderIcon from '@/lib/components/ui/provider-icon.svelte'
 	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts'
-	import { uploadMedia } from '$lib/api/media'
+	import { uploadMedia, deleteMedia } from '$lib/api/media'
 	import { parseHashtags } from '$lib/utils/hashtags'
 
 	let {
@@ -99,7 +99,7 @@
 
 	async function removeMedia() {
 		if (!post) return
-		await fetch(`/api/media/${tenant}/${post.id}`, { method: 'DELETE', credentials: 'include' })
+		await deleteMedia(tenant, post.id)
 		editMediaFiles = []
 	}
 

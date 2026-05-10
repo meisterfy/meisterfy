@@ -1,10 +1,12 @@
 <script lang="ts">
 	import PostCard from './post-card.svelte'
 
+	import type { Post, PostStatus } from '$lib/api/posts'
+
 	let { posts, clientId, onUpdateStatus, onDelete, onUpload } = $props<{
-		posts: any[]
+		posts: (Post & { filename: string; media_files: string[] })[]
 		clientId: string
-		onUpdateStatus: (id: string, filename: string, status: string) => void
+		onUpdateStatus: (id: string, filename: string, status: PostStatus) => void
 		onDelete: (id: string, filename: string) => void
 		onUpload: (event: Event, id: string, filename: string) => void
 	}>()

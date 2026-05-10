@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Building2, Plus, ArrowRight, Settings, Globe, Briefcase } from 'lucide-svelte'
-	import ProviderIcon from '$lib/components/ui/ProviderIcon.svelte'
+	import { Building2, Plus, ArrowRight, Settings, User } from 'lucide-svelte'
+	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
+	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import type { PageData } from './$types'
 
 	let { data } = $props<{ data: PageData }>()
@@ -17,28 +18,16 @@
 </script>
 
 <div class="flex h-full flex-col bg-slate-50 dark:bg-slate-950">
-	<!-- Header -->
-	<header
-		class="sticky top-0 z-50 border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-	>
-		<div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+	<Toolbar>
+		{#snippet header()}
 			<div class="flex items-center gap-3">
-				<div
-					class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm"
-				>
-					<Building2 class="h-4 w-4" />
+				<div class="h-12 w-12">
+					<img src="/logo.svg" alt="Mkt Maestro" class="h-full w-full object-contain" />
 				</div>
-				<h1 class="text-lg font-bold text-slate-900 dark:text-white">Mkt Maestro</h1>
+				<h1 class="text-lg font-bold text-slate-900 dark:text-white uppercase">Maestro</h1>
 			</div>
 
-			<div class="flex items-center gap-3">
-				<a
-					href="/settings"
-					class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-					title="Global Settings"
-				>
-					<Settings class="h-5 w-5" />
-				</a>
+			<div class="flex items-center gap-2">
 				<a
 					href="/tenants/new"
 					class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
@@ -46,18 +35,32 @@
 					<Plus class="h-4 w-4" />
 					<span class="hidden sm:inline">New Client</span>
 				</a>
+				<a
+					href="/settings"
+					class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+					title="Global Settings"
+				>
+					<Settings class="h-4 w-4" />
+				</a>
+				<a
+					href="/profile"
+					class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+					title="Your Profile"
+				>
+					<User class="h-4 w-4" />
+				</a>
 			</div>
-		</div>
-	</header>
+		{/snippet}
+	</Toolbar>
 
 	<main class="flex-1 overflow-y-auto">
-		<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<div class="mb-8">
-				<h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-					Welcome back
+		<div class="mx-auto max-w-[1200px] xl:max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+			<div class="mb-4 mt-8">
+				<h2 class="text-2xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+					Welcome back!
 				</h2>
-				<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-					Select a client to manage their marketing campaigns.
+				<p class="mt-1 lg:text-lg text-slate-500 dark:text-slate-400">
+					Select a client to manage
 				</p>
 			</div>
 

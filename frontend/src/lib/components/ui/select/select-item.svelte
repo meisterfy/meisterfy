@@ -18,13 +18,13 @@
 	{value}
 	data-slot="select-item"
 	class={cn(
-		"focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground focus:bg-accent data-highlighted:bg-accent data-highlighted:text-accent-foreground focus:text-accent-foreground relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+		"relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none transition-colors hover:bg-slate-100 focus:bg-slate-100 data-disabled:pointer-events-none data-disabled:opacity-50 dark:hover:bg-slate-800 dark:focus:bg-slate-800 select-none",
 		className
 	)}
 	{...restProps}
 >
 	{#snippet children({ selected, highlighted })}
-		<span class="absolute end-2 flex size-3.5 items-center justify-center">
+		<span class="absolute inset-e-2 flex size-3.5 items-center justify-center">
 			{#if selected}
 				<CheckIcon class="cn-select-item-indicator-icon" />
 			{/if}

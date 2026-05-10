@@ -2,10 +2,13 @@
 <script lang="ts">
 	import { FileEdit, CheckCircle, Trash2, Send, Image as ImageIcon } from 'lucide-svelte'
 
+	import type { Post, PostStatus } from '$lib/api/posts'
+	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
+
 	let { posts, clientId, onUpdateStatus, onDelete, onUpload } = $props<{
-		posts: any[]
+		posts: (Post & { filename: string; media_files: string[] })[]
 		clientId: string
-		onUpdateStatus: (id: string, filename: string, status: string) => void
+		onUpdateStatus: (id: string, filename: string, status: PostStatus) => void
 		onDelete: (id: string, filename: string) => void
 		onUpload: (event: Event, id: string, filename: string) => void
 	}>()
@@ -37,17 +40,7 @@
 							>
 						</td>
 						<td class="px-6 py-4">
-							{#if post.status === 'draft'}
-								<span
-									class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-300"
-									>Draft</span
-								>
-							{:else}
-								<span
-									class="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-600 uppercase dark:bg-emerald-900/30 dark:text-emerald-400"
-									>Approved</span
-								>
-							{/if}
+							<StatusBadge status={post.status} />
 						</td>
 						<td class="px-6 py-4">
 							{#if post.media_files?.length > 0}

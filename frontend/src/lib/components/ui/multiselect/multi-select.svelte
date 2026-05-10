@@ -47,7 +47,7 @@
 	</Popover.Trigger>
 
 	<Popover.Content
-		class="z-50 mt-1 w-[var(--bits-popover-anchor-width)] min-w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+		class="z-50 mt-1 w-(--bits-popover-anchor-width) min-w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
 		align="start"
 		sideOffset={4}
 	>

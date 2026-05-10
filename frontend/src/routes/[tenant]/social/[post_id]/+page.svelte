@@ -3,7 +3,9 @@
 	import type { PageData } from './$types'
 	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send } from 'lucide-svelte'
 	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts'
+	import { parseHashtags } from '$lib/utils/hashtags'
 	import { streamGenerate } from '$lib/api/ai'
+	import { uploadMedia } from '$lib/api/media'
 
 	let { data } = $props<{ data: PageData }>()
 
@@ -87,32 +89,20 @@
 		const target = event.target as HTMLInputElement
 		const files = target.files
 		if (!files || files.length === 0) return
-
 		uploadingMedia = true
-		const formData = new FormData()
-		for (let i = 0; i < files.length; i++) {
-			formData.append('file', files[i])
-		}
-
-		const res = await fetch(`/api/media/${data.client_id}/${data.post.id}`, {
-			method: 'POST',
-			body: formData
-		})
-
-		if (res.ok) {
+		try {
+			await uploadMedia(data.client_id, data.post.id, files)
 			window.location.reload()
-		} else {
+		} catch {
 			alert('Failed to upload media')
+		} finally {
+			uploadingMedia = false
 		}
-		uploadingMedia = false
 	}
 
 	async function savePost() {
 		saving = true
-		const tags = hashtags
-			.split(' ')
-			.map((t: string) => t.trim())
-			.filter((t: string) => t)
+		const tags = parseHashtags(hashtags)
 		try {
 			await updatePost(data.client_id, data.post.id, {
 				title,
