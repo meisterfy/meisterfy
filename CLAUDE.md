@@ -13,10 +13,15 @@
 - **Database:** PostgreSQL via pgx at `rush_maestro`. PostgreSQL is the source of truth for all content.
 - **MCP:** Streamable HTTP. Exposes two services, **AIPIM** (Project Manager at `http://localhost:3141/mcp`) and **Rush Maestro** (the Plataform at `http://localhost:5173/mcp`).
 - **Credentials:** Google Ads OAuth and other connections are stored in the `integrations` table (not `.env`). Client IDs, campaign IDs and tracking tags **never** go in committed files.
+- **BEst Pratices:** ALWAYS be SOLID and DRY.
 
 ## Agent Communication via MCP
 
 All agents can interact with this system exclusively through MCP tools. There are no agent `.md` files, no flat-file workflows, no direct script invocations from agents. The MCP servers at `http://localhost:3141/mcp` (AIPIM for memory manager and project management) and `http://localhost:5173/mcp` (Rush Maestro, the project per se) are the only interfaces.
+
+## Agent Instructions
+
+No Claude Superpowers. **ONLY** use project **Skills**, **MCP** and **Tools**.
 
 ## General Conventions
 

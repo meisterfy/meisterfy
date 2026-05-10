@@ -6,7 +6,7 @@
     },
     "aipim": {
       "type": "http",
-      "url": "http://localhost:3141"
+      "url": "http://localhost:3141/mcp"
     }
   }
 }
