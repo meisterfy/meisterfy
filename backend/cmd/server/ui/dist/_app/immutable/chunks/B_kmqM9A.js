@@ -1,1 +1,0 @@
-function e(e){return e.split(/\s+/).map(e=>e.replace(/^#/,``)).filter(Boolean)}export{e as t};

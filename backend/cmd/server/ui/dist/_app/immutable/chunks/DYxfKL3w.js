@@ -1,1 +1,0 @@
-import{n as e,t}from"./By6smvCO.js";var n=e=>t(`/admin/integrations`,{},e),r=t=>e(`/admin/integrations`,{method:`POST`,body:JSON.stringify(t)}),i=(t,n)=>e(`/admin/integrations/${t}`,{method:`PUT`,body:JSON.stringify(n)}),a=e=>t(`/admin/integrations/${e}`,{method:`DELETE`}),o=e=>t(`/admin/integrations/${e}/test`,{method:`POST`});export{i as a,o as i,a as n,n as r,r as t};

@@ -1,1 +1,0 @@
-import{n as e}from"./By6smvCO.js";var t=(t,n)=>e(`/admin/tenants/${t}/reports`,{},n),n=(t,n)=>e(`/admin/tenants/${t}/reports/${n}`);export{t as n,n as t};
