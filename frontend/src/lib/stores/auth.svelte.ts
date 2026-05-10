@@ -1,4 +1,5 @@
-import { setToken, clearToken, tryRefresh, getToken } from '$lib/api/client'
+import { setToken, clearToken, tryRefresh, getToken, apiFetch } from '$lib/api/client'
+import { localeStore } from '$lib/stores/locale.svelte'
 
 export interface AuthUser {
 	id: string
@@ -6,6 +7,8 @@ export interface AuthUser {
 	email: string
 	tenant_id: string
 	permissions: string[]
+	locale: string
+	timezone?: string
 }
 
 let _token = $state<string | null>(null)
@@ -42,13 +45,11 @@ export const auth = {
 		if (!ok) return false
 		_token = getToken()
 		try {
-			const res = await fetch('/auth/me', {
-				credentials: 'include',
-				headers: _token ? { Authorization: `Bearer ${_token}` } : {}
-			})
-			if (!res.ok) return false
-			const data = await res.json()
-			_user = data.user ?? data.data ?? data
+			const data = await apiFetch<Record<string, unknown>>('/auth/me')
+			_user = (data['user'] ?? data['data'] ?? data) as AuthUser
+			if (_user?.locale) {
+				localeStore.init(_user.locale)
+			}
 			return true
 		} catch {
 			return false
