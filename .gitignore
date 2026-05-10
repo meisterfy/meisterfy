@@ -34,3 +34,4 @@ db/
 
 # Compiled binaries
 backend/server
+backend/cmd/server/ui/dist/

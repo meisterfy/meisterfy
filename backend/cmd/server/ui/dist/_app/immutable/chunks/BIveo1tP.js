@@ -1,1 +1,0 @@
-import{r as e}from"./BSVovfdK.js";function t(t,n){return t.catch(t=>((t?.status===401||t?.status===403)&&e(302,`/login`),n))}export{t};
