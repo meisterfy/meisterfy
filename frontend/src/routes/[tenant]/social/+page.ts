@@ -1,21 +1,17 @@
 import { getPosts } from '$lib/api/posts'
+import { normalizePost } from '$lib/utils/transforms'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
 
 export const load: PageLoad = ({ params, fetch }) => {
-	const posts = getPosts(params.tenant, 'scheduled', fetch).then((data) =>
-		data.map((p) => ({
-			...p,
-			client_id: p.tenant_id,
-			filename: p.id + '.json',
-			media_files: p.media_path ? [p.media_path] : [],
-			scheduled_date: p.scheduled_date ?? p.id.slice(0, 10),
-			platform: (p.platforms?.[0] as any) ?? null
-		}))
+	const scheduled = withFallback(
+		getPosts(params.tenant, 'scheduled', fetch).then((data) => data.map(normalizePost)),
+		[]
 	)
 
 	return {
 		tenant: params.tenant,
-		scheduled: posts
+		scheduled
 	}
 }

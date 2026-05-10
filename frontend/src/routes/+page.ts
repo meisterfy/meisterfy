@@ -1,6 +1,7 @@
 import { getTenants } from '$lib/api/tenants'
 import { getIntegrations } from '$lib/api/integrations'
 import { redirect, isRedirect } from '@sveltejs/kit'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
 
@@ -8,7 +9,7 @@ export const load: PageLoad = async ({ fetch }) => {
 	try {
 		const [tenants, integrationsData] = await Promise.all([
 			getTenants(fetch),
-			getIntegrations(fetch).catch(() => ({ integrations: [], providers: [] }))
+			withFallback(getIntegrations(fetch), { integrations: [], providers: [] })
 		])
 
 		// Map integrations to tenants for easy access
@@ -32,7 +33,7 @@ export const load: PageLoad = async ({ fetch }) => {
 		})
 
 		return { tenants: tenantsWithIcons }
-	} catch (err: unknown) {
+	} catch (err) {
 		if (isRedirect(err)) throw err
 		const status = (err as { status?: number })?.status
 		if (!status || status === 401 || status === 403) {

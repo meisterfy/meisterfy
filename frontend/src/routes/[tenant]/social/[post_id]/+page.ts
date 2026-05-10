@@ -1,14 +1,13 @@
 import { getPost } from '$lib/api/posts'
-import { getTenant } from '$lib/api/tenants'
+import { normalizePost } from '$lib/utils/transforms'
 import { error } from '@sveltejs/kit'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
-
-export const load: PageLoad = async ({ params, fetch }) => {
-	const id = params.filename.replace(/\.json$/, '')
-	const [post, brand] = await Promise.all([
-		getPost(params.tenant, id).catch(() => null),
-		getTenant(params.tenant, fetch).catch(() => null)
+export const load: PageLoad = async ({ params, parent }) => {
+	const [post, { client }] = await Promise.all([
+		withFallback(getPost(params.tenant, params.post_id), null),
+		parent()
 	])
 
 	if (!post) {
@@ -17,12 +16,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 
 	return {
 		client_id: params.tenant,
-		brand,
-		post: {
-			...post,
-			client_id: post.tenant_id,
-			filename: post.id + '.json',
-			media_files: post.media_path ? [post.media_path] : []
-		}
+		brand: client.brand,
+		post: normalizePost(post)
 	}
 }

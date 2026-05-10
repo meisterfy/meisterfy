@@ -1,26 +1,18 @@
 import { getCampaign } from '$lib/api/campaigns'
+import { normalizeCampaign } from '$lib/utils/transforms'
 import { error } from '@sveltejs/kit'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
-
 export const load: PageLoad = async ({ params }) => {
-	const slug = params.filename.replace(/\.json$/, '')
-	const c = await getCampaign(params.tenant, slug).catch(() => null)
+	const c = await withFallback(getCampaign(params.tenant, params.slug), null)
 
 	if (!c) {
 		error(404, 'Campaign not found')
 	}
 
-	const data = (c.data ?? {}) as Record<string, unknown>
-	const result = (data.result ?? {}) as Record<string, unknown>
-
 	return {
 		tenant: params.tenant,
-		campaign: {
-			...result,
-			client_id: c.tenant_id,
-			filename: c.slug + '.json',
-			workflow: (data.workflow ?? {}) as Record<string, unknown>
-		}
+		campaign: normalizeCampaign(c, c.tenant_id)
 	}
 }

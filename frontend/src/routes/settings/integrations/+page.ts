@@ -1,11 +1,12 @@
 import { getTenants } from '$lib/api/tenants'
 import { getIntegrations } from '$lib/api/integrations'
+import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
 
 export const load: PageLoad = ({ fetch }) => {
 	return {
-		data: getIntegrations(fetch).catch(() => ({ integrations: [], providers: [] })),
-		tenants: getTenants(fetch).catch(() => [])
+		data: withFallback(getIntegrations(fetch), { integrations: [], providers: [] }),
+		tenants: withFallback(getTenants(fetch), [])
 	}
 }
