@@ -42,11 +42,11 @@
 		if (!draft || !schedDate) return
 		isSaving = true
 		try {
+			await updatePost(tenant, draft.id, { platforms: schedPlatforms })
 			await updatePostStatus(tenant, draft.id, 'scheduled', {
 				scheduled_date: schedDate,
 				scheduled_time: schedTime || undefined
 			})
-			await updatePost(tenant, draft.id, { platforms: schedPlatforms })
 			onScheduled(draft.id)
 			open = false
 		} finally {

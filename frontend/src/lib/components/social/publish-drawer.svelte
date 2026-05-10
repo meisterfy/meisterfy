@@ -2,7 +2,7 @@
 	import { X, Send, AlertCircle } from 'lucide-svelte'
 	import type { PostShape } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
-	import { publishToMeta, type ConnectorResource } from '$lib/api/connector_resources'
+	import { publishToMeta, type ConnectorResource } from '$lib/api/connector-resources'
 
 	let {
 		open = $bindable(false),
