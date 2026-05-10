@@ -1,0 +1,1 @@
+import{t as e}from"../chunks/BkSki5kb.js";import"../chunks/G16IiM4E.js";import"../chunks/Cs5QDfgy.js";import{r as t}from"../chunks/BSVovfdK.js";var n=e({load:()=>r}),r=({params:e})=>{t(302,`/${e.tenant}/settings/general`)};function i(e){}export{i as component,n as universal};

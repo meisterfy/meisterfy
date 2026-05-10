@@ -1,0 +1,1 @@
+import{n as e}from"./By6smvCO.js";var t=t=>e(`/admin/tenants`,{},t),n=(t,n)=>e(`/admin/tenants/${t}`,{},n),r=(t,n)=>e(`/admin/tenants/${t}`,{method:`PUT`,body:JSON.stringify(n)});export{t as n,r,n as t};
