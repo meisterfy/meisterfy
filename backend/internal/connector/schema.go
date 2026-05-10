@@ -40,6 +40,7 @@ type IntegrationSchema struct {
 	DisplayName string                     `json:"display_name"`
 	Description string                     `json:"description"`
 	LogoSVG     string                     `json:"logo_svg"`
+	LogoPNG     string                     `json:"logo_png"`
 
 	// ConfigFields are non-secret fields (customer ID, bucket name, etc.).
 	ConfigFields []FieldSchema `json:"config_fields"`
