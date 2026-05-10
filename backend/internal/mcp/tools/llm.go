@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector/llm"
+	"github.com/rush-maestro/rush-maestro/internal/domain"
 	"github.com/rush-maestro/rush-maestro/internal/mcp"
+	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
 )
 
 // RegisterLLMTools registers LLM-related MCP tools.
@@ -42,9 +43,9 @@ func RegisterLLMTools(s *mcp.Server, selector *llm.ProviderSelector) {
 				return mcp.ErrResult(fmt.Sprintf("no connected llm provider for tenant %s", p.TenantID))
 			}
 
-			req := llm.LLMRequest{
+			req := domain.LLMRequest{
 				TenantID: p.TenantID,
-				Messages: []llm.Message{{Role: llm.RoleUser, Content: p.Prompt}},
+				Messages: []domain.Message{{Role: domain.RoleUser, Content: p.Prompt}},
 				Model:    deref(p.Model),
 				System:   deref(p.System),
 			}
