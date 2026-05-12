@@ -90,11 +90,12 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if p.Days <= 0 {
 				p.Days = 30
 			}
+			startDate, endDate := googleads.DaysToDateRange(p.Days)
 			client, _, err := factory(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
-			terms, err := client.GetSearchTerms(ctx, p.CampaignID, p.Days)
+			terms, err := client.GetSearchTerms(ctx, p.CampaignID, startDate, endDate)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}

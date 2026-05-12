@@ -16,16 +16,6 @@ type CampaignMetric struct {
 	Cost        string `json:"cost"` // "R$123.45"
 }
 
-// SearchTerm is returned by GetSearchTerms.
-type SearchTerm struct {
-	Term        string  `json:"term"`
-	Status      string  `json:"status"`
-	Impressions float64 `json:"impressions"`
-	Clicks      float64 `json:"clicks"`
-	Cost        string  `json:"cost"` // "R$12.34"
-	Conversions float64 `json:"conversions"`
-}
-
 // AdGroupRow is returned by GetAdGroups.
 type AdGroupRow struct {
 	ID           string  `json:"id"`
@@ -92,42 +82,6 @@ func (c *Client) GetCriteria(ctx context.Context, campaignID string) ([]map[stri
 	for _, row := range rows {
 		if cc, ok := row["campaignCriterion"].(map[string]any); ok {
 			result = append(result, cc)
-		}
-	}
-	return result, nil
-}
-
-// GetSearchTerms returns the search terms report for a campaign over the last N days.
-func (c *Client) GetSearchTerms(ctx context.Context, campaignID string, days int) ([]SearchTerm, error) {
-	since := time.Now().AddDate(0, 0, -days).Format("2006-01-02")
-	until := time.Now().Format("2006-01-02")
-	rows, err := c.Query(ctx, fmt.Sprintf(`
-		SELECT
-		    search_term_view.search_term,
-		    search_term_view.status,
-		    metrics.impressions,
-		    metrics.clicks,
-		    metrics.cost_micros,
-		    metrics.conversions
-		FROM search_term_view
-		WHERE campaign.id = %s
-		  AND segments.date BETWEEN '%s' AND '%s'
-		ORDER BY metrics.impressions DESC
-		LIMIT 100
-	`, campaignID, since, until))
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]SearchTerm, len(rows))
-	for i, row := range rows {
-		result[i] = SearchTerm{
-			Term:        str(row, "searchTermView", "searchTerm"),
-			Status:      str(row, "searchTermView", "status"),
-			Impressions: num(row, "metrics", "impressions"),
-			Clicks:      num(row, "metrics", "clicks"),
-			Cost:        fmt.Sprintf("R$%.2f", fromMicros(num(row, "metrics", "costMicros"))),
-			Conversions: num(row, "metrics", "conversions"),
 		}
 	}
 	return result, nil

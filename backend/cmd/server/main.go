@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -174,6 +177,7 @@ func main() {
 	postsHandler        := api.NewAdminPostsHandler(postRepo)
 	reportsHandler      := api.NewAdminReportsHandler(reportRepo)
 	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
+	googleAdsHandler    := api.NewAdminGoogleAdsHandler(integrationRepo, connectorResourceRepo, tenantRepo, metricsRepo, alertRepo)
 	alertsHandler       := api.NewAdminAlertsHandler(alertRepo)
 	scheduleHandler     := api.NewAdminScheduleHandler(agentRunRepo)
 	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo)
@@ -254,6 +258,16 @@ func main() {
 			r.With(middleware.RequirePermission("create:report")).Delete("/reports/{id}", reportsHandler.Delete)
 
 			// campaigns
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live", googleAdsHandler.LiveCampaigns)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}", googleAdsHandler.LiveCampaignDetail)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/devices", googleAdsHandler.LiveCampaignDevices)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/hourly", googleAdsHandler.LiveCampaignHourly)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/impression-share", googleAdsHandler.LiveCampaignImpressionShare)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/search-terms", googleAdsHandler.LiveCampaignSearchTerms)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/quality-scores", googleAdsHandler.LiveCampaignQualityScores)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/keywords", googleAdsHandler.LiveCampaignKeywords)
+			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/sync-history", googleAdsHandler.SyncHistory)
+			r.With(middleware.RequirePermission("view:campaign")).Get("/metrics", googleAdsHandler.GetMetrics)
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns", campaignsHandler.List)
 			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns", campaignsHandler.Create)
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/{slug}", campaignsHandler.Get)
@@ -302,27 +316,59 @@ func main() {
 		r.Delete("/", mcpSrv.ServeHTTP)
 	})
 
-	// Serve SvelteKit SPA — fall back to 200.html for client-side routing
-	distFS, err := fs.Sub(uiFS, "ui/dist")
-	if err != nil {
-		slog.Error("ui/dist embed error", "err", err)
-		os.Exit(1)
-	}
-	fileServer := http.FileServer(http.FS(distFS))
-	r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if _, ferr := distFS.Open(req.URL.Path[1:]); ferr != nil {
-			content, rerr := fs.ReadFile(distFS, "200.html")
-			if rerr != nil {
-				http.NotFound(w, req)
+	// Serve SvelteKit SPA
+	if cfg.DevFrontendURL != "" {
+		// In dev mode: proxy all frontend requests to the Vite dev server (HMR enabled).
+		// Rewrites Host so Vite accepts the request, and returns a self-refreshing loading
+		// page while Vite is still starting up instead of a raw 502.
+		target, err := url.Parse(cfg.DevFrontendURL)
+		if err != nil {
+			slog.Error("invalid DEV_FRONTEND_URL", "err", err)
+			os.Exit(1)
+		}
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		// Rewrite Host header so Vite matches its own virtualHost expectation.
+		originalDirector := proxy.Director
+		proxy.Director = func(req *http.Request) {
+			originalDirector(req)
+			req.Host = target.Host
+		}
+		// Fail fast when Vite is still booting, then show a self-refreshing loading page.
+		proxy.Transport = &http.Transport{
+			DialContext:         (&net.Dialer{Timeout: 2 * time.Second}).DialContext,
+			TLSHandshakeTimeout: 2 * time.Second,
+		}
+		proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, _ error) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Refresh", "2")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`<!doctype html><html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#64748b"><p>⏳ Starting dev server…</p></body></html>`))
+		}
+		slog.Info("proxying frontend to Vite", "url", cfg.DevFrontendURL)
+		r.Handle("/*", proxy)
+	} else {
+		// In production: serve embedded ui/dist with SPA fallback to 200.html
+		distFS, err := fs.Sub(uiFS, "ui/dist")
+		if err != nil {
+			slog.Error("ui/dist embed error", "err", err)
+			os.Exit(1)
+		}
+		fileServer := http.FileServer(http.FS(distFS))
+		r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			if _, ferr := distFS.Open(req.URL.Path[1:]); ferr != nil {
+				content, rerr := fs.ReadFile(distFS, "200.html")
+				if rerr != nil {
+					http.NotFound(w, req)
+					return
+				}
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(content)
 				return
 			}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write(content)
-			return
-		}
-		fileServer.ServeHTTP(w, req)
-	}))
+			fileServer.ServeHTTP(w, req)
+		}))
+	}
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
