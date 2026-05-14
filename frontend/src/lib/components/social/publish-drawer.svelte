@@ -3,6 +3,7 @@
 	import type { PostShape } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
 	import { publishToMeta, type ConnectorResource } from '$lib/api/connector-resources'
+	import { inputCls, labelCls } from './styles'
 
 	let {
 		open = $bindable(false),
@@ -17,10 +18,6 @@
 		metaAccounts: ConnectorResource[]
 		onPublished: (id: string) => void
 	} = $props()
-
-	const inputCls =
-		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
 
 	let publishAccountId = $state('')
 	let publishPlatform = $state<'instagram' | 'facebook'>('instagram')

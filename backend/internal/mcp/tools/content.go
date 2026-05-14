@@ -34,7 +34,7 @@ type postRepo interface {
 	ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
 	GetByID(ctx context.Context, id string) (*domain.Post, error)
 	Create(ctx context.Context, p *domain.Post) error
-	UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error
+	UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
 	Delete(ctx context.Context, id string) error
 }
 

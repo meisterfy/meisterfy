@@ -18,7 +18,7 @@ import (
 type MetaPublishHandler struct {
 	postRepo        interface {
 		GetByID(ctx context.Context, id string) (*domain.Post, error)
-		UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error
+		UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
 	}
 	integrationRepo interface {
 		GetForTenant(ctx context.Context, tenantID, provider string) (*domain.Integration, error)
@@ -33,7 +33,7 @@ type MetaPublishHandler struct {
 func NewMetaPublishHandler(
 	postRepo interface {
 		GetByID(ctx context.Context, id string) (*domain.Post, error)
-		UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error
+		UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
 	},
 	integrationRepo interface {
 		GetForTenant(ctx context.Context, tenantID, provider string) (*domain.Integration, error)
@@ -158,7 +158,7 @@ func (h *MetaPublishHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	if err := h.postRepo.UpdateStatus(r.Context(), post.ID, string(domain.PostStatusPublished), now); err != nil {
+	if err := h.postRepo.UpdateStatus(r.Context(), post.ID, string(domain.PostStatusPublished), &now); err != nil {
 		InternalError(w)
 		return
 	}

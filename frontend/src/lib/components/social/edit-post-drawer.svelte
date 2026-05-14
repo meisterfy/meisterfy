@@ -5,11 +5,12 @@
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
 	import ConfirmDialog from '$lib/components/ui/dialog/confirm-dialog.svelte'
 	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
-	import PlatformSelect from '@/lib/components/ui/platform-select/platform-select.svelte'
-	import ProviderIcon from '@/lib/components/ui/provider-icon.svelte'
+	import PlatformSelect from '$lib/components/ui/platform-select/platform-select.svelte'
+	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts'
 	import { uploadMedia, deleteMedia } from '$lib/api/media'
 	import { parseHashtags } from '$lib/utils/hashtags'
+	import { inputCls, labelCls } from './styles'
 
 	let {
 		open = $bindable(false),
@@ -24,10 +25,6 @@
 		onSaved: (updated: PostShape) => void
 		onDeleted: (id: string) => void
 	} = $props()
-
-	const inputCls =
-		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
 
 	let editTitle = $state('')
 	let editContent = $state('')

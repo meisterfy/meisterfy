@@ -5,6 +5,8 @@
 	import { createPost as apiCreatePost } from '$lib/api/posts'
 	import { uploadMedia } from '$lib/api/media'
 	import { parseHashtags } from '$lib/utils/hashtags'
+	import { normalizePost } from '$lib/utils/transforms'
+	import { inputCls, labelCls } from './styles'
 
 	let {
 		open = $bindable(false),
@@ -15,10 +17,6 @@
 		tenant: string
 		onCreated: (post: PostShape) => void
 	} = $props()
-
-	const inputCls =
-		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
 
 	let newTitle = $state('')
 	let newContent = $state('')
@@ -54,18 +52,7 @@
 					/* ignore upload errors */
 				}
 			}
-			onCreated({
-				id: newPost.id,
-				status: 'draft',
-				title: newPost.title ?? newTitle,
-				content: newPost.content,
-				hashtags: newPost.hashtags ?? tags,
-				platform: undefined,
-				media_type: null,
-				client_id: tenant,
-				media_files: mediaFiles,
-				workflow: null
-			})
+			onCreated({ ...normalizePost(newPost), media_files: mediaFiles })
 			open = false
 		} finally {
 			isCreating = false

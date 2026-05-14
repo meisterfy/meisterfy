@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rush-maestro/rush-maestro/internal/domain"
@@ -65,11 +66,11 @@ func (r *PostRepository) Create(ctx context.Context, p *domain.Post) error {
 	}))
 }
 
-func (r *PostRepository) UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error {
+func (r *PostRepository) UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error {
 	return mapError(r.queries.UpdatePostStatus(ctx, db.UpdatePostStatusParams{
 		ID:          id,
 		Status:      status,
-		PublishedAt: timePtrToTS(nil),
+		PublishedAt: timePtrToTS(publishedAt),
 	}))
 }
 

@@ -3,8 +3,9 @@
 	import type { PostShape, PostPlatform } from '$lib/social'
 	import { normPlatforms } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
-	import PlatformSelect from '@/lib/components/ui/platform-select/platform-select.svelte'
+	import PlatformSelect from '$lib/components/ui/platform-select/platform-select.svelte'
 	import { updatePost, updatePostStatus } from '$lib/api/posts'
+	import { inputCls, labelCls } from './styles'
 
 	let {
 		open = $bindable(false),
@@ -18,10 +19,6 @@
 		onScheduled: (id: string) => void
 	} = $props()
 
-	const inputCls =
-		'w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-	const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5'
-
 	let schedDate = $state('')
 	let schedTime = $state('10:00')
 	let schedPlatforms = $state<PostPlatform[]>(['instagram_feed'])
@@ -31,10 +28,8 @@
 		if (open && draft) {
 			schedDate = ''
 			schedTime = '10:00'
-			schedPlatforms =
-				normPlatforms(draft.platform).length > 0
-					? normPlatforms(draft.platform)
-					: ['instagram_feed']
+			const draftPlatforms = normPlatforms(draft.platform)
+			schedPlatforms = draftPlatforms.length > 0 ? draftPlatforms : ['instagram_feed']
 		}
 	})
 
