@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte'
 	import type { PageData } from './$types'
 	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send } from 'lucide-svelte'
-	import { updatePost, deletePost as apiDeletePost } from '$lib/api/posts'
+	import { updatePost, updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
 	import { parseHashtags } from '$lib/utils/hashtags'
 	import { streamGenerate } from '$lib/api/ai'
 	import { uploadMedia } from '$lib/api/media'
@@ -108,9 +108,11 @@
 				title,
 				content,
 				hashtags: tags,
-				status: status as import('$lib/api/posts').PostStatus,
 				media_type: mediaType
 			})
+			if (status !== data.post.status) {
+				await updatePostStatus(data.client_id, data.post.id, status as import('$lib/api/posts').PostStatus)
+			}
 			window.location.href = `/${data.client_id}/social`
 		} finally {
 			saving = false

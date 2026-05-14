@@ -4,7 +4,7 @@
 	import type { PageData } from './$types'
 	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostShape, type PostPlatform } from '$lib/social'
 	import { updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
-	import ProviderIcon from '@/lib/components/ui/provider-icon.svelte'
+	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
 	import ConfirmDialog from '$lib/components/ui/dialog/confirm-dialog.svelte'
 	import CreateDraftDrawer from '$lib/components/social/create-draft-drawer.svelte'
@@ -14,7 +14,7 @@
 
 	let { data } = $props<{ data: PageData }>()
 
-	let drafts = $state<PostShape[]>(untrack(() => data.drafts as unknown as PostShape[]))
+	let drafts = $state<PostShape[]>(untrack(() => data.drafts))
 	let metaAccounts = $state(untrack(() => data.metaAccounts ?? []))
 
 	$effect(() => {

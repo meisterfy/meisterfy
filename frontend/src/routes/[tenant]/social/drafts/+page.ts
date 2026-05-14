@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ params, fetch }) => {
 		withFallback(getConnectorResources(params.tenant, 'meta', 'page', fetch), [])
 	])
 	const drafts = all
-		.filter((p) => p.status !== 'scheduled' && p.status !== 'published')
+		.filter((p) => p.status === 'draft' || p.status === 'approved')
 		.map(normalizePost)
 	return { tenant: params.tenant, drafts, metaAccounts }
 }

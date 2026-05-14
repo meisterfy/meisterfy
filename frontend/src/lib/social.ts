@@ -27,9 +27,8 @@ export const PLATFORM_OPTIONS: { value: PostPlatform; label: string }[] = Object
 	PLATFORM_CONFIG
 ).map(([value, { label }]) => ({ value: value as PostPlatform, label }))
 
-export function normPlatforms(raw: PostPlatform | PostPlatform[] | undefined): PostPlatform[] {
-	if (!raw) return []
-	return Array.isArray(raw) ? raw : [raw]
+export function normPlatforms(raw: PostPlatform[] | undefined): PostPlatform[] {
+	return raw ?? []
 }
 
 export type PostShape = {
@@ -41,7 +40,7 @@ export type PostShape = {
 	media_type?: string | null
 	scheduled_date?: string | null
 	scheduled_time?: string | null
-	platform: PostPlatform | PostPlatform[] | undefined
+	platform: PostPlatform[]
 	client_id: string
 	media_files: string[]
 	workflow: PostWorkflow | null

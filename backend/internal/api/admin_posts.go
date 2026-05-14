@@ -12,29 +12,21 @@ import (
 	"github.com/rush-maestro/rush-maestro/internal/middleware"
 )
 
-type AdminPostsHandler struct {
-	postRepo interface {
-		List(ctx context.Context, tenantID string) ([]*domain.Post, error)
-		ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
-		GetByID(ctx context.Context, id string) (*domain.Post, error)
-		Create(ctx context.Context, p *domain.Post) error
-		Update(ctx context.Context, p *domain.Post) error
-		UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error
-		Delete(ctx context.Context, id string) error
-	}
+type PostRepo interface {
+	List(ctx context.Context, tenantID string) ([]*domain.Post, error)
+	ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
+	GetByID(ctx context.Context, id string) (*domain.Post, error)
+	Create(ctx context.Context, p *domain.Post) error
+	Update(ctx context.Context, p *domain.Post) error
+	UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
+	Delete(ctx context.Context, id string) error
 }
 
-func NewAdminPostsHandler(
-	postRepo interface {
-		List(ctx context.Context, tenantID string) ([]*domain.Post, error)
-		ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
-		GetByID(ctx context.Context, id string) (*domain.Post, error)
-		Create(ctx context.Context, p *domain.Post) error
-		Update(ctx context.Context, p *domain.Post) error
-		UpdateStatus(ctx context.Context, id, status string, publishedAt interface{}) error
-		Delete(ctx context.Context, id string) error
-	},
-) *AdminPostsHandler {
+type AdminPostsHandler struct {
+	postRepo PostRepo
+}
+
+func NewAdminPostsHandler(postRepo PostRepo) *AdminPostsHandler {
 	return &AdminPostsHandler{postRepo: postRepo}
 }
 
@@ -126,6 +118,7 @@ func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Title         *string              `json:"title"`
 		Content       string               `json:"content"`
+		Status        string               `json:"status"`
 		Hashtags      []string             `json:"hashtags"`
 		MediaType     *string              `json:"media_type"`
 		MediaPath     *string              `json:"media_path"`
@@ -143,10 +136,15 @@ func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	initialStatus := domain.PostStatus(req.Status)
+	if initialStatus != domain.PostStatusScheduled {
+		initialStatus = domain.PostStatusDraft
+	}
+
 	p := &domain.Post{
 		ID:            domain.NewID(),
 		TenantID:      tenantID,
-		Status:        domain.PostStatusDraft,
+		Status:        initialStatus,
 		Title:         req.Title,
 		Content:       req.Content,
 		Hashtags:      req.Hashtags,
@@ -286,7 +284,12 @@ func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	if err := h.postRepo.UpdateStatus(r.Context(), id, string(next), nil); err != nil {
+	var publishedAt *time.Time
+	if next == domain.PostStatusPublished {
+		t := time.Now()
+		publishedAt = &t
+	}
+	if err := h.postRepo.UpdateStatus(r.Context(), id, string(next), publishedAt); err != nil {
 		InternalError(w)
 		return
 	}
@@ -294,7 +297,10 @@ func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request)
 	if req.ScheduledDate != nil || req.ScheduledTime != nil {
 		p.ScheduledDate = req.ScheduledDate
 		p.ScheduledTime = req.ScheduledTime
-		_ = h.postRepo.Update(r.Context(), p)
+		if err := h.postRepo.Update(r.Context(), p); err != nil {
+			InternalError(w)
+			return
+		}
 	}
 
 	updated, err := h.postRepo.GetByID(r.Context(), id)
