@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { X, Clock } from 'lucide-svelte'
-	import type { PostShape } from '$lib/social'
+	import type { PostShape, PostPlatform } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
 	import PlatformSelect from '$lib/components/ui/platform-select/platform-select.svelte'
 	import { createPost as apiCreatePost } from '$lib/api/posts'
