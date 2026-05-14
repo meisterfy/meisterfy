@@ -30,7 +30,7 @@ const published: PostShape = {
   title: 'Published Title',
   content: 'Published content body',
   hashtags: ['hello'],
-  platform: 'instagram_feed',
+  platform: ['instagram_feed'],
   client_id: 'acme',
   media_files: [],
   workflow: null
@@ -42,7 +42,7 @@ const draft: PostShape = {
   title: 'Draft Title',
   content: 'Draft content body',
   hashtags: [],
-  platform: 'facebook',
+  platform: ['facebook'],
   client_id: 'acme',
   media_files: [],
   workflow: null

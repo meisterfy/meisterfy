@@ -147,17 +147,6 @@ func NewTestPost(id, tenantID, content string) *domain.Post {
 	}
 }
 
-// NewTestReport returns a minimally populated Report for use in repository tests.
-func NewTestReport(id, tenantID, slug string) *domain.Report {
-	return &domain.Report{
-		ID:       id,
-		TenantID: tenantID,
-		Slug:     slug,
-		Type:     domain.ReportTypeReport,
-		Content:  "test content",
-	}
-}
-
 // NewTestIntegration returns a minimally populated Integration for use in repository tests.
 func NewTestIntegration(id, name string, provider domain.IntegrationProvider) *domain.Integration {
 	return &domain.Integration{

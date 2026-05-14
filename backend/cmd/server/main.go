@@ -122,7 +122,6 @@ func main() {
 	rbacRepo           := repository.NewRBACRepository(pool)
 	tenantRepo         := repository.NewTenantRepository(pool)
 	postRepo           := repository.NewPostRepository(pool)
-	reportRepo         := repository.NewReportRepository(pool)
 	campaignRepo       := repository.NewCampaignRepository(pool)
 	alertRepo          := repository.NewAlertRepository(pool)
 	agentRunRepo       := repository.NewAgentRunRepository(pool)
@@ -139,9 +138,7 @@ func main() {
 	mcptools.RegisterContentTools(mcpSrv, mcptools.ContentRepos{
 		Tenants:   tenantRepo,
 		Posts:     postRepo,
-		Reports:   reportRepo,
 		Campaigns: campaignRepo,
-		Alerts:    alertRepo,
 	})
 	mcptools.RegisterAdsTools(mcpSrv, adsFactory)
 	mcptools.RegisterLLMTools(mcpSrv, llmSelector)
@@ -154,7 +151,6 @@ func main() {
 	mcpresources.RegisterTenantResources(mcpSrv, mcpresources.TenantResourceRepos{
 		Tenants: tenantRepo,
 		Posts:   postRepo,
-		Reports: reportRepo,
 	})
 
 	r := chi.NewRouter()
@@ -175,11 +171,8 @@ func main() {
 	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
 	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo)
 	postsHandler        := api.NewAdminPostsHandler(postRepo)
-	reportsHandler      := api.NewAdminReportsHandler(reportRepo)
 	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
 	googleAdsHandler    := api.NewAdminGoogleAdsHandler(integrationRepo, connectorResourceRepo, tenantRepo, metricsRepo, alertRepo)
-	alertsHandler       := api.NewAdminAlertsHandler(alertRepo)
-	scheduleHandler     := api.NewAdminScheduleHandler(agentRunRepo)
 	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo)
 	oauthGoogleAds      := api.NewOAuthGoogleAdsHandler(integrationRepo, cfg.BaseURL)
 	oauthMeta           := api.NewOAuthMetaHandler(integrationRepo, connectorResourceRepo, cfg.BaseURL)
@@ -251,12 +244,6 @@ func main() {
 			r.Patch("/posts/{id}/status", postsHandler.UpdateStatus)
 			r.With(middleware.RequirePermission("delete:post")).Delete("/posts/{id}", postsHandler.Delete)
 
-			// reports
-			r.With(middleware.RequirePermission("view:report")).Get("/reports", reportsHandler.List)
-			r.With(middleware.RequirePermission("create:report")).Post("/reports", reportsHandler.Create)
-			r.With(middleware.RequirePermission("view:report")).Get("/reports/{slug}", reportsHandler.Get)
-			r.With(middleware.RequirePermission("create:report")).Delete("/reports/{id}", reportsHandler.Delete)
-
 			// campaigns
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live", googleAdsHandler.LiveCampaigns)
 			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}", googleAdsHandler.LiveCampaignDetail)
@@ -274,16 +261,6 @@ func main() {
 			r.With(middleware.RequirePermission("manage:campaign")).Put("/campaigns/{slug}", campaignsHandler.Update)
 			r.With(middleware.RequirePermission("manage:campaign")).Delete("/campaigns/{id}", campaignsHandler.Delete)
 			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/{id}/deploy", campaignsHandler.Deploy)
-
-			// alerts
-			r.Get("/alerts", alertsHandler.List)
-			r.Get("/alerts/count", alertsHandler.Count)
-			r.Get("/alerts/history", alertsHandler.History)
-			r.Post("/alerts/{id}/resolve", alertsHandler.Resolve)
-			r.Post("/alerts/{id}/ignore", alertsHandler.Ignore)
-
-			// schedule / agent-runs
-			r.Get("/schedule", scheduleHandler.Get)
 
 			// generic connector resources
 			r.Get("/connectors", connectorResourcesHandler.List)

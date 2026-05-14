@@ -6,8 +6,6 @@
   "confirm_delete": "Tem certeza que deseja excluir?",
   "back_to_app": "Voltar ao painel",
   "no_options": "Nenhuma opção encontrada",
-  "alerts": "Alertas",
-  "no_alerts_yet": "Nenhum alerta ainda",
-  "reports": "Relatórios",
-  "no_reports_found": "Nenhum relatório encontrado para este cliente."
+  "previous": "Anterior",
+  "next": "Próximo"
 }
