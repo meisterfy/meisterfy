@@ -6,7 +6,7 @@
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { icon: Icon, theme = 'indigo', label, value, subtitle, delta } = $props<{
     icon: any
-    theme?: 'indigo' | 'blue' | 'emerald' | 'amber'
+    theme?: 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose' | 'slate'
     label: string
     value: string | number
     subtitle?: string
@@ -17,22 +17,26 @@
     indigo: {
       hover: 'hover:border-indigo-200 dark:hover:border-indigo-800',
       iconBg: 'bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30',
-      watermark: 'text-indigo-500',
     },
     blue: {
       hover: 'hover:border-blue-200 dark:hover:border-blue-800',
       iconBg: 'bg-blue-50 text-blue-500 dark:bg-blue-900/30',
-      watermark: 'text-blue-500',
     },
     emerald: {
       hover: 'hover:border-emerald-200 dark:hover:border-emerald-800',
       iconBg: 'bg-emerald-50 text-emerald-500 dark:bg-emerald-900/30',
-      watermark: 'text-emerald-500',
     },
     amber: {
       hover: 'hover:border-amber-200 dark:hover:border-amber-800',
       iconBg: 'bg-amber-50 text-amber-500 dark:bg-amber-900/30',
-      watermark: 'text-amber-500',
+    },
+    rose: {
+      hover: 'hover:border-rose-200 dark:hover:border-rose-800',
+      iconBg: 'bg-rose-50 text-rose-500 dark:bg-rose-900/30',
+    },
+    slate: {
+      hover: 'hover:border-slate-300 dark:hover:border-slate-700',
+      iconBg: 'bg-slate-100 text-slate-500 dark:bg-slate-800',
     },
   }
 
@@ -42,9 +46,6 @@
 <div
   class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors {t.hover} dark:border-slate-800 dark:bg-slate-900"
 >
-  <div class="absolute top-0 right-0 p-4 opacity-5 transition-opacity group-hover:opacity-10">
-    <Icon class="h-16 w-16 {t.watermark}" />
-  </div>
   <div class="relative z-10 mb-2 flex items-center gap-2 text-sm font-medium text-slate-500">
     <div class="flex h-8 w-8 items-center justify-center rounded-md {t.iconBg}">
       <Icon class="h-4 w-4" />

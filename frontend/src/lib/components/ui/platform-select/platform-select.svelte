@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Check, ChevronDown, X } from 'lucide-svelte'
-	import ProviderIcon from '@/lib/components/ui/provider-icon.svelte'
+	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import { BRAND_COLOR, PLATFORM_CONFIG, type PostPlatform } from '$lib/social'
 
 	let {
@@ -68,7 +68,7 @@
 					<span
 						class="flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
 					>
-						<ProviderIcon provider={plt} size={11} class="h-3 w-3 shrink-0" style="color: {BRAND_COLOR[plt]}" />
+						<ProviderIcon provider={plt} class="h-3 w-3 shrink-0" style="color: {BRAND_COLOR[plt]}" />
 						{cfg?.label ?? plt}
 						<button
 							type="button"
@@ -111,7 +111,7 @@
 							<Check class="h-3 w-3 text-white" />
 						{/if}
 					</div>
-					<ProviderIcon provider={plt} size={15} class="h-3.5 w-3.5 shrink-0" style="color: {BRAND_COLOR[plt]}" />
+					<ProviderIcon provider={plt} class="h-3.5 w-3.5 shrink-0" style="color: {BRAND_COLOR[plt]}" />
 					<span class="text-slate-700 dark:text-slate-300">{cfg?.label ?? plt}</span>
 				</button>
 			{/each}

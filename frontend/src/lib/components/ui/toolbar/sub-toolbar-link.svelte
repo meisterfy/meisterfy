@@ -1,12 +1,9 @@
 <script lang="ts">
-
-	import type { Component } from 'svelte'
-    import type { IconProps } from 'lucide-svelte'
-
 	interface Props {
 		href: string
 		label: string
-		icon: Component<IconProps>
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		icon: any
 		active: boolean
 	}
 
