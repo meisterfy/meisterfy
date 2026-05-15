@@ -1,10 +1,11 @@
 .PHONY: dev/backend dev/frontend build migrate/up migrate/down migrate/status \
-        migrate/create test/backend test/frontend lint sqlc
+        migrate/create test/backend test/backend/unit test/backend/integration \
+        test/backend/cover test/frontend lint sqlc
 
 # Dev Server
 
 dev/backend:
-	cd backend && $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || go run ./cmd/server
+	cd backend && DEV_FRONTEND_URL=http://localhost:5173 $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || DEV_FRONTEND_URL=http://localhost:5173 go run ./cmd/server
 
 dev/frontend:
 	cd frontend && bun run dev
@@ -41,6 +42,15 @@ migrate/create:
 
 test/backend:
 	cd backend && go test ./...
+
+test/backend/unit:
+	cd backend && go test -race -count=1 ./...
+
+test/backend/integration:
+	cd backend && go test -tags=integration -race -count=1 ./...
+
+test/backend/cover:
+	cd backend && go test -race -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
 
 test/frontend:
 	cd frontend && bun run test

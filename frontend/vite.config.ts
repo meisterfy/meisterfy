@@ -3,8 +3,6 @@ import { playwright } from '@vitest/browser-playwright'
 import tailwindcss from '@tailwindcss/vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { paraglideVitePlugin } from '@inlang/paraglide-js'
-import path from 'node:path'
-
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
@@ -20,16 +18,21 @@ export default defineConfig({
 			'^/(admin|auth|setup|health|mcp|ai)': 'http://localhost:8181'
 		}
 	},
-	resolve: {
-		alias: {
-			'@': path.resolve('./src')
-		}
-	},
 	optimizeDeps: {
 		include: ['marked']
 	},
 	test: {
 		expect: { requireAssertions: true },
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'json', 'html'],
+			include: ['src/lib/**'],
+			exclude: ['src/lib/paraglide/**', 'src/lib/vitest-examples/**'],
+			thresholds: {
+				lines: 30,
+				functions: 30,
+			}
+		},
 		projects: [
 			{
 				extends: './vite.config.ts',
