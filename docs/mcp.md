@@ -1,6 +1,6 @@
-# MCP Server — Rush Maestro
+# MCP Server — Maestro
 
-Rush Maestro exposes a **Model Context Protocol (MCP)** server so that external AI agents and future UI connectors can read and write all content programmatically.
+Maestro exposes a **Model Context Protocol (MCP)** server so that external AI agents and future UI connectors can read and write all content programmatically.
 
 ## Endpoint
 
@@ -19,7 +19,7 @@ Accepts: `POST`, `GET`, `DELETE`
 ```json
 {
   "mcpServers": {
-    "rush-maestro": {
+    "mkt-maestro": {
       "type": "http",
       "url": "http://localhost:5173/mcp"
     }
