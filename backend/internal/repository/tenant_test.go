@@ -1,3 +1,5 @@
+//go:build integration
+
 package repository
 
 import (
@@ -5,13 +7,12 @@ import (
 	"testing"
 
 	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/testutil"
 )
 
 func TestTenantRepository_CreateAndGet(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewTenantRepository(container.Pool)
+	repo := NewTenantRepository(sharedDB.Pool)
 
 	tenant := &domain.Tenant{
 		ID:   "tenant-1",
@@ -32,9 +33,9 @@ func TestTenantRepository_CreateAndGet(t *testing.T) {
 }
 
 func TestTenantRepository_List(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewTenantRepository(container.Pool)
+	repo := NewTenantRepository(sharedDB.Pool)
 
 	for _, id := range []string{"a", "b", "c"} {
 		if err := repo.Create(ctx, &domain.Tenant{ID: id, Name: id}); err != nil {
@@ -52,15 +53,15 @@ func TestTenantRepository_List(t *testing.T) {
 }
 
 func TestTenantRepository_ResetDB(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewTenantRepository(container.Pool)
+	repo := NewTenantRepository(sharedDB.Pool)
 
 	if err := repo.Create(ctx, &domain.Tenant{ID: "x", Name: "x"}); err != nil {
 		t.Fatalf("create: %v", err)
 	}
 
-	container.ResetDB(t)
+	sharedDB.ResetDB(t)
 
 	_, err := repo.GetByID(ctx, "x")
 	if err == nil {
