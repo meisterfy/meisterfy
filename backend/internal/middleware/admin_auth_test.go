@@ -45,8 +45,8 @@ func issueExpiredTestToken(t *testing.T, claims domain.UserClaims) string {
 	ac := testJWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID,
-			Issuer:    "rush-maestro",
-			Audience:  jwt.ClaimStrings{"rush-maestro-api"},
+			Issuer:    "mkt-maestro",
+			Audience:  jwt.ClaimStrings{"mkt-maestro-api"},
 			IssuedAt:  jwt.NewNumericDate(past.Add(-15 * time.Minute)),
 			ExpiresAt: jwt.NewNumericDate(past),
 		},

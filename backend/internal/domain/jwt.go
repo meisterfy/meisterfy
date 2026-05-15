@@ -11,8 +11,8 @@ import (
 const (
 	accessTokenTTL  = 15 * time.Minute
 	refreshTokenTTL = 7 * 24 * time.Hour
-	jwtIssuer       = "rush-maestro"
-	jwtAudience     = "rush-maestro-api"
+	jwtIssuer   = "mkt-maestro"
+	jwtAudience = "mkt-maestro-api"
 )
 
 type TokenPair struct {
