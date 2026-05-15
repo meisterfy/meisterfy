@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { CheckCircle2, User, Key, Globe, Clock, ArrowLeft } from 'lucide-svelte'
+	import { CircleCheck, User, Key, Globe, Clock, ArrowLeft } from 'lucide-svelte'
 	import { Input } from '$lib/components/ui/input'
 	import * as Select from '$lib/components/ui/select'
 	import { auth } from '$lib/stores/auth.svelte'
@@ -185,7 +185,7 @@
 					</button>
 					{#if profileSaved}
 						<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-							<CheckCircle2 class="h-4 w-4" /> Saved
+							<CircleCheck class="h-4 w-4" /> Saved
 						</span>
 					{/if}
 				</div>
@@ -261,7 +261,7 @@
 					</button>
 					{#if pwSaved}
 						<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-							<CheckCircle2 class="h-4 w-4" /> Password updated
+							<CircleCheck class="h-4 w-4" /> Password updated
 						</span>
 					{/if}
 				</div>

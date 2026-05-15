@@ -7,14 +7,23 @@
 @theme {
 	--color-primary: var(--primary-base);
 	--color-text: var(--text-base);
+	--color-border: var(--border-color);
+	--color-bg: var(--background-color);
+	--color-bg-light: var(--background-color-light);
 }
 :root {
 	--primary-base: var(--color-indigo-700);
 	--text-base: var(--color-slate-700);
+	--border-color: color-mix(in srgb, var(--color-slate-900) 10%, transparent);
+	--background-color: var(--color-gray-50);
+	--background-color-light: var(--color-gray-100);
 }
 .dark {
-	--primary-base: var(--color-indigo-600);
+	--primary-base: var(--color-indigo-400);
 	--text-base: var(--color-slate-300);
+	--border-color: color-mix(in srgb, white 10%, transparent);
+	--background-color: var(--color-slate-950);
+	--background-color-light: var(--color-slate-900);
 }
 
 

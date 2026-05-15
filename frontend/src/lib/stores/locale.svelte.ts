@@ -1,9 +1,14 @@
 import { setLocale, getLocale } from '$lib/paraglide/runtime'
 import { apiFetch } from '$lib/api/client'
 
-type Locale = 'en' | 'pt-BR'
+export const LOCALE_OPTIONS = [
+	{ value: 'en', label: 'English', flag: '🇺🇸' },
+	{ value: 'pt-BR', label: 'Português', flag: '🇧🇷' }
+] as const
 
-const SUPPORTED: Locale[] = ['en', 'pt-BR']
+type Locale = (typeof LOCALE_OPTIONS)[number]['value']
+
+const SUPPORTED: Locale[] = LOCALE_OPTIONS.map((o) => o.value)
 
 function toSafeLocale(raw: string): Locale {
 	return (SUPPORTED.includes(raw as Locale) ? raw : 'en') as Locale

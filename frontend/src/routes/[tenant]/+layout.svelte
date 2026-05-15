@@ -18,6 +18,7 @@
 	import type { LayoutData } from './$types'
 	import type { MenuItem } from '$lib/types/menu'
 	import * as m from '$lib/paraglide/messages.js'
+	import Footer from '$lib/components/layout/footer.svelte'
 
 	let { data, children } = $props<{ data: LayoutData; children: Snippet }>()
 
@@ -139,8 +140,10 @@
 	</Toolbar>
 
 	<main
-		class="flex min-w-0 flex-1 flex-col overflow-y-auto print:h-auto print:flex-none print:overflow-visible"
+		class="flex min-w-0 flex-1 flex-col print:h-auto print:flex-none print:overflow-visible"
 	>
 		{@render children()}
 	</main>
+	<Footer />
 </div>
+

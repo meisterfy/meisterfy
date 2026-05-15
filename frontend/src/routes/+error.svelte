@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { page } from '$app/stores'
+	import { page } from '$app/state'
 
-	const status = $derived($page.status)
-	const message = $derived($page.error?.message ?? '')
+	const status = $derived(page.status)
+	const message = $derived(page.error?.message ?? '')
 	const is5xx = $derived(status >= 500)
 
 	const labels: Record<number, { title: string; hint: string }> = {
@@ -51,7 +51,7 @@
 				class="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60"
 			>
 				<p
-					class="font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap text-slate-500 dark:text-slate-400"
+					class="font-mono text-[11px] leading-relaxed wrap-break-word whitespace-pre-wrap text-slate-500 dark:text-slate-400"
 				>
 					{message}
 				</p>
