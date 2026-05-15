@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui'
-	import { Eye, EyeOff, FlaskConical } from 'lucide-svelte'
+	import { FlaskConical } from 'lucide-svelte'
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import MultiSelect from '$lib/components/ui/multiselect/multi-select.svelte'
+	import * as Select from '$lib/components/ui/select'
 	import type { IntegrationManager } from '../integrations.svelte'
 
 	let { manager, onSave, onTest }: {
@@ -37,6 +38,46 @@
 					</div>
 				</div>
 
+				{#snippet fieldGroup(fields: typeof manager.activeProvider.config_fields, label: string, isCredential: boolean)}
+					{#if fields?.length}
+						<div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
+							<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">{label}</p>
+							{#each fields as field (field.key)}
+								<div>
+									<label for="field-{field.key}" class="mb-1 block text-xs font-semibold text-slate-500">
+										{field.label}{#if field.required}<span class="text-red-400">*</span>{/if}
+									</label>
+									{#if field.type === 'select' && field.options?.length}
+										{@const selectedLabel = field.options.find((o) => o.value === manager.form[field.key])?.label ?? field.options[0]?.label}
+										<Select.Root type="single" bind:value={manager.form[field.key]}>
+											<Select.Trigger class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+												{selectedLabel}
+											</Select.Trigger>
+											<Select.Content>
+												{#each field.options as opt (opt.value)}
+													<Select.Item value={opt.value}>{opt.label}</Select.Item>
+												{/each}
+											</Select.Content>
+										</Select.Root>
+									{:else}
+										<input
+											id="field-{field.key}"
+											type={!isCredential && field.type === 'url' ? 'url' : 'text'}
+											bind:value={manager.form[field.key]}
+											placeholder={field.placeholder ?? ''}
+											required={isCredential ? (field.required && !manager.editingId) : field.required}
+											class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+										/>
+									{/if}
+									{#if field.help_text}
+										<p class="mt-0.5 text-xs text-slate-400">{field.help_text}</p>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{/snippet}
+
 				<form onsubmit={onSave} class="flex flex-col gap-4">
 					<!-- Name -->
 					<div>
@@ -56,98 +97,16 @@
 						/>
 					</div>
 
-					<!-- Dynamic fields -->
-					{#if manager.activeProvider.config_fields?.length}
-						<div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
-							<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
-								Configuration
-							</p>
-							{#each manager.activeProvider.config_fields as field (field.key)}
-								<div>
-									<label
-										for="f-{field.key}"
-										class="mb-1 block text-xs font-semibold text-slate-500"
-									>
-										{field.label}{#if field.required}
-											<span class="text-red-400">*</span>{/if}
-									</label>
-									<input
-										id="f-{field.key}"
-										type={field.type === 'password'
-											? manager.showSecrets[field.key]
-												? 'text'
-												: 'password'
-											: field.type === 'url'
-												? 'url'
-												: 'text'}
-										bind:value={manager.form[field.key]}
-										placeholder={field.placeholder ?? ''}
-										required={field.required}
-										class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-									/>
-									{#if field.help_text}
-										<p class="mt-0.5 text-xs text-slate-400">{field.help_text}</p>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/if}
-
-					{#if manager.activeProvider.credential_fields?.length}
-						<div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
-							<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
-								Credentials
-							</p>
-							{#each manager.activeProvider.credential_fields as field (field.key)}
-								<div>
-									<label
-										for="c-{field.key}"
-										class="mb-1 block text-xs font-semibold text-slate-500"
-									>
-										{field.label}{#if field.required}
-											<span class="text-red-400">*</span>{/if}
-									</label>
-									<div class="relative">
-										<input
-											id="c-{field.key}"
-											type={field.type === 'password'
-												? manager.showSecrets[field.key]
-													? 'text'
-													: 'password'
-												: 'text'}
-											bind:value={manager.form[field.key]}
-											placeholder={field.placeholder ?? ''}
-											required={field.required && !manager.editingId}
-											class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-9 font-mono text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-										/>
-										{#if field.type === 'password'}
-											<button
-												type="button"
-												onclick={() => {
-													manager.showSecrets[field.key] = !manager.showSecrets[field.key]
-												}}
-												class="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-											>
-												{#if manager.showSecrets[field.key]}<EyeOff class="h-4 w-4" />{:else}<Eye
-														class="h-4 w-4"
-													/>{/if}
-											</button>
-										{/if}
-									</div>
-									{#if field.help_text}
-										<p class="mt-0.5 text-xs text-slate-400">{field.help_text}</p>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/if}
+					{@render fieldGroup(manager.activeProvider.config_fields, 'Configuration', false)}
+					{@render fieldGroup(manager.activeProvider.credential_fields, 'Credentials', true)}
 
 					<div>
 						<p class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase">
 							Assign to clients
 						</p>
 						<MultiSelect
-							bind:value={manager.formTenants}
+							value={manager.formTenants}
+							onchange={(v) => { manager.formTenants = v }}
 							options={manager.tenantOptions}
 							placeholder="Select clients…"
 						/>
@@ -158,24 +117,6 @@
 							class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
 						>
 							After saving, you'll be redirected to authorize via OAuth.
-						</p>
-					{/if}
-
-					{#if manager.testStatus}
-						<div
-							class="rounded-lg px-3 py-2 text-sm {manager.testStatus.ok
-								? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-								: 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}"
-						>
-							{manager.testStatus.message}
-						</div>
-					{/if}
-
-					{#if manager.modalError}
-						<p
-							class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
-						>
-							{manager.modalError}
 						</p>
 					{/if}
 

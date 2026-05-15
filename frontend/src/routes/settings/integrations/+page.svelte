@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { CircleCheck } from 'lucide-svelte'
+	import { toast } from 'svelte-sonner'
 	import Skeleton from '$lib/components/ui/skeleton.svelte'
 	import ConfirmDialog from '$lib/components/ui/dialog/confirm-dialog.svelte'
 	import type { PageData } from './$types'
-	import CardAdd from '@/lib/components/ui/card/connection/card-add.svelte'
-	import CardConnected from '@/lib/components/ui/card/connection/card-connected.svelte'
+	import CardAdd from '$lib/components/ui/card/connection/card-add.svelte'
+	import CardConnected from '$lib/components/ui/card/connection/card-connected.svelte'
 	import { IntegrationManager } from './integrations.svelte'
 	import IntegrationFilters from './components/integration-filters.svelte'
 	import IntegrationSection from './components/integration-section.svelte'
@@ -17,18 +17,13 @@
 	$effect(() => {
 		manager.init(data)
 	})
+
+	$effect(() => {
+		if (manager.justConnected) toast.success(manager.connectedMessage)
+	})
 </script>
 
 <div class="w-full px-4 py-8 sm:px-6 lg:px-8">
-	{#if manager.justConnected}
-		<div
-			class="mb-6 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
-		>
-			<CircleCheck class="h-4 w-4 shrink-0" />
-			{manager.connectedMessage}
-		</div>
-	{/if}
-
 	{#if manager.isLoading}
 		<div class="space-y-8">
 			{#each Array(2) as _}
@@ -68,6 +63,7 @@
 							tenantOptions={manager.tenantOptions}
 							onEdit={() => manager.openEdit(integration, provider)}
 							onDelete={() => manager.confirmDelete(integration.id)}
+							onConnect={() => manager.handleConnect(integration.id)}
 						/>
 					{/if}
 				{/each}
