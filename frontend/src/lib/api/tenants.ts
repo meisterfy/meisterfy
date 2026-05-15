@@ -1,11 +1,30 @@
 import { apiFetch, apiFetchData } from './client'
 
 export interface AdsMonitoringConfig {
+	// monitoring thresholds
 	target_cpa_brl: number
 	no_conversion_alert_days: number
 	max_cpa_multiplier: number
 	min_daily_impressions: number
 	budget_underpace_threshold: number
+	// automation
+	sync_enabled: boolean
+	ai_report_daily: boolean
+	ai_report_weekly: boolean
+	ai_report_monthly: boolean
+	// adjustments (UI only)
+	adjustments_enabled: boolean
+	max_increase_pct: number
+	max_increase_brl: number
+	max_decrease_pct: number
+	max_decrease_brl: number
+}
+
+export interface ReportPrompts {
+	instant?: string
+	daily?: string
+	weekly?: string
+	monthly?: string
 }
 
 export interface Tenant {
@@ -19,6 +38,7 @@ export interface Tenant {
 	instructions: string | null
 	hashtags: string[]
 	ads_monitoring: AdsMonitoringConfig | null
+	report_prompts: ReportPrompts | null
 	created_at: string
 	updated_at: string
 }
@@ -40,3 +60,6 @@ export const updateTenant = (id: string, body: Partial<Tenant>) =>
 
 export const deleteTenant = (id: string) =>
 	apiFetch<void>(`/admin/tenants/${id}`, { method: 'DELETE' })
+
+export const getGoogleAdsStatus = (tenantId: string, fetchFn?: typeof fetch) =>
+	apiFetchData<{ connected: boolean }>(`/admin/tenants/${tenantId}/google-ads/status`, {}, fetchFn)

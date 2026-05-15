@@ -1,4 +1,4 @@
-import { getToken } from './client'
+import { apiFetchData, getToken } from './client'
 
 export interface AIMessage {
 	role: 'user' | 'assistant' | 'system'
@@ -10,6 +10,7 @@ export interface AIGenerateRequest {
 	messages: AIMessage[]
 	system?: string
 	task_type?: string
+	provider?: string
 	model?: string
 	temperature?: number
 	max_tokens?: number
@@ -20,18 +21,27 @@ export interface AIChunk {
 	done: boolean
 }
 
+export interface AIProvider {
+	name: string
+}
+
 export type ChunkCallback = (chunk: AIChunk) => void
+
+export const getAIProviders = (tenantId: string, fetchFn?: typeof fetch) =>
+	apiFetchData<AIProvider[]>(`/admin/tenants/${tenantId}/ai/providers`, {}, fetchFn)
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 export async function streamGenerate(
 	req: AIGenerateRequest,
-	onChunk: ChunkCallback
+	onChunk: ChunkCallback,
+	signal?: AbortSignal
 ): Promise<void> {
 	const token = getToken()
 	const res = await fetch(`${BASE_URL}/ai/generate`, {
 		method: 'POST',
 		credentials: 'include',
+		signal,
 		headers: {
 			'Content-Type': 'application/json',
 			Accept: 'text/event-stream',
@@ -63,9 +73,13 @@ export async function streamGenerate(
 			const raw = line.slice(5).trim()
 			if (raw === '[DONE]') return
 			try {
-				const chunk = JSON.parse(raw) as AIChunk
-				onChunk(chunk)
-			} catch {
+				const parsed = JSON.parse(raw)
+				if (parsed.error && typeof parsed.error === 'string') {
+					throw new Error(parsed.error)
+				}
+				onChunk(parsed as AIChunk)
+			} catch (e) {
+				if (e instanceof Error) throw e
 				// malformed chunk — skip
 			}
 		}
