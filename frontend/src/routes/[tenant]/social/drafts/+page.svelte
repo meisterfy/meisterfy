@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { FileEdit, Check, ImagePlus, Plus, Pencil, CalendarPlus, Send, Trash2 } from 'lucide-svelte'
+	import { FileEdit, Check, ImagePlus, Plus, Pencil, CalendarPlus, Send, Trash2, Sparkles } from 'lucide-svelte'
 	import type { PageData } from './$types'
 	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostShape, type PostPlatform } from '$lib/social'
 	import { updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
@@ -11,6 +11,7 @@
 	import EditDraftDrawer from '$lib/components/social/edit-draft-drawer.svelte'
 	import ScheduleDrawer from '$lib/components/social/schedule-drawer.svelte'
 	import PublishDrawer from '$lib/components/social/publish-drawer.svelte'
+	import AiDraftGenerator from '$lib/components/social/ai-draft-generator.svelte'
 
 	let { data } = $props<{ data: PageData }>()
 
@@ -23,6 +24,7 @@
 
 	// ── Create ─────────────────────────────────────────────────────────────────
 	let showCreate = $state(false)
+	let showAiGenerator = $state(false)
 
 	// ── Edit ───────────────────────────────────────────────────────────────────
 	let showEdit = $state(false)
@@ -108,12 +110,20 @@
 				Posts without a scheduled date. Approve and schedule to add to the planner.
 			</p>
 		</div>
-		<button
-			onclick={() => (showCreate = true)}
-			class="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-		>
-			<Plus class="h-4 w-4" /> New Draft
-		</button>
+		<div class="flex items-center gap-2">
+			<button
+				onclick={() => (showAiGenerator = true)}
+				class="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400"
+			>
+				<Sparkles class="h-4 w-4" /> Generate with AI
+			</button>
+			<button
+				onclick={() => (showCreate = true)}
+				class="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+			>
+				<Plus class="h-4 w-4" /> New Draft
+			</button>
+		</div>
 	</div>
 
 	{#if drafts.length === 0}
@@ -228,6 +238,12 @@
 	description={postToDelete ? `"${postToDelete.title}" will be permanently removed.` : ''}
 	isLoading={isDeletingPost}
 	onconfirm={confirmDelete}
+/>
+
+<AiDraftGenerator
+	bind:open={showAiGenerator}
+	tenant={data.tenant}
+	onCreated={(created) => { drafts = [...created, ...drafts] }}
 />
 
 <CreateDraftDrawer
