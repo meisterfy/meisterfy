@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/mcp"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 )
 
 // ContentRepos groups the repository interfaces required by content tools.
@@ -32,8 +32,8 @@ type postRepo interface {
 	ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
 	GetByID(ctx context.Context, id string) (*domain.Post, error)
 	Create(ctx context.Context, p *domain.Post) error
-	UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
-	Delete(ctx context.Context, id string) error
+	UpdateStatus(ctx context.Context, id, tenantID, status string, publishedAt *time.Time) error
+	Delete(ctx context.Context, id, tenantID string) error
 }
 
 type campaignRepo interface {
@@ -294,15 +294,17 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"id":     map[string]any{"type": "string"},
-				"status": map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
+				"id":        map[string]any{"type": "string"},
+				"tenant_id": map[string]any{"type": "string"},
+				"status":    map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
 			},
-			"required": []string{"id", "status"},
+			"required": []string{"id", "tenant_id", "status"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
 			var p struct {
-				ID     string `json:"id"`
-				Status string `json:"status"`
+				ID       string `json:"id"`
+				TenantID string `json:"tenant_id"`
+				Status   string `json:"status"`
 			}
 			json.Unmarshal(args, &p)
 			var publishedAt *time.Time
@@ -310,7 +312,7 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				now := time.Now()
 				publishedAt = &now
 			}
-			if err := repos.Posts.UpdateStatus(ctx, p.ID, p.Status, publishedAt); err != nil {
+			if err := repos.Posts.UpdateStatus(ctx, p.ID, p.TenantID, p.Status, publishedAt); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
 			return mcp.Ok(map[string]string{"updated": p.ID, "status": p.Status})
@@ -322,16 +324,18 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"id": map[string]any{"type": "string"},
+				"id":        map[string]any{"type": "string"},
+				"tenant_id": map[string]any{"type": "string"},
 			},
-			"required": []string{"id"},
+			"required": []string{"id", "tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
 			var p struct {
-				ID string `json:"id"`
+				ID       string `json:"id"`
+				TenantID string `json:"tenant_id"`
 			}
 			json.Unmarshal(args, &p)
-			if err := repos.Posts.Delete(ctx, p.ID); err != nil {
+			if err := repos.Posts.Delete(ctx, p.ID, p.TenantID); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
 			return mcp.Ok(map[string]string{"deleted": p.ID})

@@ -7,33 +7,43 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 const openaiAPI = "https://api.openai.com/v1/chat/completions"
 
 type OpenAIProvider struct {
-	apiKey  string
-	baseURL string
-	client  *http.Client
+	apiKey             string
+	baseURL            string
+	defaultModel       string
+	defaultTemperature float64
+	client             *http.Client
 }
 
-func NewOpenAIProvider(apiKey string) *OpenAIProvider {
+func NewOpenAIProvider(apiKey string, cfg map[string]any) *OpenAIProvider {
 	return &OpenAIProvider{
-		apiKey:  apiKey,
-		baseURL: openaiAPI,
-		client:  &http.Client{},
+		apiKey:             apiKey,
+		baseURL:            openaiAPI,
+		defaultModel:       connector.ConfigString(cfg, "model", "gpt-4o-mini"),
+		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
+		client:             &http.Client{},
 	}
 }
 
-func NewOpenAIProviderWithBaseURL(apiKey, baseURL string) *OpenAIProvider {
+// NewOpenAIProviderWithBaseURL is used by providers that embed OpenAIProvider
+// (Kimi, Groq) and supply their own base URL, default model, and temperature explicitly.
+func NewOpenAIProviderWithBaseURL(apiKey, baseURL, defaultModel string, defaultTemperature float64) *OpenAIProvider {
 	return &OpenAIProvider{
-		apiKey:  apiKey,
-		baseURL: baseURL,
-		client:  &http.Client{},
+		apiKey:             apiKey,
+		baseURL:            baseURL,
+		defaultModel:       defaultModel,
+		defaultTemperature: defaultTemperature,
+		client:             &http.Client{},
 	}
 }
 
@@ -42,7 +52,7 @@ func (p *OpenAIProvider) Name() string { return "openai" }
 func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, stream domain.StreamFunc) (*domain.LLMResponse, error) {
 	model := req.Model
 	if model == "" {
-		model = "gpt-4o-mini"
+		model = p.defaultModel
 	}
 
 	messages := make([]openAIMessage, 0, len(req.Messages))
@@ -56,7 +66,7 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 	body := openAIRequest{
 		Model:       model,
 		Messages:    messages,
-		Temperature: req.Temperature,
+		Temperature: p.defaultTemperature,
 		MaxTokens:   req.MaxTokens,
 		Stream:      true,
 	}
@@ -87,6 +97,38 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 	var result domain.LLMResponse
 	result.Model = model
 
+	// Detect whether the API returned an SSE stream or a plain JSON completion.
+	// Some providers (e.g. kimi-k2.6) ignore stream:true for certain models.
+	contentType := resp.Header.Get("Content-Type")
+	isSSE := strings.Contains(contentType, "text/event-stream")
+
+	if !isSSE {
+		// Non-streaming JSON response — buffer and parse directly.
+		rawBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		slog.Warn("openai provider: non-streaming response (stream:true ignored by provider)", "model", model, "content_type", contentType, "body_len", len(rawBody))
+		var nonStream openAINonStreamResponse
+		if err := json.Unmarshal(rawBody, &nonStream); err != nil {
+			return nil, fmt.Errorf("openai non-streaming parse error: %w", err)
+		}
+		if nonStream.Error != nil {
+			return nil, fmt.Errorf("provider error: %s", nonStream.Error.Message)
+		}
+		if len(nonStream.Choices) > 0 {
+			content := nonStream.Choices[0].Message.Content
+			result.Content = content
+			if stream != nil && content != "" {
+				_ = stream(domain.LLMChunk{Content: content})
+				_ = stream(domain.LLMChunk{Done: true})
+			}
+		}
+		return &result, nil
+	}
+
+	// SSE streaming response — read and parse incrementally.
+	var sseEvents, contentEvents int
 	reader := bufio.NewReader(resp.Body)
 	for {
 		line, err := reader.ReadString('\n')
@@ -100,6 +142,7 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 		if !strings.HasPrefix(line, "data: ") {
 			continue
 		}
+		sseEvents++
 		data := strings.TrimPrefix(line, "data: ")
 		if data == "[DONE]" {
 			if stream != nil {
@@ -113,9 +156,14 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 			continue
 		}
 
+		if event.Error != nil {
+			return nil, fmt.Errorf("provider error: %s", event.Error.Message)
+		}
+
 		if len(event.Choices) > 0 {
 			delta := event.Choices[0].Delta.Content
 			if delta != "" {
+				contentEvents++
 				chunk := domain.LLMChunk{Content: delta}
 				if stream != nil {
 					if err := stream(chunk); err != nil {
@@ -124,7 +172,7 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 				}
 				result.Content += delta
 			}
-			if event.Choices[0].FinishReason != "" {
+			if event.Choices[0].FinishReason != "" && result.Content != "" {
 				if stream != nil {
 					_ = stream(domain.LLMChunk{Done: true})
 				}
@@ -133,6 +181,11 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 		}
 	}
 
+	if contentEvents == 0 {
+		slog.Warn("openai provider: SSE stream had no content events", "model", model, "sse_events", sseEvents)
+	} else {
+		slog.Info("openai provider: stream finished", "model", model, "sse_events", sseEvents, "content_events", contentEvents, "content_len", len(result.Content))
+	}
 	return &result, nil
 }
 
@@ -152,8 +205,27 @@ type openAIRequest struct {
 type openAIStreamEvent struct {
 	Choices []struct {
 		Delta struct {
-			Content string `json:"content"`
+			Content          string `json:"content"`
+			ReasoningContent string `json:"reasoning_content"` // thinking models (kimi-k2.6, o1, etc.)
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
+	Error *struct {
+		Message string `json:"message"`
+		Type    string `json:"type"`
+	} `json:"error"`
+}
+
+// openAINonStreamResponse handles providers that return a plain JSON completion
+// despite receiving stream:true (e.g. kimi-k2.6 in some configurations).
+type openAINonStreamResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+	Error *struct {
+		Message string `json:"message"`
+		Type    string `json:"type"`
+	} `json:"error"`
 }

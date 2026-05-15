@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
 
 type AdminUsersHandler struct {
 	userRepo interface {
-		List(ctx context.Context) ([]*domain.User, error)
+		ListForTenant(ctx context.Context, tenantID string) ([]*domain.User, error)
 		GetByID(ctx context.Context, id string) (*domain.User, error)
 		Create(ctx context.Context, u *domain.User) error
 		Update(ctx context.Context, u *domain.User) error
@@ -23,12 +24,16 @@ type AdminUsersHandler struct {
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
 		RemoveRole(ctx context.Context, userID, tenantID, roleID string) error
+		GetRoleForUser(ctx context.Context, userID, tenantID string) (*domain.Role, error)
+		GetRolesForUsers(ctx context.Context, userIDs []string, tenantID string) (map[string]*domain.Role, error)
+		RemoveAllRolesForUserInTenant(ctx context.Context, userID, tenantID string) error
 	}
+	audit AuditLogRepo
 }
 
 func NewAdminUsersHandler(
 	userRepo interface {
-		List(ctx context.Context) ([]*domain.User, error)
+		ListForTenant(ctx context.Context, tenantID string) ([]*domain.User, error)
 		GetByID(ctx context.Context, id string) (*domain.User, error)
 		Create(ctx context.Context, u *domain.User) error
 		Update(ctx context.Context, u *domain.User) error
@@ -37,9 +42,18 @@ func NewAdminUsersHandler(
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
 		RemoveRole(ctx context.Context, userID, tenantID, roleID string) error
+		GetRoleForUser(ctx context.Context, userID, tenantID string) (*domain.Role, error)
+		GetRolesForUsers(ctx context.Context, userIDs []string, tenantID string) (map[string]*domain.Role, error)
+		RemoveAllRolesForUserInTenant(ctx context.Context, userID, tenantID string) error
 	},
+	audit AuditLogRepo,
 ) *AdminUsersHandler {
-	return &AdminUsersHandler{userRepo: userRepo, rbacRepo: rbacRepo}
+	return &AdminUsersHandler{userRepo: userRepo, rbacRepo: rbacRepo, audit: audit}
+}
+
+type roleRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type userAdminResponse struct {
@@ -49,24 +63,36 @@ type userAdminResponse struct {
 	Locale    string    `json:"locale"`
 	Timezone  string    `json:"timezone"`
 	IsActive  bool      `json:"is_active"`
+	Role      *roleRef  `json:"role,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (h *AdminUsersHandler) List(w http.ResponseWriter, r *http.Request) {
-	users, err := h.userRepo.List(r.Context())
+	claims := middleware.UserClaimsFromContext(r.Context())
+	users, err := h.userRepo.ListForTenant(r.Context(), claims.TenantID)
 	if err != nil {
 		InternalError(w)
 		return
 	}
+	ids := make([]string, len(users))
+	for i, u := range users {
+		ids[i] = u.ID
+	}
+	roles, _ := h.rbacRepo.GetRolesForUsers(r.Context(), ids, claims.TenantID)
 	data := make([]userAdminResponse, len(users))
 	for i, u := range users {
-		data[i] = toUserAdminResponse(u)
+		resp := toUserAdminResponse(u)
+		if role, ok := roles[u.ID]; ok {
+			resp.Role = &roleRef{ID: role.ID, Name: role.Name}
+		}
+		data[i] = resp
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": data})
 }
 
 func (h *AdminUsersHandler) Get(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	u, err := h.userRepo.GetByID(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -74,6 +100,11 @@ func (h *AdminUsersHandler) Get(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		InternalError(w)
+		return
+	}
+	// Ensure the target user belongs to the caller's tenant.
+	if role, _ := h.rbacRepo.GetRoleForUser(r.Context(), u.ID, claims.TenantID); role == nil {
+		NotFound(w)
 		return
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": toUserAdminResponse(u)})
@@ -95,6 +126,7 @@ func (h *AdminUsersHandler) Create(w http.ResponseWriter, r *http.Request) {
 		UnprocessableEntity(w, "invalid request body")
 		return
 	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	if req.Name == "" || req.Email == "" || req.Password == "" {
 		UnprocessableEntity(w, "name, email and password are required")
 		return
@@ -140,10 +172,18 @@ func (h *AdminUsersHandler) Create(w http.ResponseWriter, r *http.Request) {
 		_ = h.rbacRepo.AssignRole(r.Context(), u.ID, tenantID, roleID)
 	}
 
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "user.created", EntityType: "user", EntityID: u.ID, EntityName: &u.Name,
+			After: toUserAdminResponse(u), IP: auditIP(r),
+		})
+	}
 	JSON(w, http.StatusCreated, map[string]any{"data": toUserAdminResponse(u)})
 }
 
 func (h *AdminUsersHandler) Update(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	u, err := h.userRepo.GetByID(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -151,6 +191,10 @@ func (h *AdminUsersHandler) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		InternalError(w)
+		return
+	}
+	if role, _ := h.rbacRepo.GetRoleForUser(r.Context(), u.ID, claims.TenantID); role == nil {
+		NotFound(w)
 		return
 	}
 
@@ -170,7 +214,7 @@ func (h *AdminUsersHandler) Update(w http.ResponseWriter, r *http.Request) {
 		u.Name = req.Name
 	}
 	if req.Email != "" {
-		u.Email = req.Email
+		u.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	}
 	if req.Locale != "" {
 		u.Locale = req.Locale
@@ -190,18 +234,45 @@ func (h *AdminUsersHandler) Update(w http.ResponseWriter, r *http.Request) {
 		InternalError(w)
 		return
 	}
-
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: claims.TenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "user.updated", EntityType: "user", EntityID: u.ID, EntityName: &u.Name,
+			After: toUserAdminResponse(u), IP: auditIP(r),
+		})
+	}
 	JSON(w, http.StatusOK, map[string]any{"data": toUserAdminResponse(u)})
 }
 
 func (h *AdminUsersHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	if err := h.userRepo.Delete(r.Context(), chi.URLParam(r, "id")); err != nil {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	id := chi.URLParam(r, "id")
+	u, err := h.userRepo.GetByID(r.Context(), id)
+	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
 			return
 		}
 		InternalError(w)
 		return
+	}
+	if role, _ := h.rbacRepo.GetRoleForUser(r.Context(), u.ID, claims.TenantID); role == nil {
+		NotFound(w)
+		return
+	}
+	before := toUserAdminResponse(u)
+	u.IsActive = false
+	if err := h.userRepo.Update(r.Context(), u); err != nil {
+		InternalError(w)
+		return
+	}
+	_ = h.rbacRepo.RemoveAllRolesForUserInTenant(r.Context(), id, claims.TenantID)
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: claims.TenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "user.deactivated", EntityType: "user", EntityID: id, EntityName: &u.Name,
+			Before: before, IP: auditIP(r),
+		})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -211,21 +282,38 @@ func (h *AdminUsersHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "id")
 
 	var req struct {
-		RoleID   string `json:"role_id"`
-		TenantID string `json:"tenant_id"`
+		RoleID string `json:"role_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RoleID == "" {
 		UnprocessableEntity(w, "role_id is required")
 		return
 	}
-	tenantID := req.TenantID
-	if tenantID == "" {
-		tenantID = claims.TenantID
+	tenantID := claims.TenantID
+
+	// Ensure the target user belongs to this tenant before changing their role.
+	if target, _ := h.userRepo.GetByID(r.Context(), userID); target == nil {
+		NotFound(w)
+		return
+	}
+	if role, _ := h.rbacRepo.GetRoleForUser(r.Context(), userID, tenantID); role == nil {
+		NotFound(w)
+		return
 	}
 
+	if err := h.rbacRepo.RemoveAllRolesForUserInTenant(r.Context(), userID, tenantID); err != nil {
+		InternalError(w)
+		return
+	}
 	if err := h.rbacRepo.AssignRole(r.Context(), userID, tenantID, req.RoleID); err != nil {
 		InternalError(w)
 		return
+	}
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "user.role_assigned", EntityType: "user", EntityID: userID,
+			After: map[string]any{"role_id": req.RoleID, "tenant_id": tenantID}, IP: auditIP(r),
+		})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

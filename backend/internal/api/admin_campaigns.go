@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 )
 
 type AdminCampaignsHandler struct {

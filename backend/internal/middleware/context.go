@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 type contextKey string

@@ -8,26 +8,28 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
 
 type PostRepo interface {
 	List(ctx context.Context, tenantID string) ([]*domain.Post, error)
 	ListByStatus(ctx context.Context, tenantID, status string) ([]*domain.Post, error)
 	GetByID(ctx context.Context, id string) (*domain.Post, error)
+	GetByIDAndTenant(ctx context.Context, id, tenantID string) (*domain.Post, error)
 	Create(ctx context.Context, p *domain.Post) error
 	Update(ctx context.Context, p *domain.Post) error
-	UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error
-	Delete(ctx context.Context, id string) error
+	UpdateStatus(ctx context.Context, id, tenantID, status string, publishedAt *time.Time) error
+	Delete(ctx context.Context, id, tenantID string) error
 }
 
 type AdminPostsHandler struct {
 	postRepo PostRepo
+	audit    AuditLogRepo
 }
 
-func NewAdminPostsHandler(postRepo PostRepo) *AdminPostsHandler {
-	return &AdminPostsHandler{postRepo: postRepo}
+func NewAdminPostsHandler(postRepo PostRepo, audit AuditLogRepo) *AdminPostsHandler {
+	return &AdminPostsHandler{postRepo: postRepo, audit: audit}
 }
 
 type postResponse struct {
@@ -100,7 +102,8 @@ func (h *AdminPostsHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminPostsHandler) Get(w http.ResponseWriter, r *http.Request) {
-	p, err := h.postRepo.GetByID(r.Context(), chi.URLParam(r, "id"))
+	tenantID := chi.URLParam(r, "tenantId")
+	p, err := h.postRepo.GetByIDAndTenant(r.Context(), chi.URLParam(r, "id"), tenantID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
@@ -113,6 +116,7 @@ func (h *AdminPostsHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	tenantID := chi.URLParam(r, "tenantId")
 
 	var req struct {
@@ -160,16 +164,29 @@ func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	created, err := h.postRepo.GetByID(r.Context(), p.ID)
+	created, err := h.postRepo.GetByIDAndTenant(r.Context(), p.ID, tenantID)
 	if err != nil {
 		created = p
+	}
+	if claims != nil && h.audit != nil {
+		title := ""
+		if created.Title != nil {
+			title = *created.Title
+		}
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "post.created", EntityType: "post", EntityID: created.ID, EntityName: &title,
+			After: toPostResponse(created), IP: auditIP(r),
+		})
 	}
 	JSON(w, http.StatusCreated, map[string]any{"data": toPostResponse(created)})
 }
 
 func (h *AdminPostsHandler) Update(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	tenantID := chi.URLParam(r, "tenantId")
 	id := chi.URLParam(r, "id")
-	p, err := h.postRepo.GetByID(r.Context(), id)
+	p, err := h.postRepo.GetByIDAndTenant(r.Context(), id, tenantID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
@@ -228,9 +245,20 @@ func (h *AdminPostsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.postRepo.GetByID(r.Context(), p.ID)
+	updated, err := h.postRepo.GetByIDAndTenant(r.Context(), p.ID, tenantID)
 	if err != nil {
 		updated = p
+	}
+	if claims != nil && h.audit != nil {
+		title := ""
+		if updated.Title != nil {
+			title = *updated.Title
+		}
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "post.updated", EntityType: "post", EntityID: updated.ID, EntityName: &title,
+			After: toPostResponse(updated), IP: auditIP(r),
+		})
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": toPostResponse(updated)})
 }
@@ -244,9 +272,10 @@ var transitionPermissions = map[domain.PostStatus]string{
 
 func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.UserClaimsFromContext(r.Context())
+	tenantID := chi.URLParam(r, "tenantId")
 	id := chi.URLParam(r, "id")
 
-	p, err := h.postRepo.GetByID(r.Context(), id)
+	p, err := h.postRepo.GetByIDAndTenant(r.Context(), id, tenantID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
@@ -289,7 +318,7 @@ func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request)
 		t := time.Now()
 		publishedAt = &t
 	}
-	if err := h.postRepo.UpdateStatus(r.Context(), id, string(next), publishedAt); err != nil {
+	if err := h.postRepo.UpdateStatus(r.Context(), id, tenantID, string(next), publishedAt); err != nil {
 		InternalError(w)
 		return
 	}
@@ -303,22 +332,48 @@ func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	updated, err := h.postRepo.GetByID(r.Context(), id)
+	updated, err := h.postRepo.GetByIDAndTenant(r.Context(), id, tenantID)
 	if err != nil {
 		InternalError(w)
 		return
+	}
+	if claims != nil && h.audit != nil {
+		title := ""
+		if updated.Title != nil {
+			title = *updated.Title
+		}
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "post.status_changed", EntityType: "post", EntityID: updated.ID, EntityName: &title,
+			After: map[string]any{"status": string(updated.Status)}, IP: auditIP(r),
+		})
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": toPostResponse(updated)})
 }
 
 func (h *AdminPostsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	if err := h.postRepo.Delete(r.Context(), chi.URLParam(r, "id")); err != nil {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	tenantID := chi.URLParam(r, "tenantId")
+	id := chi.URLParam(r, "id")
+	before, _ := h.postRepo.GetByIDAndTenant(r.Context(), id, tenantID)
+	if err := h.postRepo.Delete(r.Context(), id, tenantID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
 			return
 		}
 		InternalError(w)
 		return
+	}
+	if claims != nil && h.audit != nil && before != nil {
+		title := ""
+		if before.Title != nil {
+			title = *before.Title
+		}
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: tenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "post.deleted", EntityType: "post", EntityID: id, EntityName: &title,
+			Before: toPostResponse(before), IP: auditIP(r),
+		})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

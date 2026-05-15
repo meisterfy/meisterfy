@@ -4,9 +4,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 func TestTenantRepository_CreateAndGet(t *testing.T) {
@@ -66,5 +67,63 @@ func TestTenantRepository_ResetDB(t *testing.T) {
 	_, err := repo.GetByID(ctx, "x")
 	if err == nil {
 		t.Error("expected error after reset, got nil")
+	}
+}
+
+func TestTenantRepository_GetByID_NotFound(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewTenantRepository(sharedDB.Pool)
+
+	_, err := repo.GetByID(ctx, "tenant-nonexistent")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestTenantRepository_Create_DuplicateID(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewTenantRepository(sharedDB.Pool)
+
+	tenant := &domain.Tenant{ID: "t-dup", Name: "Dup"}
+	if err := repo.Create(ctx, tenant); err != nil {
+		t.Fatalf("first create: %v", err)
+	}
+	if err := repo.Create(ctx, tenant); err == nil {
+		t.Error("expected error on duplicate ID, got nil")
+	}
+}
+
+func TestTenantRepository_UpdateAndDelete(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewTenantRepository(sharedDB.Pool)
+
+	tenant := &domain.Tenant{ID: "t-upd", Name: "Original"}
+	if err := repo.Create(ctx, tenant); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	tenant.Name = "Updated"
+	if err := repo.Update(ctx, tenant); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+
+	got, err := repo.GetByID(ctx, "t-upd")
+	if err != nil {
+		t.Fatalf("get after update: %v", err)
+	}
+	if got.Name != "Updated" {
+		t.Errorf("name=%q, want Updated", got.Name)
+	}
+
+	if err := repo.Delete(ctx, "t-upd"); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+
+	_, err = repo.GetByID(ctx, "t-upd")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound after delete, got %v", err)
 	}
 }

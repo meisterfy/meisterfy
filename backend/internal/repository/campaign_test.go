@@ -5,9 +5,11 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/testutil"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/testutil"
 )
 
 func TestCampaignRepository_UpsertAndGet(t *testing.T) {
@@ -29,8 +31,12 @@ func TestCampaignRepository_UpsertAndGet(t *testing.T) {
 	if got.Slug != "summer-sale" {
 		t.Errorf("slug = %q, want %q", got.Slug, "summer-sale")
 	}
-	if string(got.Data) != `{"budget":100}` {
-		t.Errorf("data = %s, want %s", got.Data, `{"budget":100}`)
+	var gotData map[string]any
+	if err := json.Unmarshal(got.Data, &gotData); err != nil {
+		t.Fatalf("unmarshal data: %v", err)
+	}
+	if gotData["budget"] != float64(100) {
+		t.Errorf("data.budget = %v, want 100", gotData["budget"])
 	}
 }
 
@@ -71,5 +77,18 @@ func TestCampaignRepository_MarkDeployedAndDelete(t *testing.T) {
 	_, err := repo.GetBySlug(ctx, "tenant-camp3", "slug-c")
 	if err == nil {
 		t.Error("expected error after delete, got nil")
+	}
+}
+
+func TestCampaignRepository_GetBySlug_NotFound(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewCampaignRepository(sharedDB.Pool)
+
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-camp-nf", "Campaign NF Tenant")
+
+	_, err := repo.GetBySlug(ctx, "tenant-camp-nf", "nonexistent-slug")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }

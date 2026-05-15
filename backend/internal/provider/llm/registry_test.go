@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 type mockIntegrationRepo struct {
@@ -150,7 +150,7 @@ type testProvider struct {
 }
 
 func (t *testProvider) Name() string { return t.name }
-func (t *testProvider) Generate(ctx context.Context, req LLMRequest, stream StreamFunc) (*LLMResponse, error) {
+func (t *testProvider) Generate(ctx context.Context, req domain.LLMRequest, stream domain.StreamFunc) (*domain.LLMResponse, error) {
 	return nil, nil
 }
 

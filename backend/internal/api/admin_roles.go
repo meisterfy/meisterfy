@@ -7,15 +7,17 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
+
 
 type AdminRolesHandler struct {
 	rbacRepo interface {
 		ListRoles(ctx context.Context, tenantID string) ([]domain.Role, error)
 		GetRoleByID(ctx context.Context, id string) (*domain.Role, error)
 		CreateRole(ctx context.Context, role *domain.Role) error
+		UpdateRole(ctx context.Context, id, name string) error
 		DeleteRole(ctx context.Context, id string) error
 		SetRolePermissions(ctx context.Context, roleID string, permNames []string) error
 		ListPermissions(ctx context.Context) ([]domain.Permission, error)
@@ -26,6 +28,7 @@ func NewAdminRolesHandler(rbacRepo interface {
 	ListRoles(ctx context.Context, tenantID string) ([]domain.Role, error)
 	GetRoleByID(ctx context.Context, id string) (*domain.Role, error)
 	CreateRole(ctx context.Context, role *domain.Role) error
+	UpdateRole(ctx context.Context, id, name string) error
 	DeleteRole(ctx context.Context, id string) error
 	SetRolePermissions(ctx context.Context, roleID string, permNames []string) error
 	ListPermissions(ctx context.Context) ([]domain.Permission, error)
@@ -103,7 +106,22 @@ func (h *AdminRolesHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminRolesHandler) SetPermissions(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	roleID := chi.URLParam(r, "id")
+
+	role, err := h.rbacRepo.GetRoleByID(r.Context(), roleID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			NotFound(w)
+			return
+		}
+		InternalError(w)
+		return
+	}
+	if role.TenantID == nil || *role.TenantID != claims.TenantID {
+		Forbidden(w)
+		return
+	}
 
 	var req struct {
 		Permissions []string `json:"permissions"`
@@ -120,12 +138,68 @@ func (h *AdminRolesHandler) SetPermissions(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *AdminRolesHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	if err := h.rbacRepo.DeleteRole(r.Context(), chi.URLParam(r, "id")); err != nil {
+func (h *AdminRolesHandler) Update(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	roleID := chi.URLParam(r, "id")
+
+	role, err := h.rbacRepo.GetRoleByID(r.Context(), roleID)
+	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
 			return
 		}
+		InternalError(w)
+		return
+	}
+	if role.TenantID == nil || *role.TenantID != claims.TenantID {
+		Forbidden(w)
+		return
+	}
+
+	var req struct {
+		Name        string   `json:"name"`
+		Permissions []string `json:"permissions"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		UnprocessableEntity(w, "invalid request body")
+		return
+	}
+
+	if req.Name != "" && req.Name != role.Name {
+		if err := h.rbacRepo.UpdateRole(r.Context(), roleID, req.Name); err != nil {
+			InternalError(w)
+			return
+		}
+	}
+
+	if req.Permissions != nil {
+		if err := h.rbacRepo.SetRolePermissions(r.Context(), roleID, req.Permissions); err != nil {
+			InternalError(w)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AdminRolesHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	roleID := chi.URLParam(r, "id")
+
+	role, err := h.rbacRepo.GetRoleByID(r.Context(), roleID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			NotFound(w)
+			return
+		}
+		InternalError(w)
+		return
+	}
+	if role.TenantID == nil || *role.TenantID != claims.TenantID {
+		Forbidden(w)
+		return
+	}
+
+	if err := h.rbacRepo.DeleteRole(r.Context(), roleID); err != nil {
 		InternalError(w)
 		return
 	}

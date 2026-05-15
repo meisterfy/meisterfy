@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

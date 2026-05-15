@@ -11,6 +11,8 @@ import (
 const (
 	accessTokenTTL  = 15 * time.Minute
 	refreshTokenTTL = 7 * 24 * time.Hour
+	jwtIssuer       = "rush-maestro"
+	jwtAudience     = "rush-maestro-api"
 )
 
 type TokenPair struct {
@@ -31,6 +33,7 @@ type accessClaims struct {
 	jwt.RegisteredClaims
 	TenantID    string   `json:"tid"`
 	Permissions []string `json:"perms"`
+	UserName    string   `json:"uname,omitempty"`
 }
 
 type refreshClaims struct {
@@ -46,11 +49,14 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 	ac := accessClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID,
+			Issuer:    jwtIssuer,
+			Audience:  jwt.ClaimStrings{jwtAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(accessExp),
 		},
 		TenantID:    claims.TenantID,
 		Permissions: claims.Permissions,
+		UserName:    claims.UserName,
 	}
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, ac).SignedString(s.secret)
 	if err != nil {
@@ -60,6 +66,8 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 	rc := refreshClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID,
+			Issuer:    jwtIssuer,
+			Audience:  jwt.ClaimStrings{jwtAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(refreshExp),
 		},
@@ -81,6 +89,8 @@ func (s *JWTService) ParseAccessToken(token string) (*UserClaims, error) {
 	var ac accessClaims
 	_, err := jwt.ParseWithClaims(token, &ac, s.keyFunc,
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithIssuer(jwtIssuer),
+		jwt.WithAudience(jwtAudience),
 	)
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -92,6 +102,7 @@ func (s *JWTService) ParseAccessToken(token string) (*UserClaims, error) {
 		UserID:      ac.Subject,
 		TenantID:    ac.TenantID,
 		Permissions: ac.Permissions,
+		UserName:    ac.UserName,
 	}, nil
 }
 

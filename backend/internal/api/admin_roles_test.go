@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,6 +34,9 @@ func (m *mockRolesRepo) GetRoleByID(_ context.Context, _ string) (*domain.Role, 
 }
 func (m *mockRolesRepo) CreateRole(_ context.Context, _ *domain.Role) error {
 	return m.createErr
+}
+func (m *mockRolesRepo) UpdateRole(_ context.Context, _ string, _ string) error {
+	return nil
 }
 func (m *mockRolesRepo) DeleteRole(_ context.Context, _ string) error {
 	return m.deleteErr

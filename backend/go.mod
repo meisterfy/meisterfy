@@ -1,4 +1,4 @@
-module github.com/rush-maestro/rush-maestro
+module github.com/mkt-maestro/mkt-maestro
 
 go 1.25.7
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 )
 
 // MonitoringDefaults applied when the tenant has no ads_monitoring config.
@@ -44,6 +44,9 @@ func CollectDailyMetrics(
 	alertRepo *repository.AlertRepository,
 	agentRunRepo *repository.AgentRunRepository,
 ) (*CollectResult, error) {
+	if err := validateDate(targetDate); err != nil {
+		return nil, err
+	}
 	cfg := MonitoringDefaults
 	if tenant.AdsMonitoring != nil {
 		m := tenant.AdsMonitoring

@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/goleak"
 
-	"github.com/rush-maestro/rush-maestro/testutil"
+	"github.com/mkt-maestro/mkt-maestro/testutil"
 )
 
 var sharedDB *testutil.PostgresContainer
@@ -18,16 +18,16 @@ var sharedDB *testutil.PostgresContainer
 func TestMain(m *testing.M) {
 	sharedDB = testutil.NewPostgresContainer(nil)
 
-	exitCode := 0
-	defer func() {
-		sharedDB.Cleanup(context.Background())
-		os.Exit(exitCode)
-	}()
+	exitCode := m.Run()
 
-	exitCode = m.Run()
+	// Close the pool before checking for goroutine leaks so pgxpool
+	// background goroutines have time to exit before goleak scans.
+	sharedDB.Cleanup(context.Background())
 
 	if err := goleak.Find(); err != nil {
 		fmt.Fprintf(os.Stderr, "goleak: %v\n", err)
 		exitCode = 1
 	}
+
+	os.Exit(exitCode)
 }

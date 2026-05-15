@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type MetricsRepository struct {

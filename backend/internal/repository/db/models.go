@@ -36,6 +36,21 @@ type AlertEvent struct {
 	CreatedAt    time.Time          `json:"created_at"`
 }
 
+type AuditLog struct {
+	ID         string    `json:"id"`
+	TenantID   string    `json:"tenant_id"`
+	UserID     string    `json:"user_id"`
+	UserName   string    `json:"user_name"`
+	Action     string    `json:"action"`
+	EntityType string    `json:"entity_type"`
+	EntityID   string    `json:"entity_id"`
+	EntityName *string   `json:"entity_name"`
+	Before     []byte    `json:"before"`
+	After      []byte    `json:"after"`
+	Ip         *string   `json:"ip"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 type Campaign struct {
 	ID         string             `json:"id"`
 	TenantID   string             `json:"tenant_id"`
@@ -44,6 +59,19 @@ type Campaign struct {
 	DeployedAt pgtype.Timestamptz `json:"deployed_at"`
 	CreatedAt  time.Time          `json:"created_at"`
 	UpdatedAt  time.Time          `json:"updated_at"`
+}
+
+type CampaignAiReport struct {
+	ID          pgtype.UUID `json:"id"`
+	TenantID    string      `json:"tenant_id"`
+	CampaignID  string      `json:"campaign_id"`
+	ReportType  string      `json:"report_type"`
+	Content     string      `json:"content"`
+	PeriodStart pgtype.Date `json:"period_start"`
+	PeriodEnd   pgtype.Date `json:"period_end"`
+	GeneratedAt time.Time   `json:"generated_at"`
+	GeneratedBy *string     `json:"generated_by"`
+	Model       *string     `json:"model"`
 }
 
 type ConnectorResource struct {
@@ -76,19 +104,20 @@ type DailyMetric struct {
 }
 
 type Integration struct {
-	ID                string    `json:"id"`
-	Name              string    `json:"name"`
-	Provider          string    `json:"provider"`
-	Group             string    `json:"group"`
-	OauthClientID     *string   `json:"oauth_client_id"`
-	OauthClientSecret *string   `json:"oauth_client_secret"`
-	DeveloperToken    *string   `json:"developer_token"`
-	LoginCustomerID   *string   `json:"login_customer_id"`
-	RefreshToken      *string   `json:"refresh_token"`
-	Status            string    `json:"status"`
-	ErrorMessage      *string   `json:"error_message"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	ID                string          `json:"id"`
+	Name              string          `json:"name"`
+	Provider          string          `json:"provider"`
+	Group             string          `json:"group"`
+	OauthClientID     *string         `json:"oauth_client_id"`
+	OauthClientSecret *string         `json:"oauth_client_secret"`
+	DeveloperToken    *string         `json:"developer_token"`
+	LoginCustomerID   *string         `json:"login_customer_id"`
+	RefreshToken      *string         `json:"refresh_token"`
+	Status            string          `json:"status"`
+	ErrorMessage      *string         `json:"error_message"`
+	CreatedAt         time.Time       `json:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at"`
+	Config            json.RawMessage `json:"config"`
 }
 
 type IntegrationTenant struct {
@@ -167,6 +196,7 @@ type Tenant struct {
 	AdsMonitoring  []byte          `json:"ads_monitoring"`
 	CreatedAt      time.Time       `json:"created_at"`
 	UpdatedAt      time.Time       `json:"updated_at"`
+	ReportPrompts  json.RawMessage `json:"report_prompts"`
 }
 
 type User struct {

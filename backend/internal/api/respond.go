@@ -24,3 +24,11 @@ func InternalError(w http.ResponseWriter)        { Error(w, http.StatusInternalS
 func UnprocessableEntity(w http.ResponseWriter, msg string) {
 	Error(w, http.StatusUnprocessableEntity, msg)
 }
+
+func auditIP(r *http.Request) *string {
+	ip := r.Header.Get("X-Real-IP")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+	return &ip
+}

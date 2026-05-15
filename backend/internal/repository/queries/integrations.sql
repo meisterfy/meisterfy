@@ -13,14 +13,14 @@ LIMIT 1;
 
 -- name: CreateIntegration :exec
 INSERT INTO integrations (id, name, provider, "group", oauth_client_id, oauth_client_secret,
-    developer_token, login_customer_id, status)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+    developer_token, login_customer_id, status, config)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
 -- name: UpdateIntegration :exec
 UPDATE integrations
 SET name = $2, oauth_client_id = $3, oauth_client_secret = $4,
     developer_token = $5, login_customer_id = $6, refresh_token = $7,
-    status = $8, error_message = $9, updated_at = NOW()
+    status = $8, error_message = $9, config = $10, updated_at = NOW()
 WHERE id = $1;
 
 -- name: DeleteIntegration :exec

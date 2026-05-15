@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector/anthropic"
-	"github.com/rush-maestro/rush-maestro/internal/connector/gemini"
-	"github.com/rush-maestro/rush-maestro/internal/connector/groq"
-	"github.com/rush-maestro/rush-maestro/internal/connector/kimi"
-	"github.com/rush-maestro/rush-maestro/internal/connector/openai"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/anthropic"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/gemini"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/groq"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/kimi"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 var (
@@ -85,18 +85,18 @@ func (s *ProviderSelector) ResolveAll(ctx context.Context, tenantID string) []Pr
 	return out
 }
 
-func NewProvider(name, apiKey string) (domain.LLMProvider, error) {
+func NewProvider(name, apiKey string, cfg map[string]any) (domain.LLMProvider, error) {
 	switch name {
 	case "claude":
-		return anthropic.NewAnthropicProvider(apiKey), nil
+		return anthropic.NewAnthropicProvider(apiKey, cfg), nil
 	case "openai":
-		return openai.NewOpenAIProvider(apiKey), nil
+		return openai.NewOpenAIProvider(apiKey, cfg), nil
 	case "gemini":
-		return gemini.NewGeminiProvider(apiKey), nil
+		return gemini.NewGeminiProvider(apiKey, cfg), nil
 	case "groq":
-		return groq.NewGroqProvider(apiKey), nil
+		return groq.NewGroqProvider(apiKey, cfg), nil
 	case "kimi":
-		return kimi.NewKimiProvider(apiKey), nil
+		return kimi.NewKimiProvider(apiKey, cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}

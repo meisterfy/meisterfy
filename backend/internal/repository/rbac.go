@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type RBACRepository struct {
@@ -75,6 +76,11 @@ func (r *RBACRepository) CreateRole(ctx context.Context, role *domain.Role) erro
 	}))
 }
 
+func (r *RBACRepository) UpdateRole(ctx context.Context, id, name string) error {
+	_, err := r.pool.Exec(ctx, `UPDATE roles SET name = $1 WHERE id = $2`, name, id)
+	return mapError(err)
+}
+
 func (r *RBACRepository) DeleteRole(ctx context.Context, id string) error {
 	return mapError(r.queries.DeleteRole(ctx, id))
 }
@@ -102,6 +108,64 @@ func (r *RBACRepository) ListPermissions(ctx context.Context) ([]domain.Permissi
 		perms[i] = domain.Permission{ID: row.ID, Name: row.Name}
 	}
 	return perms, nil
+}
+
+func (r *RBACRepository) GetRoleForUser(ctx context.Context, userID, tenantID string) (*domain.Role, error) {
+	const q = `
+		SELECT r.id, r.name, r.tenant_id
+		FROM roles r
+		JOIN user_tenant_roles utr ON utr.role_id = r.id
+		WHERE utr.user_id = $1 AND utr.tenant_id = $2
+		LIMIT 1
+	`
+	var role domain.Role
+	var tid *string
+	err := r.pool.QueryRow(ctx, q, userID, tenantID).Scan(&role.ID, &role.Name, &tid)
+	if err != nil {
+		if errors.Is(mapError(err), domain.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	role.TenantID = tid
+	return &role, nil
+}
+
+func (r *RBACRepository) GetRolesForUsers(ctx context.Context, userIDs []string, tenantID string) (map[string]*domain.Role, error) {
+	if len(userIDs) == 0 {
+		return map[string]*domain.Role{}, nil
+	}
+	const q = `
+		SELECT r.id, r.name, r.tenant_id, utr.user_id
+		FROM roles r
+		JOIN user_tenant_roles utr ON utr.role_id = r.id
+		WHERE utr.user_id = ANY($1) AND utr.tenant_id = $2
+	`
+	rows, err := r.pool.Query(ctx, q, userIDs, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[string]*domain.Role, len(userIDs))
+	for rows.Next() {
+		var role domain.Role
+		var tid *string
+		var uid string
+		if err := rows.Scan(&role.ID, &role.Name, &tid, &uid); err != nil {
+			return nil, err
+		}
+		role.TenantID = tid
+		out[uid] = &role
+	}
+	return out, rows.Err()
+}
+
+func (r *RBACRepository) RemoveAllRolesForUserInTenant(ctx context.Context, userID, tenantID string) error {
+	_, err := r.pool.Exec(ctx,
+		`DELETE FROM user_tenant_roles WHERE user_id = $1 AND tenant_id = $2`,
+		userID, tenantID,
+	)
+	return err
 }
 
 func mapRole(row db.Role, perms []string) domain.Role {

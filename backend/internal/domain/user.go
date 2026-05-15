@@ -32,6 +32,7 @@ type Permission struct {
 
 type UserClaims struct {
 	UserID      string
+	UserName    string
 	TenantID    string
 	Permissions []string
 }

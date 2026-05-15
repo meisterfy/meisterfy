@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type PostRepository struct {
@@ -46,6 +46,14 @@ func (r *PostRepository) GetByID(ctx context.Context, id string) (*domain.Post, 
 	return mapPost(row), nil
 }
 
+func (r *PostRepository) GetByIDAndTenant(ctx context.Context, id, tenantID string) (*domain.Post, error) {
+	row, err := r.queries.GetPostByIDAndTenant(ctx, db.GetPostByIDAndTenantParams{ID: id, TenantID: tenantID})
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return mapPost(row), nil
+}
+
 func (r *PostRepository) Create(ctx context.Context, p *domain.Post) error {
 	hashJSON, _ := json.Marshal(p.Hashtags)
 	platJSON, _ := json.Marshal(p.Platforms)
@@ -66,9 +74,10 @@ func (r *PostRepository) Create(ctx context.Context, p *domain.Post) error {
 	}))
 }
 
-func (r *PostRepository) UpdateStatus(ctx context.Context, id, status string, publishedAt *time.Time) error {
+func (r *PostRepository) UpdateStatus(ctx context.Context, id, tenantID, status string, publishedAt *time.Time) error {
 	return mapError(r.queries.UpdatePostStatus(ctx, db.UpdatePostStatusParams{
 		ID:          id,
+		TenantID:    tenantID,
 		Status:      status,
 		PublishedAt: timePtrToTS(publishedAt),
 	}))
@@ -80,6 +89,7 @@ func (r *PostRepository) Update(ctx context.Context, p *domain.Post) error {
 	workJSON, _ := json.Marshal(p.Workflow)
 	return mapError(r.queries.UpdatePost(ctx, db.UpdatePostParams{
 		ID:            p.ID,
+		TenantID:      p.TenantID,
 		Title:         p.Title,
 		Content:       p.Content,
 		Hashtags:      hashJSON,
@@ -91,8 +101,8 @@ func (r *PostRepository) Update(ctx context.Context, p *domain.Post) error {
 	}))
 }
 
-func (r *PostRepository) Delete(ctx context.Context, id string) error {
-	return mapError(r.queries.DeletePost(ctx, id))
+func (r *PostRepository) Delete(ctx context.Context, id, tenantID string) error {
+	return mapError(r.queries.DeletePost(ctx, db.DeletePostParams{ID: id, TenantID: tenantID}))
 }
 
 func mapPosts(rows []db.Post) []*domain.Post {

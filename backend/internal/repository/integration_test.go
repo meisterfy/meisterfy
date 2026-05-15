@@ -4,10 +4,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/testutil"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/testutil"
 )
 
 func TestIntegrationRepository_CreateAndGet(t *testing.T) {
@@ -154,5 +155,59 @@ func TestIntegrationRepository_UpdateAndDelete(t *testing.T) {
 	_, err = repo.GetByID(ctx, "ig-5")
 	if err == nil {
 		t.Error("expected error after delete, got nil")
+	}
+}
+
+func TestIntegrationRepository_GetByID_NotFound(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewIntegrationRepository(sharedDB.Pool, nil)
+
+	_, err := repo.GetByID(ctx, "ig-nonexistent")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestIntegrationRepository_Create_DuplicateID(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewIntegrationRepository(sharedDB.Pool, nil)
+
+	ig := testutil.NewTestIntegration("ig-dup", "Dup", domain.ProviderOpenAI)
+	if err := repo.Create(ctx, ig); err != nil {
+		t.Fatalf("first create: %v", err)
+	}
+	if err := repo.Create(ctx, ig); err == nil {
+		t.Error("expected error on duplicate ID, got nil")
+	}
+}
+
+func TestIntegrationRepository_GetForTenant(t *testing.T) {
+	sharedDB.ResetDB(t)
+	ctx := context.Background()
+	repo := NewIntegrationRepository(sharedDB.Pool, nil)
+
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-ig-ft", "Integration FT Tenant")
+	ig := testutil.NewTestIntegration("ig-ft-1", "OpenAI FT", domain.ProviderOpenAI)
+	ig.Status = domain.StatusConnected
+	if err := repo.Create(ctx, ig); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	if err := repo.SetTenants(ctx, "ig-ft-1", []string{"tenant-ig-ft"}); err != nil {
+		t.Fatalf("set tenants: %v", err)
+	}
+
+	got, err := repo.GetForTenant(ctx, "tenant-ig-ft", string(domain.ProviderOpenAI))
+	if err != nil {
+		t.Fatalf("get for tenant: %v", err)
+	}
+	if got.ID != "ig-ft-1" {
+		t.Errorf("id = %q, want %q", got.ID, "ig-ft-1")
+	}
+
+	_, err = repo.GetForTenant(ctx, "tenant-ig-ft", "nonexistent-provider")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound for missing provider, got %v", err)
 	}
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 //go:embed logo.svg
