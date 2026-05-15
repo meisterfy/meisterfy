@@ -36,7 +36,11 @@
 			if (data.access_token) {
 				auth.setToken(data.access_token)
 				setToken(data.access_token)
-				if (data.user) auth.setUser(data.user)
+				if (data.user) auth.setUser({
+						...data.user,
+						tenant_id: data.tenant_id ?? data.user.tenant_id ?? '',
+						permissions: data.permissions ?? data.user.permissions ?? []
+					})
 			}
 			needsTenant = !!data.needs_tenant
 			step = 2
@@ -57,7 +61,7 @@
 		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 	>
 		{#if step === 1}
-			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">Welcome to Rush Maestro</h1>
+			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">Welcome to Maestro</h1>
 			<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
 				Create the first admin account to get started.
 			</p>
