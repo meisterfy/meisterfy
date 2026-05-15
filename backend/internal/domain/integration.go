@@ -15,7 +15,7 @@ const (
 	ProviderGemini    IntegrationProvider = "gemini"
 	ProviderKimi      IntegrationProvider = "kimi"
 	ProviderBrevo     IntegrationProvider = "brevo"
-	ProviderSendible  IntegrationProvider = "sendible"
+	ProviderResend    IntegrationProvider = "resend"
 	ProviderSentry    IntegrationProvider = "sentry"
 )
 
@@ -51,6 +51,7 @@ type Integration struct {
 	Status            IntegrationStatus
 	ErrorMessage      *string
 	TenantIDs         []string
+	Config            map[string]any
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }

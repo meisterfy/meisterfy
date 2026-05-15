@@ -7,24 +7,26 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 )
 
 const createIntegration = `-- name: CreateIntegration :exec
 INSERT INTO integrations (id, name, provider, "group", oauth_client_id, oauth_client_secret,
-    developer_token, login_customer_id, status)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    developer_token, login_customer_id, status, config)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateIntegrationParams struct {
-	ID                string  `json:"id"`
-	Name              string  `json:"name"`
-	Provider          string  `json:"provider"`
-	Group             string  `json:"group"`
-	OauthClientID     *string `json:"oauth_client_id"`
-	OauthClientSecret *string `json:"oauth_client_secret"`
-	DeveloperToken    *string `json:"developer_token"`
-	LoginCustomerID   *string `json:"login_customer_id"`
-	Status            string  `json:"status"`
+	ID                string          `json:"id"`
+	Name              string          `json:"name"`
+	Provider          string          `json:"provider"`
+	Group             string          `json:"group"`
+	OauthClientID     *string         `json:"oauth_client_id"`
+	OauthClientSecret *string         `json:"oauth_client_secret"`
+	DeveloperToken    *string         `json:"developer_token"`
+	LoginCustomerID   *string         `json:"login_customer_id"`
+	Status            string          `json:"status"`
+	Config            json.RawMessage `json:"config"`
 }
 
 func (q *Queries) CreateIntegration(ctx context.Context, arg CreateIntegrationParams) error {
@@ -38,6 +40,7 @@ func (q *Queries) CreateIntegration(ctx context.Context, arg CreateIntegrationPa
 		arg.DeveloperToken,
 		arg.LoginCustomerID,
 		arg.Status,
+		arg.Config,
 	)
 	return err
 }
@@ -61,7 +64,7 @@ func (q *Queries) DeleteIntegrationTenants(ctx context.Context, integrationID st
 }
 
 const getIntegrationByID = `-- name: GetIntegrationByID :one
-SELECT id, name, provider, "group", oauth_client_id, oauth_client_secret, developer_token, login_customer_id, refresh_token, status, error_message, created_at, updated_at FROM integrations WHERE id = $1 LIMIT 1
+SELECT id, name, provider, "group", oauth_client_id, oauth_client_secret, developer_token, login_customer_id, refresh_token, status, error_message, created_at, updated_at, config FROM integrations WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetIntegrationByID(ctx context.Context, id string) (Integration, error) {
@@ -81,12 +84,13 @@ func (q *Queries) GetIntegrationByID(ctx context.Context, id string) (Integratio
 		&i.ErrorMessage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Config,
 	)
 	return i, err
 }
 
 const getIntegrationForTenant = `-- name: GetIntegrationForTenant :one
-SELECT i.id, i.name, i.provider, i."group", i.oauth_client_id, i.oauth_client_secret, i.developer_token, i.login_customer_id, i.refresh_token, i.status, i.error_message, i.created_at, i.updated_at FROM integrations i
+SELECT i.id, i.name, i.provider, i."group", i.oauth_client_id, i.oauth_client_secret, i.developer_token, i.login_customer_id, i.refresh_token, i.status, i.error_message, i.created_at, i.updated_at, i.config FROM integrations i
 JOIN integration_tenants it ON it.integration_id = i.id
 WHERE it.tenant_id = $1 AND i.provider = $2
   AND i.status = 'connected'
@@ -115,6 +119,7 @@ func (q *Queries) GetIntegrationForTenant(ctx context.Context, arg GetIntegratio
 		&i.ErrorMessage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Config,
 	)
 	return i, err
 }
@@ -159,7 +164,7 @@ func (q *Queries) InsertIntegrationTenant(ctx context.Context, arg InsertIntegra
 }
 
 const listIntegrations = `-- name: ListIntegrations :many
-SELECT id, name, provider, "group", oauth_client_id, oauth_client_secret, developer_token, login_customer_id, refresh_token, status, error_message, created_at, updated_at FROM integrations ORDER BY name
+SELECT id, name, provider, "group", oauth_client_id, oauth_client_secret, developer_token, login_customer_id, refresh_token, status, error_message, created_at, updated_at, config FROM integrations ORDER BY name
 `
 
 func (q *Queries) ListIntegrations(ctx context.Context) ([]Integration, error) {
@@ -185,6 +190,7 @@ func (q *Queries) ListIntegrations(ctx context.Context) ([]Integration, error) {
 			&i.ErrorMessage,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Config,
 		); err != nil {
 			return nil, err
 		}
@@ -200,20 +206,21 @@ const updateIntegration = `-- name: UpdateIntegration :exec
 UPDATE integrations
 SET name = $2, oauth_client_id = $3, oauth_client_secret = $4,
     developer_token = $5, login_customer_id = $6, refresh_token = $7,
-    status = $8, error_message = $9, updated_at = NOW()
+    status = $8, error_message = $9, config = $10, updated_at = NOW()
 WHERE id = $1
 `
 
 type UpdateIntegrationParams struct {
-	ID                string  `json:"id"`
-	Name              string  `json:"name"`
-	OauthClientID     *string `json:"oauth_client_id"`
-	OauthClientSecret *string `json:"oauth_client_secret"`
-	DeveloperToken    *string `json:"developer_token"`
-	LoginCustomerID   *string `json:"login_customer_id"`
-	RefreshToken      *string `json:"refresh_token"`
-	Status            string  `json:"status"`
-	ErrorMessage      *string `json:"error_message"`
+	ID                string          `json:"id"`
+	Name              string          `json:"name"`
+	OauthClientID     *string         `json:"oauth_client_id"`
+	OauthClientSecret *string         `json:"oauth_client_secret"`
+	DeveloperToken    *string         `json:"developer_token"`
+	LoginCustomerID   *string         `json:"login_customer_id"`
+	RefreshToken      *string         `json:"refresh_token"`
+	Status            string          `json:"status"`
+	ErrorMessage      *string         `json:"error_message"`
+	Config            json.RawMessage `json:"config"`
 }
 
 func (q *Queries) UpdateIntegration(ctx context.Context, arg UpdateIntegrationParams) error {
@@ -227,6 +234,7 @@ func (q *Queries) UpdateIntegration(ctx context.Context, arg UpdateIntegrationPa
 		arg.RefreshToken,
 		arg.Status,
 		arg.ErrorMessage,
+		arg.Config,
 	)
 	return err
 }

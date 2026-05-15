@@ -21,32 +21,32 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
-	"github.com/rush-maestro/rush-maestro/internal/api"
-	"github.com/rush-maestro/rush-maestro/internal/config"
-	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
-	"github.com/rush-maestro/rush-maestro/internal/scheduler"
-	"github.com/rush-maestro/rush-maestro/internal/service/media"
-	mcpserver "github.com/rush-maestro/rush-maestro/internal/mcp"
-	mcpresources "github.com/rush-maestro/rush-maestro/internal/mcp/resources"
-	mcptools "github.com/rush-maestro/rush-maestro/internal/mcp/tools"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/api"
+	"github.com/mkt-maestro/mkt-maestro/internal/config"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
+	"github.com/mkt-maestro/mkt-maestro/internal/scheduler"
+	"github.com/mkt-maestro/mkt-maestro/internal/service/media"
+	mcpserver "github.com/mkt-maestro/mkt-maestro/internal/mcp"
+	mcpresources "github.com/mkt-maestro/mkt-maestro/internal/mcp/resources"
+	mcptools "github.com/mkt-maestro/mkt-maestro/internal/mcp/tools"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 
 	// Register all integration provider schemas.
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/anthropic"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/brevo"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/gemini"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/googleads"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/groq"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/kimi"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/meta"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/openai"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/r2"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/s3"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/resend"
-	_ "github.com/rush-maestro/rush-maestro/internal/connector/sentry"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/anthropic"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/brevo"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/gemini"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/groq"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/kimi"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/meta"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/r2"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/s3"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/resend"
+	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/sentry"
 )
 
 //go:embed all:ui/dist
@@ -225,7 +225,7 @@ func main() {
 			r.With(middleware.RequirePermission("view-any:role")).Get("/roles", rolesHandler.List)
 			r.With(middleware.RequirePermission("create:role")).Post("/roles", rolesHandler.Create)
 			r.With(middleware.RequirePermission("view:role")).Get("/roles/{id}", rolesHandler.Get)
-			r.With(middleware.RequirePermission("update:role")).Put("/roles/{id}/permissions", rolesHandler.SetPermissions)
+			r.With(middleware.RequirePermission("update:role")).Put("/roles/{id}", rolesHandler.Update)
 			r.With(middleware.RequirePermission("delete:role")).Delete("/roles/{id}", rolesHandler.Delete)
 			r.With(middleware.RequirePermission("view:role")).Get("/permissions", rolesHandler.ListPermissions)
 	

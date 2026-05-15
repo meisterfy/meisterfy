@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
 
 type MediaHandler struct {
@@ -72,11 +73,16 @@ func (h *MediaHandler) Serve(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/media/{tenantId}/{postId} — upload media for a post
 func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	tenantID := chi.URLParam(r, "tenantId")
 	postID := chi.URLParam(r, "postId")
 
 	if !h.isValidSegment(tenantID) {
 		UnprocessableEntity(w, "invalid tenant")
+		return
+	}
+	if claims == nil || (claims.TenantID != tenantID && !claims.HasPermission("view-any:tenant")) {
+		Forbidden(w)
 		return
 	}
 
@@ -148,11 +154,16 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /api/media/{tenantId}/{postId} — delete media for a post
 func (h *MediaHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	tenantID := chi.URLParam(r, "tenantId")
 	postID := chi.URLParam(r, "postId")
 
 	if !h.isValidSegment(tenantID) {
 		UnprocessableEntity(w, "invalid tenant")
+		return
+	}
+	if claims == nil || (claims.TenantID != tenantID && !claims.HasPermission("view-any:tenant")) {
+		Forbidden(w)
 		return
 	}
 

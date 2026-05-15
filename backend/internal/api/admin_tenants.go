@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
 
 type AdminTenantsHandler struct {
@@ -23,6 +23,7 @@ type AdminTenantsHandler struct {
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
 	}
+	audit AuditLogRepo
 }
 
 func NewAdminTenantsHandler(
@@ -36,8 +37,9 @@ func NewAdminTenantsHandler(
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
 	},
+	audit AuditLogRepo,
 ) *AdminTenantsHandler {
-	return &AdminTenantsHandler{tenantRepo: tenantRepo, rbacRepo: rbacRepo}
+	return &AdminTenantsHandler{tenantRepo: tenantRepo, rbacRepo: rbacRepo, audit: audit}
 }
 
 type tenantResponse struct {
@@ -51,6 +53,7 @@ type tenantResponse struct {
 	Instructions   *string                     `json:"instructions"`
 	Hashtags       []string                    `json:"hashtags"`
 	AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
+	ReportPrompts  *domain.ReportPrompts       `json:"report_prompts"`
 	CreatedAt      time.Time                   `json:"created_at"`
 	UpdatedAt      time.Time                   `json:"updated_at"`
 }
@@ -71,6 +74,7 @@ func toTenantResponse(t *domain.Tenant) tenantResponse {
 		Instructions:   t.Instructions,
 		Hashtags:       hashtags,
 		AdsMonitoring:  t.AdsMonitoring,
+		ReportPrompts:  t.ReportPrompts,
 		CreatedAt:      t.CreatedAt,
 		UpdatedAt:      t.UpdatedAt,
 	}
@@ -158,10 +162,18 @@ func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if created == nil {
 		created = t
 	}
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: claims.TenantID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "tenant.created", EntityType: "tenant", EntityID: created.ID, EntityName: &created.Name,
+			After: toTenantResponse(created), IP: auditIP(r),
+		})
+	}
 	JSON(w, http.StatusCreated, map[string]any{"data": toTenantResponse(created)})
 }
 
 func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	id := chi.URLParam(r, "tenantId")
 	t, err := h.tenantRepo.GetByID(r.Context(), id)
 	if err != nil {
@@ -183,11 +195,14 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		Instructions   *string                     `json:"instructions"`
 		Hashtags       []string                    `json:"hashtags"`
 		AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
+		ReportPrompts  *domain.ReportPrompts        `json:"report_prompts"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		UnprocessableEntity(w, "invalid request body")
 		return
 	}
+
+	beforeState := toTenantResponse(t)
 
 	if req.Name != nil {
 		t.Name = *req.Name
@@ -216,22 +231,50 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if req.AdsMonitoring != nil {
 		t.AdsMonitoring = req.AdsMonitoring
 	}
+	if req.ReportPrompts != nil {
+		t.ReportPrompts = req.ReportPrompts
+	}
+
+	afterState := toTenantResponse(t)
+	bJSON, _ := json.Marshal(beforeState)
+	aJSON, _ := json.Marshal(afterState)
+	if string(bJSON) == string(aJSON) {
+		JSON(w, http.StatusOK, map[string]any{"data": afterState})
+		return
+	}
 
 	if err := h.tenantRepo.Update(r.Context(), t); err != nil {
 		InternalError(w)
 		return
 	}
-	JSON(w, http.StatusOK, map[string]any{"data": toTenantResponse(t)})
+	if claims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: t.ID, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "tenant.updated", EntityType: "tenant", EntityID: t.ID, EntityName: &t.Name,
+			Before: beforeState, After: afterState, IP: auditIP(r),
+		})
+	}
+	JSON(w, http.StatusOK, map[string]any{"data": afterState})
 }
 
 func (h *AdminTenantsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	if err := h.tenantRepo.Delete(r.Context(), chi.URLParam(r, "tenantId")); err != nil {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	id := chi.URLParam(r, "tenantId")
+	before, _ := h.tenantRepo.GetByID(r.Context(), id)
+	if err := h.tenantRepo.Delete(r.Context(), id); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			NotFound(w)
 			return
 		}
 		InternalError(w)
 		return
+	}
+	if claims != nil && h.audit != nil && before != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: id, UserID: claims.UserID, UserName: claims.UserName,
+			Action: "tenant.deleted", EntityType: "tenant", EntityID: id, EntityName: &before.Name,
+			Before: toTenantResponse(before), IP: auditIP(r),
+		})
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

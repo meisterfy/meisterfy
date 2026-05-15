@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 type OAuthGoogleAdsHandler struct {
@@ -34,6 +36,17 @@ func NewOAuthGoogleAdsHandler(
 type oauthState struct {
 	IntegrationID string `json:"integration_id"`
 	ReturnTo      string `json:"return_to"`
+	Nonce         string `json:"nonce"`
+}
+
+const oauthNonceCookie = "oauth_nonce"
+
+func generateNonce() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func encodeOAuthState(s oauthState) string {
@@ -73,9 +86,24 @@ func (h *OAuthGoogleAdsHandler) Start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	nonce, err := generateNonce()
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     oauthNonceCookie,
+		Value:    nonce,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   600,
+	})
+
 	state := encodeOAuthState(oauthState{
 		IntegrationID: integrationID,
 		ReturnTo:      "/settings/integrations",
+		Nonce:         nonce,
 	})
 
 	params := url.Values{
@@ -110,6 +138,13 @@ func (h *OAuthGoogleAdsHandler) Callback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	nonceCookie, cookieErr := r.Cookie(oauthNonceCookie)
+	if cookieErr != nil || nonceCookie.Value == "" || nonceCookie.Value != state.Nonce {
+		h.htmlError(w, "Invalid State", "CSRF nonce mismatch.")
+		return
+	}
+	http.SetCookie(w, &http.Cookie{Name: oauthNonceCookie, Value: "", MaxAge: -1, Path: "/"})
+
 	ig, err := h.repo.GetByID(r.Context(), state.IntegrationID)
 	if err != nil || ig.OAuthClientID == nil || ig.OAuthClientSecret == nil {
 		h.htmlError(w, "Integration Not Found", "The integration was deleted or credentials are missing.")
@@ -140,7 +175,7 @@ func (h *OAuthGoogleAdsHandler) Callback(w http.ResponseWriter, r *http.Request)
 	}
 
 	returnTo := state.ReturnTo
-	if returnTo == "" {
+	if returnTo == "" || !strings.HasPrefix(returnTo, "/") {
 		returnTo = "/settings/integrations"
 	}
 	http.Redirect(w, r, returnTo+"?connected=1", http.StatusFound)

@@ -3,15 +3,16 @@ package api
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/sync/errgroup"
-	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 )
 
 type AdminGoogleAdsHandler struct {
@@ -388,11 +389,20 @@ func (h *AdminGoogleAdsHandler) LiveCampaignKeywords(w http.ResponseWriter, r *h
 
 	keywords, err := client.GetKeywordPerformance(r.Context(), campaignID, startDate, endDate)
 	if err != nil {
+		slog.Error("LiveCampaignKeywords failed", "tenant", tenantID, "campaign", campaignID, "err", err)
 		InternalError(w)
 		return
 	}
 
 	JSON(w, http.StatusOK, map[string]any{"data": keywords})
+}
+
+// GET /admin/tenants/{tenantId}/google-ads/status
+// Returns whether Google Ads is properly connected and configured for this tenant.
+func (h *AdminGoogleAdsHandler) Status(w http.ResponseWriter, r *http.Request) {
+	tenantID := chi.URLParam(r, "tenantId")
+	_, _, err := h.buildClient(r.Context(), tenantID)
+	JSON(w, http.StatusOK, map[string]any{"data": map[string]any{"connected": err == nil}})
 }
 
 // POST /admin/tenants/{tenantId}/campaigns/sync-history

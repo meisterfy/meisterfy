@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/go-chi/chi/v5"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 func AuthenticateAdmin(jwtSvc *domain.JWTService) func(http.Handler) http.Handler {
@@ -49,6 +50,24 @@ func RequirePermission(permission string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// RequireTenantMatch ensures the {tenantId} URL parameter matches the authenticated
+// user's tenant. Users with view-any:tenant (super-admins) bypass the check.
+func RequireTenantMatch(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims := UserClaimsFromContext(r.Context())
+		if claims == nil {
+			writeErr(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		tenantID := chi.URLParam(r, "tenantId")
+		if tenantID != "" && tenantID != claims.TenantID && !claims.HasPermission("view-any:tenant") {
+			writeErr(w, http.StatusForbidden, "forbidden")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func extractBearer(r *http.Request) string {

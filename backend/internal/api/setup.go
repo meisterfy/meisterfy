@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 type SetupHandler struct {
@@ -68,6 +69,7 @@ func (h *SetupHandler) Create(w http.ResponseWriter, r *http.Request) {
 		UnprocessableEntity(w, "invalid request body")
 		return
 	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	if req.Name == "" {
 		UnprocessableEntity(w, "name is required")
 		return

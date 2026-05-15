@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
-	"github.com/rush-maestro/rush-maestro/internal/mcp"
-	"github.com/rush-maestro/rush-maestro/internal/repository"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository"
 )
 
 // MonitoringRepos groups dependencies for monitoring tools.

@@ -10,20 +10,25 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 const anthropicAPI = "https://api.anthropic.com/v1/messages"
 
 type AnthropicProvider struct {
-	apiKey string
-	client *http.Client
+	apiKey             string
+	defaultModel       string
+	defaultTemperature float64
+	client             *http.Client
 }
 
-func NewAnthropicProvider(apiKey string) *AnthropicProvider {
+func NewAnthropicProvider(apiKey string, cfg map[string]any) *AnthropicProvider {
 	return &AnthropicProvider{
-		apiKey: apiKey,
-		client: &http.Client{},
+		apiKey:             apiKey,
+		defaultModel:       connector.ConfigString(cfg, "model", "claude-3-5-sonnet-20241022"),
+		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
+		client:             &http.Client{},
 	}
 }
 
@@ -32,7 +37,7 @@ func (p *AnthropicProvider) Name() string { return "claude" }
 func (p *AnthropicProvider) Generate(ctx context.Context, req domain.LLMRequest, stream domain.StreamFunc) (*domain.LLMResponse, error) {
 	model := req.Model
 	if model == "" {
-		model = "claude-3-5-sonnet-20241022"
+		model = p.defaultModel
 	}
 
 	messages := make([]anthropicMessage, 0, len(req.Messages))
@@ -47,7 +52,7 @@ func (p *AnthropicProvider) Generate(ctx context.Context, req domain.LLMRequest,
 		Model:       model,
 		MaxTokens:   domain.DefaultMaxTokens(req.MaxTokens),
 		Messages:    messages,
-		Temperature: domain.DefaultTemp(req.Temperature),
+		Temperature: p.defaultTemperature,
 		Stream:      true,
 	}
 	if req.System != "" {

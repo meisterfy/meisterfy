@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/connector"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 // OAuthMetaHandler implements the Meta (Facebook/Instagram) OAuth 2.0 flow.
@@ -43,7 +43,10 @@ func NewOAuthMetaHandler(
 type metaOAuthState struct {
 	IntegrationID string `json:"integration_id"`
 	ReturnTo      string `json:"return_to"`
+	Nonce         string `json:"nonce"`
 }
+
+const metaNonceCookie = "meta_oauth_nonce"
 
 func encodeMetaOAuthState(s metaOAuthState) string {
 	b, _ := json.Marshal(s)
@@ -82,9 +85,24 @@ func (h *OAuthMetaHandler) Start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	nonce, err := generateNonce()
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     metaNonceCookie,
+		Value:    nonce,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   600,
+	})
+
 	state := encodeMetaOAuthState(metaOAuthState{
 		IntegrationID: integrationID,
 		ReturnTo:      "/settings/integrations",
+		Nonce:         nonce,
 	})
 
 	scopes := "pages_manage_posts,instagram_content_publish,pages_read_engagement"
@@ -118,6 +136,13 @@ func (h *OAuthMetaHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		h.htmlError(w, "Invalid State", "Could not parse OAuth state parameter.")
 		return
 	}
+
+	nonceCookie, cookieErr := r.Cookie(metaNonceCookie)
+	if cookieErr != nil || nonceCookie.Value == "" || nonceCookie.Value != state.Nonce {
+		h.htmlError(w, "Invalid State", "CSRF nonce mismatch.")
+		return
+	}
+	http.SetCookie(w, &http.Cookie{Name: metaNonceCookie, Value: "", MaxAge: -1, Path: "/"})
 
 	ig, err := h.repo.GetByID(r.Context(), state.IntegrationID)
 	if err != nil || ig.OAuthClientID == nil || ig.OAuthClientSecret == nil {
@@ -166,7 +191,7 @@ func (h *OAuthMetaHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	returnTo := state.ReturnTo
-	if returnTo == "" {
+	if returnTo == "" || !strings.HasPrefix(returnTo, "/") {
 		returnTo = "/settings/integrations"
 	}
 	http.Redirect(w, r, returnTo+"?connected=1&provider=meta", http.StatusFound)

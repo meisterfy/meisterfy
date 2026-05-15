@@ -46,7 +46,16 @@ type KeywordPerfRow struct {
 // Limited to top 100 rows by cost. If the API rejects date segmentation on
 // search_term_view, retries without the date filter.
 func (c *Client) GetSearchTerms(ctx context.Context, campaignID, startDate, endDate string) ([]SearchTermRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	startDate, endDate = defaultDateRange(startDate, endDate)
+	if err := validateDate(startDate); err != nil {
+		return nil, err
+	}
+	if err := validateDate(endDate); err != nil {
+		return nil, err
+	}
 
 	gaqlWithDate := fmt.Sprintf(`
 		SELECT search_term_view.search_term, search_term_view.status,
@@ -108,6 +117,9 @@ func (c *Client) GetSearchTerms(ctx context.Context, campaignID, startDate, endD
 // GetKeywordQualityScores returns quality score data for all active keywords in the campaign.
 // QS is not time-segmented so no date filter is applied.
 func (c *Client) GetKeywordQualityScores(ctx context.Context, campaignID string) ([]KeywordQSRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
 		       ad_group_criterion.quality_info.quality_score,
@@ -140,16 +152,25 @@ func (c *Client) GetKeywordQualityScores(ctx context.Context, campaignID string)
 }
 
 // GetKeywordPerformance returns cost/conversion metrics for the top 50 keywords by spend.
+// Uses keyword_view (the correct resource for date-ranged keyword metrics in Google Ads API).
 func (c *Client) GetKeywordPerformance(ctx context.Context, campaignID, startDate, endDate string) ([]KeywordPerfRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	startDate, endDate = defaultDateRange(startDate, endDate)
+	if err := validateDate(startDate); err != nil {
+		return nil, err
+	}
+	if err := validateDate(endDate); err != nil {
+		return nil, err
+	}
 
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type,
 		       ad_group.name,
 		       metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions
-		FROM ad_group_criterion
+		FROM keyword_view
 		WHERE campaign.id = %s
-		  AND ad_group_criterion.type = 'KEYWORD'
 		  AND ad_group_criterion.status != 'REMOVED'
 		  AND segments.date BETWEEN '%s' AND '%s'
 		ORDER BY metrics.cost_micros DESC

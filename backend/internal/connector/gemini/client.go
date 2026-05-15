@@ -10,20 +10,25 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 const geminiAPI = "https://generativelanguage.googleapis.com/v1beta/models"
 
 type GeminiProvider struct {
-	apiKey string
-	client *http.Client
+	apiKey             string
+	defaultModel       string
+	defaultTemperature float64
+	client             *http.Client
 }
 
-func NewGeminiProvider(apiKey string) *GeminiProvider {
+func NewGeminiProvider(apiKey string, cfg map[string]any) *GeminiProvider {
 	return &GeminiProvider{
-		apiKey: apiKey,
-		client: &http.Client{},
+		apiKey:             apiKey,
+		defaultModel:       connector.ConfigString(cfg, "model", "gemini-1.5-flash"),
+		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
+		client:             &http.Client{},
 	}
 }
 
@@ -32,7 +37,7 @@ func (p *GeminiProvider) Name() string { return "gemini" }
 func (p *GeminiProvider) Generate(ctx context.Context, req domain.LLMRequest, stream domain.StreamFunc) (*domain.LLMResponse, error) {
 	model := req.Model
 	if model == "" {
-		model = "gemini-1.5-flash"
+		model = p.defaultModel
 	}
 
 	contents := make([]geminiContent, 0, len(req.Messages))
@@ -50,7 +55,7 @@ func (p *GeminiProvider) Generate(ctx context.Context, req domain.LLMRequest, st
 	body := geminiRequest{
 		Contents: contents,
 		GenerationConfig: geminiGenerationConfig{
-			Temperature:     domain.DefaultTemp(req.Temperature),
+			Temperature:     p.defaultTemperature,
 			MaxOutputTokens: domain.DefaultMaxTokens(req.MaxTokens),
 		},
 	}

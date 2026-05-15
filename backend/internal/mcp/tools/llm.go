@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/mcp"
-	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
+	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
 )
 
 // RegisterLLMTools registers LLM-related MCP tools.
@@ -57,7 +57,7 @@ func RegisterLLMTools(s *mcp.Server, selector *llm.ProviderSelector) {
 					lastErr = fmt.Errorf("provider %s missing credentials", c.Name)
 					continue
 				}
-				inst, err := llm.NewProvider(c.Name, *apiKey)
+				inst, err := llm.NewProvider(c.Name, *apiKey, c.Integration.Config)
 				if err != nil {
 					lastErr = err
 					continue

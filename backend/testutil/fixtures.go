@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 // MustCreateTenant creates a tenant with the given id/name or fails the test.
@@ -36,14 +36,14 @@ func MustCreatePost(ctx context.Context, t testing.TB, pool *pgxpool.Pool, id, t
 	}
 }
 
-// MustCreateCampaign inserts a campaign draft for testing.
+// MustCreateCampaign inserts a campaign for testing.
 func MustCreateCampaign(ctx context.Context, t testing.TB, pool *pgxpool.Pool, id, tenantID, slug string, data []byte) {
 	t.Helper()
 	if data == nil {
 		data = []byte("{}")
 	}
 	_, err := pool.Exec(ctx,
-		`INSERT INTO campaign_drafts (id, tenant_id, slug, data, created_at, updated_at)
+		`INSERT INTO campaigns (id, tenant_id, slug, data, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, NOW(), NOW())`,
 		id, tenantID, slug, data,
 	)
@@ -56,7 +56,7 @@ func MustCreateCampaign(ctx context.Context, t testing.TB, pool *pgxpool.Pool, i
 func MustCreateAlert(ctx context.Context, t testing.TB, pool *pgxpool.Pool, id, tenantID, level, alertType, message string) {
 	t.Helper()
 	_, err := pool.Exec(ctx,
-		`INSERT INTO alerts (id, tenant_id, level, type, message, details, created_at)
+		`INSERT INTO alert_events (id, tenant_id, level, type, message, details, created_at)
 		 VALUES ($1, $2, $3, $4, $5, '{}', NOW())`,
 		id, tenantID, level, alertType, message,
 	)
@@ -155,5 +155,30 @@ func NewTestIntegration(id, name string, provider domain.IntegrationProvider) *d
 		Provider: provider,
 		Group:    domain.GroupAds,
 		Status:   domain.StatusPending,
+	}
+}
+
+// MustCreateUser creates a user row for testing.
+func MustCreateUser(ctx context.Context, t testing.TB, pool *pgxpool.Pool, id, email string) {
+	t.Helper()
+	_, err := pool.Exec(ctx,
+		`INSERT INTO users (id, name, email, password_hash, locale, timezone, is_active)
+		 VALUES ($1, $2, $3, 'x', 'pt_BR', 'UTC', true)`,
+		id, "User "+id, email,
+	)
+	if err != nil {
+		t.Fatalf("create user %s: %v", id, err)
+	}
+}
+
+// MustCreateRole creates a role row for testing.
+func MustCreateRole(ctx context.Context, t testing.TB, pool *pgxpool.Pool, id, name string, tenantID *string) {
+	t.Helper()
+	_, err := pool.Exec(ctx,
+		`INSERT INTO roles (id, name, tenant_id) VALUES ($1, $2, $3)`,
+		id, name, tenantID,
+	)
+	if err != nil {
+		t.Fatalf("create role %s: %v", id, err)
 	}
 }

@@ -53,7 +53,16 @@ func DaysToDateRange(days int) (string, string) {
 // GetDeviceBreakdown returns cost/conversion/click/impression metrics aggregated by device.
 // Only DESKTOP, MOBILE, TABLET are included (others filtered if impressions == 0).
 func (c *Client) GetDeviceBreakdown(ctx context.Context, campaignID, startDate, endDate string) ([]DeviceRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	startDate, endDate = defaultDateRange(startDate, endDate)
+	if err := validateDate(startDate); err != nil {
+		return nil, err
+	}
+	if err := validateDate(endDate); err != nil {
+		return nil, err
+	}
 
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT segments.device,
@@ -104,7 +113,16 @@ func (c *Client) GetDeviceBreakdown(ctx context.Context, campaignID, startDate, 
 // GetHourlyBreakdown returns metrics aggregated by hour of day (0–23).
 // Always returns exactly 24 rows; hours with no data have zero values.
 func (c *Client) GetHourlyBreakdown(ctx context.Context, campaignID, startDate, endDate string) ([]HourlyRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	startDate, endDate = defaultDateRange(startDate, endDate)
+	if err := validateDate(startDate); err != nil {
+		return nil, err
+	}
+	if err := validateDate(endDate); err != nil {
+		return nil, err
+	}
 
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT segments.hour,
@@ -139,7 +157,16 @@ func (c *Client) GetHourlyBreakdown(ctx context.Context, campaignID, startDate, 
 // GetImpressionShare returns averaged impression share stats for the period.
 // Returns nil if there are no valid rows.
 func (c *Client) GetImpressionShare(ctx context.Context, campaignID, startDate, endDate string) (*ImpressionShareStats, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	startDate, endDate = defaultDateRange(startDate, endDate)
+	if err := validateDate(startDate); err != nil {
+		return nil, err
+	}
+	if err := validateDate(endDate); err != nil {
+		return nil, err
+	}
 
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT metrics.search_impression_share,

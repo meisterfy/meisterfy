@@ -52,11 +52,16 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 }
 
 const deletePost = `-- name: DeletePost :exec
-DELETE FROM posts WHERE id = $1
+DELETE FROM posts WHERE id = $1 AND tenant_id = $2
 `
 
-func (q *Queries) DeletePost(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deletePost, id)
+type DeletePostParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) error {
+	_, err := q.db.Exec(ctx, deletePost, arg.ID, arg.TenantID)
 	return err
 }
 
@@ -66,6 +71,38 @@ SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, me
 
 func (q *Queries) GetPostByID(ctx context.Context, id string) (Post, error) {
 	row := q.db.QueryRow(ctx, getPostByID, id)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Status,
+		&i.Title,
+		&i.Content,
+		&i.Hashtags,
+		&i.MediaType,
+		&i.Workflow,
+		&i.MediaPath,
+		&i.Platforms,
+		&i.ScheduledDate,
+		&i.ScheduledTime,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPostByIDAndTenant = `-- name: GetPostByIDAndTenant :one
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts WHERE id = $1 AND tenant_id = $2 LIMIT 1
+`
+
+type GetPostByIDAndTenantParams struct {
+	ID       string `json:"id"`
+	TenantID string `json:"tenant_id"`
+}
+
+func (q *Queries) GetPostByIDAndTenant(ctx context.Context, arg GetPostByIDAndTenantParams) (Post, error) {
+	row := q.db.QueryRow(ctx, getPostByIDAndTenant, arg.ID, arg.TenantID)
 	var i Post
 	err := row.Scan(
 		&i.ID,
@@ -222,7 +259,7 @@ UPDATE posts
 SET title = $2, content = $3, hashtags = $4, media_type = $5,
     platforms = $6, scheduled_date = $7, scheduled_time = $8,
     workflow = $9, updated_at = NOW()
-WHERE id = $1
+WHERE id = $1 AND tenant_id = $10
 `
 
 type UpdatePostParams struct {
@@ -235,6 +272,7 @@ type UpdatePostParams struct {
 	ScheduledDate *string         `json:"scheduled_date"`
 	ScheduledTime *string         `json:"scheduled_time"`
 	Workflow      []byte          `json:"workflow"`
+	TenantID      string          `json:"tenant_id"`
 }
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
@@ -248,21 +286,29 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
 		arg.ScheduledDate,
 		arg.ScheduledTime,
 		arg.Workflow,
+		arg.TenantID,
 	)
 	return err
 }
 
 const updatePostStatus = `-- name: UpdatePostStatus :exec
-UPDATE posts SET status = $2, published_at = $3, updated_at = NOW() WHERE id = $1
+UPDATE posts SET status = $2, published_at = $3, updated_at = NOW()
+WHERE id = $1 AND tenant_id = $4
 `
 
 type UpdatePostStatusParams struct {
 	ID          string             `json:"id"`
 	Status      string             `json:"status"`
 	PublishedAt pgtype.Timestamptz `json:"published_at"`
+	TenantID    string             `json:"tenant_id"`
 }
 
 func (q *Queries) UpdatePostStatus(ctx context.Context, arg UpdatePostStatusParams) error {
-	_, err := q.db.Exec(ctx, updatePostStatus, arg.ID, arg.Status, arg.PublishedAt)
+	_, err := q.db.Exec(ctx, updatePostStatus,
+		arg.ID,
+		arg.Status,
+		arg.PublishedAt,
+		arg.TenantID,
+	)
 	return err
 }

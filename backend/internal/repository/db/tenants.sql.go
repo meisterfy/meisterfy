@@ -12,8 +12,8 @@ import (
 
 const createTenant = `-- name: CreateTenant :exec
 INSERT INTO tenants (id, name, language, niche, location, primary_persona, tone,
-    instructions, hashtags, ads_monitoring)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    instructions, hashtags, ads_monitoring, report_prompts)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
 
 type CreateTenantParams struct {
@@ -27,6 +27,7 @@ type CreateTenantParams struct {
 	Instructions   *string         `json:"instructions"`
 	Hashtags       json.RawMessage `json:"hashtags"`
 	AdsMonitoring  []byte          `json:"ads_monitoring"`
+	ReportPrompts  json.RawMessage `json:"report_prompts"`
 }
 
 func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) error {
@@ -41,6 +42,7 @@ func (q *Queries) CreateTenant(ctx context.Context, arg CreateTenantParams) erro
 		arg.Instructions,
 		arg.Hashtags,
 		arg.AdsMonitoring,
+		arg.ReportPrompts,
 	)
 	return err
 }
@@ -55,7 +57,7 @@ func (q *Queries) DeleteTenant(ctx context.Context, id string) error {
 }
 
 const getTenantByID = `-- name: GetTenantByID :one
-SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at FROM tenants WHERE id = $1 LIMIT 1
+SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at, report_prompts FROM tenants WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetTenantByID(ctx context.Context, id string) (Tenant, error) {
@@ -74,12 +76,13 @@ func (q *Queries) GetTenantByID(ctx context.Context, id string) (Tenant, error) 
 		&i.AdsMonitoring,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ReportPrompts,
 	)
 	return i, err
 }
 
 const listTenants = `-- name: ListTenants :many
-SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at FROM tenants ORDER BY name
+SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at, report_prompts FROM tenants ORDER BY name
 `
 
 func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
@@ -104,6 +107,7 @@ func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
 			&i.AdsMonitoring,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ReportPrompts,
 		); err != nil {
 			return nil, err
 		}
@@ -119,7 +123,7 @@ const updateTenant = `-- name: UpdateTenant :exec
 UPDATE tenants
 SET name = $2, language = $3, niche = $4, location = $5,
     primary_persona = $6, tone = $7, instructions = $8,
-    hashtags = $9, ads_monitoring = $10,
+    hashtags = $9, ads_monitoring = $10, report_prompts = $11,
     updated_at = NOW()
 WHERE id = $1
 `
@@ -135,6 +139,7 @@ type UpdateTenantParams struct {
 	Instructions   *string         `json:"instructions"`
 	Hashtags       json.RawMessage `json:"hashtags"`
 	AdsMonitoring  []byte          `json:"ads_monitoring"`
+	ReportPrompts  json.RawMessage `json:"report_prompts"`
 }
 
 func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) error {
@@ -149,6 +154,7 @@ func (q *Queries) UpdateTenant(ctx context.Context, arg UpdateTenantParams) erro
 		arg.Instructions,
 		arg.Hashtags,
 		arg.AdsMonitoring,
+		arg.ReportPrompts,
 	)
 	return err
 }

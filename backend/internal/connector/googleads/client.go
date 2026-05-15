@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
 const adsAPIBase = "https://googleads.googleapis.com/v23"

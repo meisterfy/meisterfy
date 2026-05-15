@@ -58,6 +58,9 @@ func (c *Client) GetLiveMetrics(ctx context.Context) ([]CampaignMetric, error) {
 
 // GetCriteria returns all criteria for a campaign (keywords, ad schedule, locations, devices).
 func (c *Client) GetCriteria(ctx context.Context, campaignID string) ([]map[string]any, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	rows, err := c.Query(ctx, fmt.Sprintf(`
 		SELECT
 		    campaign_criterion.criterion_id,
@@ -89,6 +92,9 @@ func (c *Client) GetCriteria(ctx context.Context, campaignID string) ([]map[stri
 
 // GetAdGroups returns ad groups with metrics for a campaign over the last N days.
 func (c *Client) GetAdGroups(ctx context.Context, campaignID string, days int) ([]AdGroupRow, error) {
+	if err := validateCampaignID(campaignID); err != nil {
+		return nil, err
+	}
 	since := time.Now().AddDate(0, 0, -days).Format("2006-01-02")
 	until := time.Now().Format("2006-01-02")
 	rows, err := c.Query(ctx, fmt.Sprintf(`

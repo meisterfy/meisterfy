@@ -2,19 +2,22 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/crypto"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type IntegrationRepository struct {
 	pool    *pgxpool.Pool
 	queries *db.Queries
+	key     []byte
 }
 
-func NewIntegrationRepository(pool *pgxpool.Pool) *IntegrationRepository {
-	return &IntegrationRepository{pool: pool, queries: db.New(pool)}
+func NewIntegrationRepository(pool *pgxpool.Pool, key []byte) *IntegrationRepository {
+	return &IntegrationRepository{pool: pool, queries: db.New(pool), key: key}
 }
 
 func (r *IntegrationRepository) List(ctx context.Context) ([]*domain.Integration, error) {
@@ -24,7 +27,7 @@ func (r *IntegrationRepository) List(ctx context.Context) ([]*domain.Integration
 	}
 	integrations := make([]*domain.Integration, len(rows))
 	for i, row := range rows {
-		ig := mapIntegration(row)
+		ig := r.mapIntegration(row)
 		tenantIDs, _ := r.queries.GetTenantsForIntegration(ctx, row.ID)
 		ig.TenantIDs = tenantIDs
 		integrations[i] = ig
@@ -37,7 +40,7 @@ func (r *IntegrationRepository) GetByID(ctx context.Context, id string) (*domain
 	if err != nil {
 		return nil, mapError(err)
 	}
-	ig := mapIntegration(row)
+	ig := r.mapIntegration(row)
 	ig.TenantIDs, _ = r.queries.GetTenantsForIntegration(ctx, id)
 	return ig, nil
 }
@@ -50,34 +53,74 @@ func (r *IntegrationRepository) GetForTenant(ctx context.Context, tenantID, prov
 	if err != nil {
 		return nil, mapError(err)
 	}
-	return mapIntegration(row), nil
+	return r.mapIntegration(row), nil
+}
+
+func (r *IntegrationRepository) encryptSecret(s *string) (*string, error) {
+	if len(r.key) == 0 {
+		return s, nil
+	}
+	return crypto.EncryptPtr(r.key, s)
+}
+
+func (r *IntegrationRepository) decryptSecret(s *string) *string {
+	if len(r.key) == 0 {
+		return s
+	}
+	dec, err := crypto.DecryptPtr(r.key, s)
+	if err != nil {
+		return s // return raw if decryption fails (e.g. unencrypted legacy value)
+	}
+	return dec
 }
 
 func (r *IntegrationRepository) Create(ctx context.Context, ig *domain.Integration) error {
+	secret, err := r.encryptSecret(ig.OAuthClientSecret)
+	if err != nil {
+		return err
+	}
+	devToken, err := r.encryptSecret(ig.DeveloperToken)
+	if err != nil {
+		return err
+	}
 	return mapError(r.queries.CreateIntegration(ctx, db.CreateIntegrationParams{
-		ID:               ig.ID,
-		Name:             ig.Name,
-		Provider:         string(ig.Provider),
-		Group:            string(ig.Group),
-		OauthClientID:    ig.OAuthClientID,
-		OauthClientSecret: ig.OAuthClientSecret,
-		DeveloperToken:   ig.DeveloperToken,
-		LoginCustomerID:  ig.LoginCustomerID,
-		Status:           string(ig.Status),
+		ID:                ig.ID,
+		Name:              ig.Name,
+		Provider:          string(ig.Provider),
+		Group:             string(ig.Group),
+		OauthClientID:     ig.OAuthClientID,
+		OauthClientSecret: secret,
+		DeveloperToken:    devToken,
+		LoginCustomerID:   ig.LoginCustomerID,
+		Status:            string(ig.Status),
+		Config:            r.encryptConfig(ig.Config),
 	}))
 }
 
 func (r *IntegrationRepository) Update(ctx context.Context, ig *domain.Integration) error {
+	secret, err := r.encryptSecret(ig.OAuthClientSecret)
+	if err != nil {
+		return err
+	}
+	devToken, err := r.encryptSecret(ig.DeveloperToken)
+	if err != nil {
+		return err
+	}
+	refreshToken, err := r.encryptSecret(ig.RefreshToken)
+	if err != nil {
+		return err
+	}
 	return mapError(r.queries.UpdateIntegration(ctx, db.UpdateIntegrationParams{
-		ID:               ig.ID,
-		Name:             ig.Name,
-		OauthClientID:    ig.OAuthClientID,
-		OauthClientSecret: ig.OAuthClientSecret,
-		DeveloperToken:   ig.DeveloperToken,
-		LoginCustomerID:  ig.LoginCustomerID,
-		RefreshToken:     ig.RefreshToken,
-		Status:           string(ig.Status),
-		ErrorMessage:     ig.ErrorMessage,
+		ID:                ig.ID,
+		Name:              ig.Name,
+		OauthClientID:     ig.OAuthClientID,
+		OauthClientSecret: secret,
+		DeveloperToken:    devToken,
+		LoginCustomerID:   ig.LoginCustomerID,
+		RefreshToken:      refreshToken,
+		Status:            string(ig.Status),
+		ErrorMessage:      ig.ErrorMessage,
+		Config:            r.encryptConfig(ig.Config),
 	}))
 }
 
@@ -100,20 +143,60 @@ func (r *IntegrationRepository) SetTenants(ctx context.Context, integrationID st
 	return nil
 }
 
-func mapIntegration(row db.Integration) *domain.Integration {
+func (r *IntegrationRepository) mapIntegration(row db.Integration) *domain.Integration {
 	return &domain.Integration{
 		ID:                row.ID,
 		Name:              row.Name,
 		Provider:          domain.IntegrationProvider(row.Provider),
 		Group:             domain.IntegrationGroup(row.Group),
 		OAuthClientID:     row.OauthClientID,
-		OAuthClientSecret: row.OauthClientSecret,
-		DeveloperToken:    row.DeveloperToken,
+		OAuthClientSecret: r.decryptSecret(row.OauthClientSecret),
+		DeveloperToken:    r.decryptSecret(row.DeveloperToken),
 		LoginCustomerID:   row.LoginCustomerID,
-		RefreshToken:      row.RefreshToken,
+		RefreshToken:      r.decryptSecret(row.RefreshToken),
 		Status:            domain.IntegrationStatus(row.Status),
 		ErrorMessage:      row.ErrorMessage,
+		Config:            r.decryptConfig(row.Config),
 		CreatedAt:         row.CreatedAt,
 		UpdatedAt:         row.UpdatedAt,
 	}
+}
+
+func (r *IntegrationRepository) encryptConfig(cfg map[string]any) json.RawMessage {
+	if len(cfg) == 0 {
+		cfg = map[string]any{}
+	}
+	plain, _ := json.Marshal(cfg)
+	if len(r.key) == 0 {
+		return plain
+	}
+	enc, err := crypto.Encrypt(r.key, string(plain))
+	if err != nil {
+		return plain
+	}
+	quoted, _ := json.Marshal(enc)
+	return quoted
+}
+
+func (r *IntegrationRepository) decryptConfig(raw json.RawMessage) map[string]any {
+	if len(raw) == 0 {
+		return map[string]any{}
+	}
+	if len(r.key) > 0 && len(raw) > 2 && raw[0] == '"' {
+		var ciphertext string
+		if json.Unmarshal(raw, &ciphertext) == nil {
+			if plain, err := crypto.Decrypt(r.key, ciphertext); err == nil {
+				var out map[string]any
+				if json.Unmarshal([]byte(plain), &out) == nil {
+					return out
+				}
+			}
+		}
+	}
+	var out map[string]any
+	_ = json.Unmarshal(raw, &out)
+	if out == nil {
+		return map[string]any{}
+	}
+	return out
 }

@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/middleware"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
 )
 
 const refreshCookieName = "maestro_refresh"
@@ -69,6 +70,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		UnprocessableEntity(w, "invalid request body")
 		return
 	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	if req.Email == "" || req.Password == "" {
 		UnprocessableEntity(w, "email and password are required")
 		return
@@ -333,6 +335,7 @@ func (h *AuthHandler) issueTokens(ctx context.Context, user *domain.User, tenant
 	}
 	claims := domain.UserClaims{
 		UserID:      user.ID,
+		UserName:    user.Name,
 		TenantID:    tenantID,
 		Permissions: perms,
 	}

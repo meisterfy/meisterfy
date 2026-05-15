@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type TenantRepository struct {
@@ -45,6 +45,7 @@ func (r *TenantRepository) GetByID(ctx context.Context, id string) (*domain.Tena
 func (r *TenantRepository) Create(ctx context.Context, t *domain.Tenant) error {
 	hashJSON, _ := json.Marshal(t.Hashtags)
 	adsJSON, _ := json.Marshal(t.AdsMonitoring)
+	promptsJSON := marshalPrompts(t.ReportPrompts)
 	return mapError(r.queries.CreateTenant(ctx, db.CreateTenantParams{
 		ID:             t.ID,
 		Name:           t.Name,
@@ -56,12 +57,14 @@ func (r *TenantRepository) Create(ctx context.Context, t *domain.Tenant) error {
 		Instructions:   t.Instructions,
 		Hashtags:       hashJSON,
 		AdsMonitoring:  adsJSON,
+		ReportPrompts:  promptsJSON,
 	}))
 }
 
 func (r *TenantRepository) Update(ctx context.Context, t *domain.Tenant) error {
 	hashJSON, _ := json.Marshal(t.Hashtags)
 	adsJSON, _ := json.Marshal(t.AdsMonitoring)
+	promptsJSON := marshalPrompts(t.ReportPrompts)
 	return mapError(r.queries.UpdateTenant(ctx, db.UpdateTenantParams{
 		ID:             t.ID,
 		Name:           t.Name,
@@ -73,11 +76,20 @@ func (r *TenantRepository) Update(ctx context.Context, t *domain.Tenant) error {
 		Instructions:   t.Instructions,
 		Hashtags:       hashJSON,
 		AdsMonitoring:  adsJSON,
+		ReportPrompts:  promptsJSON,
 	}))
 }
 
 func (r *TenantRepository) Delete(ctx context.Context, id string) error {
 	return mapError(r.queries.DeleteTenant(ctx, id))
+}
+
+func marshalPrompts(p *domain.ReportPrompts) []byte {
+	b, _ := json.Marshal(p)
+	if len(b) == 0 || string(b) == "null" {
+		return []byte("{}")
+	}
+	return b
 }
 
 func mapTenant(row db.Tenant) (*domain.Tenant, error) {
@@ -92,6 +104,13 @@ func mapTenant(row db.Tenant) (*domain.Tenant, error) {
 			adsCfg = nil
 		}
 	}
+	var prompts *domain.ReportPrompts
+	if len(row.ReportPrompts) > 0 && string(row.ReportPrompts) != "null" && string(row.ReportPrompts) != "{}" {
+		prompts = &domain.ReportPrompts{}
+		if err := json.Unmarshal(row.ReportPrompts, prompts); err != nil {
+			prompts = nil
+		}
+	}
 	return &domain.Tenant{
 		ID:             row.ID,
 		Name:           row.Name,
@@ -103,6 +122,7 @@ func mapTenant(row db.Tenant) (*domain.Tenant, error) {
 		Instructions:   row.Instructions,
 		Hashtags:       hashtags,
 		AdsMonitoring:  adsCfg,
+		ReportPrompts:  prompts,
 		CreatedAt:      row.CreatedAt,
 		UpdatedAt:      row.UpdatedAt,
 	}, nil

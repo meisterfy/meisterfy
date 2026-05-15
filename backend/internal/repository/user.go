@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/rush-maestro/rush-maestro/internal/domain"
-	"github.com/rush-maestro/rush-maestro/internal/repository/db"
+	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
 )
 
 type UserRepository struct {
@@ -77,6 +77,30 @@ func (r *UserRepository) UpdatePasswordHash(ctx context.Context, id, hash string
 
 func (r *UserRepository) Delete(ctx context.Context, id string) error {
 	return mapError(r.queries.DeleteUser(ctx, id))
+}
+
+func (r *UserRepository) ListForTenant(ctx context.Context, tenantID string) ([]*domain.User, error) {
+	const q = `
+		SELECT u.id, u.name, u.email, u.password_hash, u.locale, u.timezone, u.is_active, u.created_at, u.updated_at
+		FROM users u
+		JOIN user_tenant_roles utr ON utr.user_id = u.id
+		WHERE utr.tenant_id = $1
+		ORDER BY u.created_at DESC
+	`
+	rows, err := r.pool.Query(ctx, q, tenantID)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	defer rows.Close()
+	var users []*domain.User
+	for rows.Next() {
+		var u db.User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Locale, &u.Timezone, &u.IsActive, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, mapUser(u))
+	}
+	return users, rows.Err()
 }
 
 func (r *UserRepository) Count(ctx context.Context) (int64, error) {
