@@ -1,3 +1,5 @@
+//go:build integration
+
 package repository
 
 import (
@@ -9,11 +11,11 @@ import (
 )
 
 func TestCampaignRepository_UpsertAndGet(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewCampaignRepository(container.Pool)
+	repo := NewCampaignRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-camp", "Campaign Tenant")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-camp", "Campaign Tenant")
 
 	data := json.RawMessage(`{"budget":100}`)
 	if err := repo.Upsert(ctx, "camp-1", "tenant-camp", "summer-sale", data); err != nil {
@@ -33,13 +35,13 @@ func TestCampaignRepository_UpsertAndGet(t *testing.T) {
 }
 
 func TestCampaignRepository_List(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewCampaignRepository(container.Pool)
+	repo := NewCampaignRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-camp2", "Campaign Tenant 2")
-	testutil.MustCreateCampaign(ctx, t, container.Pool, "c1", "tenant-camp2", "slug-a", nil)
-	testutil.MustCreateCampaign(ctx, t, container.Pool, "c2", "tenant-camp2", "slug-b", nil)
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-camp2", "Campaign Tenant 2")
+	testutil.MustCreateCampaign(ctx, t, sharedDB.Pool, "c1", "tenant-camp2", "slug-a", nil)
+	testutil.MustCreateCampaign(ctx, t, sharedDB.Pool, "c2", "tenant-camp2", "slug-b", nil)
 
 	list, err := repo.List(ctx, "tenant-camp2")
 	if err != nil {
@@ -51,12 +53,12 @@ func TestCampaignRepository_List(t *testing.T) {
 }
 
 func TestCampaignRepository_MarkDeployedAndDelete(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewCampaignRepository(container.Pool)
+	repo := NewCampaignRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-camp3", "Campaign Tenant 3")
-	testutil.MustCreateCampaign(ctx, t, container.Pool, "c3", "tenant-camp3", "slug-c", nil)
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-camp3", "Campaign Tenant 3")
+	testutil.MustCreateCampaign(ctx, t, sharedDB.Pool, "c3", "tenant-camp3", "slug-c", nil)
 
 	if err := repo.MarkDeployed(ctx, "c3"); err != nil {
 		t.Fatalf("mark deployed: %v", err)

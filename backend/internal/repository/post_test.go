@@ -1,3 +1,5 @@
+//go:build integration
+
 package repository
 
 import (
@@ -9,11 +11,11 @@ import (
 )
 
 func TestPostRepository_CreateAndGet(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewPostRepository(container.Pool)
+	repo := NewPostRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-post", "Post Tenant")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-post", "Post Tenant")
 
 	post := testutil.NewTestPost("post-1", "tenant-post", "Hello world")
 	post.Title = testutil.Ptr("My Title")
@@ -41,13 +43,13 @@ func TestPostRepository_CreateAndGet(t *testing.T) {
 }
 
 func TestPostRepository_ListByStatus(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewPostRepository(container.Pool)
+	repo := NewPostRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-post2", "Post Tenant 2")
-	testutil.MustCreatePost(ctx, t, container.Pool, "p1", "tenant-post2", "draft content", string(domain.PostStatusDraft))
-	testutil.MustCreatePost(ctx, t, container.Pool, "p2", "tenant-post2", "approved content", string(domain.PostStatusApproved))
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-post2", "Post Tenant 2")
+	testutil.MustCreatePost(ctx, t, sharedDB.Pool, "p1", "tenant-post2", "draft content", string(domain.PostStatusDraft))
+	testutil.MustCreatePost(ctx, t, sharedDB.Pool, "p2", "tenant-post2", "approved content", string(domain.PostStatusApproved))
 
 	list, err := repo.ListByStatus(ctx, "tenant-post2", string(domain.PostStatusDraft))
 	if err != nil {
@@ -59,11 +61,11 @@ func TestPostRepository_ListByStatus(t *testing.T) {
 }
 
 func TestPostRepository_UpdateAndDelete(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewPostRepository(container.Pool)
+	repo := NewPostRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-post3", "Post Tenant 3")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-post3", "Post Tenant 3")
 	post := testutil.NewTestPost("post-3", "tenant-post3", "original")
 	if err := repo.Create(ctx, post); err != nil {
 		t.Fatalf("create: %v", err)
@@ -82,7 +84,7 @@ func TestPostRepository_UpdateAndDelete(t *testing.T) {
 		t.Errorf("content = %q, want %q", got.Content, "updated")
 	}
 
-	if err := repo.Delete(ctx, "post-3"); err != nil {
+	if err := repo.Delete(ctx, "post-3", "tenant-post3"); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
 

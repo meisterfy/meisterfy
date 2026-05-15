@@ -1,3 +1,5 @@
+//go:build integration
+
 package repository
 
 import (
@@ -8,12 +10,12 @@ import (
 )
 
 func TestAlertRepository_CreateAndListOpen(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewAlertRepository(container.Pool)
+	repo := NewAlertRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-alert", "Alert Tenant")
-	testutil.MustCreateAlert(ctx, t, container.Pool, "alert-1", "tenant-alert", "WARN", "budget", "over budget")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-alert", "Alert Tenant")
+	testutil.MustCreateAlert(ctx, t, sharedDB.Pool, "alert-1", "tenant-alert", "WARN", "budget", "over budget")
 
 	list, err := repo.ListOpen(ctx, "tenant-alert")
 	if err != nil {
@@ -28,12 +30,12 @@ func TestAlertRepository_CreateAndListOpen(t *testing.T) {
 }
 
 func TestAlertRepository_CountOpen(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewAlertRepository(container.Pool)
+	repo := NewAlertRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-alert2", "Alert Tenant 2")
-	testutil.MustCreateAlert(ctx, t, container.Pool, "alert-2", "tenant-alert2", "CRITICAL", "cpa", "too high")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-alert2", "Alert Tenant 2")
+	testutil.MustCreateAlert(ctx, t, sharedDB.Pool, "alert-2", "tenant-alert2", "CRITICAL", "cpa", "too high")
 
 	count, err := repo.CountOpen(ctx, "tenant-alert2")
 	if err != nil {
@@ -45,12 +47,12 @@ func TestAlertRepository_CountOpen(t *testing.T) {
 }
 
 func TestAlertRepository_ResolveAndIgnore(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewAlertRepository(container.Pool)
+	repo := NewAlertRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-alert3", "Alert Tenant 3")
-	testutil.MustCreateAlert(ctx, t, container.Pool, "alert-3", "tenant-alert3", "WARN", "budget", "msg")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-alert3", "Alert Tenant 3")
+	testutil.MustCreateAlert(ctx, t, sharedDB.Pool, "alert-3", "tenant-alert3", "WARN", "budget", "msg")
 
 	if err := repo.Resolve(ctx, "alert-3"); err != nil {
 		t.Fatalf("resolve: %v", err)

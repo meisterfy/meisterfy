@@ -1,3 +1,5 @@
+//go:build integration
+
 package repository
 
 import (
@@ -9,11 +11,11 @@ import (
 )
 
 func TestAgentRunRepository_LogAndListRecent(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewAgentRunRepository(container.Pool)
+	repo := NewAgentRunRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-ar", "AgentRun Tenant")
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-ar", "AgentRun Tenant")
 
 	if err := repo.Log(ctx, "tenant-ar", "scheduler", "success", "daily run"); err != nil {
 		t.Fatalf("log: %v", err)
@@ -32,13 +34,13 @@ func TestAgentRunRepository_LogAndListRecent(t *testing.T) {
 }
 
 func TestAgentRunRepository_GetLast(t *testing.T) {
+	sharedDB.ResetDB(t)
 	ctx := context.Background()
-	container := testutil.NewPostgresContainer(t)
-	repo := NewAgentRunRepository(container.Pool)
+	repo := NewAgentRunRepository(sharedDB.Pool)
 
-	testutil.MustCreateTenant(ctx, t, container.Pool, "tenant-ar2", "AgentRun Tenant 2")
-	testutil.MustCreateAgentRun(ctx, t, container.Pool, "ar-1", "tenant-ar2", "sync", "failed", time.Now().Add(-time.Hour))
-	testutil.MustCreateAgentRun(ctx, t, container.Pool, "ar-2", "tenant-ar2", "sync", "success", time.Now())
+	testutil.MustCreateTenant(ctx, t, sharedDB.Pool, "tenant-ar2", "AgentRun Tenant 2")
+	testutil.MustCreateAgentRun(ctx, t, sharedDB.Pool, "ar-1", "tenant-ar2", "sync", "failed", time.Now().Add(-time.Hour))
+	testutil.MustCreateAgentRun(ctx, t, sharedDB.Pool, "ar-2", "tenant-ar2", "sync", "success", time.Now())
 
 	last, err := repo.GetLast(ctx, "tenant-ar2", "sync")
 	if err != nil {
