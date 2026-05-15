@@ -1,121 +1,137 @@
-# Rush Maestro
+# Maestro
 
-Local marketing management system with multi-tenant support. Combines a CMS, Google Ads integration, AI-assisted content generation, and an MCP server as the single interface for all AI agents.
+AI-assisted marketing management platform for agencies — Social Media scheduling, Google Ads management, AI content generation, and an MCP server. Everything managed through the UI, no CLI required.
 
-## Stack
+**Stack:** Go 1.22+ (chi, pgx/v5, goose) · SvelteKit 5 (Svelte runes, Tailwind v4) · PostgreSQL 16 · Docker Compose
 
-- **Backend:** Go (chi router, pgx/v5, goose migrations) — `backend/`
-- **UI:** SvelteKit (Svelte 5 runes) + Tailwind v4 + `adapter-static` — `frontend/`
-- **Database:** PostgreSQL at `rush_maestro` via pgx
-- **MCP:** Go Streamable HTTP at `POST /mcp`
-- **Google Ads:** Go connector via `google.golang.org/api/ads`
-- **Credentials:** Google Ads OAuth stored in the `integrations` table
+---
 
 ## Architecture
 
-PostgreSQL is the single source of truth. The MCP server is the single interface for all AI agents — no flat-file workflows, no agent `.md` personas.
-
 ```
-Go Backend (port 8080)
-  └── /health             — health check
-  └── /setup              — initial setup
-  └── /auth/*             — JWT auth + OAuth flows (Google Ads, Meta)
-  └── /admin/*            — REST API (users, roles, tenants, posts, campaigns, alerts, reports)
-  └── /api/media/*        — media upload & serve
-  └── /ai/generate        — AI content generation (SSE streaming)
-  └── /mcp                — MCP endpoint (Streamable HTTP)
-  └── /*                  — SvelteKit SPA fallback
+Go Backend  (port 8080 — SPA embedded in binary for production)
+  ├── GET  /health                          health check + setup detection
+  ├── POST /setup                           first-run admin account creation
+  ├── /auth/*                               JWT login/refresh/logout, OAuth (Google Ads, Meta)
+  ├── /admin/*                              REST API — users, roles, tenants, posts,
+  │                                         campaigns, alerts, reports, integrations
+  ├── GET|DELETE /api/media/{tenant}/{id}   media serve & delete
+  ├── POST /api/media/{tenant}/{postId}     media upload (JWT-gated)
+  ├── POST /ai/generate                     AI content (SSE stream, JWT-gated)
+  └── /mcp                                  MCP endpoint (Streamable HTTP, API-key auth)
 
-SvelteKit SPA (port 5173, dev)
-  └── src/routes/[tenant]/*   — pages (static adapter, pure client-side)
-  └── src/lib/api/             — Go REST API client
-```
-
-## Features
-
-**Social** — drafts, content planner calendar, status workflow (draft → approved → scheduled → published), media upload, Meta Graph API publishing
-
-**Google Ads** — local campaign drafts, deploy to Google Ads API, live metrics, negative keywords, budget management, ad scheduling, extensions, search terms
-
-**AI Generation** — multi-provider LLM (Claude, GPT, Gemini, Groq, Kimi) with streaming; brand context injected from tenant settings
-
-**Brand Settings** — per-tenant config: language, niche, location, persona, tone, instructions, hashtags, monitoring thresholds
-
-**Monitoring** — daily metrics collection, threshold alerts (CPA, conversions, impression share, budget pacing), WARN/CRITICAL inbox with resolve/ignore
-
-**Reports** — markdown reports in PostgreSQL, auto-typed by slug (audit, search, weekly, monthly), browser print-to-PDF
-
-**MCP** — 30 tools + 5 resources over Streamable HTTP at `http://localhost:8080/mcp`
-
-## MCP Tools
-
-See [`docs/mcp.md`](docs/mcp.md) for full reference.
-
-**Content:** `list_tenants` · `get_tenant` · `create_tenant` · `update_tenant` · `list_posts` · `get_post` · `create_post` · `update_post_status` · `delete_post` · `list_reports` · `get_report` · `create_report` · `list_campaigns` · `get_campaign` · `check_alerts`
-
-**Google Ads — Read:** `get_live_metrics` · `get_campaign_criteria` · `get_search_terms` · `get_ad_groups`
-
-**Google Ads — Write:** `add_negative_keywords` · `update_campaign_budget` · `set_weekday_schedule` · `add_ad_group_keywords` · `add_campaign_extensions` · `set_campaign_status`
-
-**LLM:** `generate_content`
-
-**Monitoring:** `collect_daily_metrics` · `consolidate_monthly` · `get_metrics_history` · `get_monthly_summary`
-
-## Quick Start
-
-### Infrastructure
-
-```bash
-docker compose -f docker-compose.yml up -d   # postgres + minio
-```
-
-### Backend
-
-```bash
-cd backend
-cp .env.example .env      # configure DATABASE_URL, JWT_SECRET
-go run ./cmd/server
-```
-
-### Frontend
-
-```bash
-cd frontend
-bun install
-bun run dev               # proxied to Go API at localhost:8080
-```
-
-Google Ads and Meta credentials are configured via **Settings → Integrations** in the UI (OAuth flow). No manual `.env` needed for those.
-
-## Environment Variables
-
-```
-PORT=8080
-DATABASE_URL=postgres://...
-JWT_SECRET=
-BASE_URL=http://localhost:8080
-ADMIN_CORS_ORIGINS=http://localhost:5173
-APP_ENV=development
-COOKIE_DOMAIN=localhost
-STORAGE_PATH=./storage/images
-MCP_API_KEY=
-
-# Meta publishing
-META_PAGE_ACCESS_TOKEN=
-META_PAGE_ID=
-META_INSTAGRAM_ACCOUNT_ID=
-MEDIA_PUBLIC_BASE_URL=     # tunnel URL for Meta media uploads
-
-# Google Ads deploy
-FINAL_URL=                 # landing page for campaign deploy
-```
-
-## Crontab
-
-```
-3 7 * * * cd /path/to/rush-maestro/backend && go run ./cmd/scripts collect-daily-metrics <tenant> >> /tmp/ads.log 2>&1
+SvelteKit SPA  (port 5173 in dev)
+  ├── /login  /setup                        public pages
+  ├── /tenants/new                          onboarding
+  ├── /[tenant]/social                      post planner (calendar + drawers)
+  ├── /[tenant]/social/drafts               draft management
+  ├── /[tenant]/campaigns/*                 Google Ads live & history
+  ├── /[tenant]/alerts                      monitoring alerts
+  ├── /[tenant]/reports                     AI reports
+  └── /settings/*                           integrations, users, roles
 ```
 
 ---
 
-Architecture notes: [`.project/`](.project/)
+## Connection System
+
+Credentials are stored in the `integrations` table (encrypted). Connecting in the UI unlocks features:
+
+| Category | Providers |
+|----------|-----------|
+| LLM | OpenAI, Gemini, Kimi, Groq, Claude (Anthropic) |
+| Storage | S3, R2 |
+| Ads (OAuth2) | Google Ads |
+| Social (OAuth2) | Meta (Instagram) |
+| Email | Resend, Brevo |
+| Tracking | Sentry |
+
+---
+
+## Quick Start
+
+**Prerequisites:** Go 1.22+, Bun 1.x, Docker, [air](https://github.com/air-verse/air), [goose](https://github.com/pressly/goose), [golangci-lint](https://golangci-lint.run/usage/install/), sqlc
+
+```bash
+docker compose up -d
+cp backend/.env.example backend/.env   # set DATABASE_URL + JWT_SECRET (openssl rand -hex 32)
+cd frontend && bun install && cd ..
+make migrate/up
+make dev/bundle
+```
+
+Open `http://localhost:5173` — the setup wizard creates the first admin account.
+
+---
+
+## Makefile Reference
+
+```
+Development
+  make dev/backend         Go backend (air hot-reload)
+  make dev/frontend        SvelteKit dev server
+  make dev/bundle          All processes in parallel (recommended)
+
+Build
+  make build               Build frontend + Go binary
+
+Migrations
+  make migrate/up          Apply all pending migrations
+  make migrate/down        Rollback last migration
+  make migrate/status      Show migration state
+  make migrate/create      Interactive: create a new migration file
+
+Testing
+  make test/backend        Go tests (all)
+  make test/backend/unit   Go unit tests with race detector
+  make test/backend/integration  Integration tests (requires Postgres)
+  make test/backend/cover  Coverage report (opens browser)
+  make smoke               Smoke tests against localhost:8080
+  make smoke/remote URL=…  Smoke tests against a remote URL
+  make test/frontend       Vitest unit + browser component tests
+  make test/e2e            Playwright E2E tests (requires running stack)
+  make test/e2e/ui         Playwright interactive UI mode
+  make test/e2e/report     Open last Playwright HTML report
+
+Quality
+  make lint                golangci-lint + ESLint/Prettier
+  make sqlc                Regenerate sqlc query bindings
+```
+
+---
+
+## Test Suite
+
+### Backend
+
+| Layer | Command | What it covers |
+|-------|---------|----------------|
+| Unit | `make test/backend/unit` | Crypto (AES-256-GCM), JWT, password hashing, middleware, HTTP handlers |
+| Integration | `make test/backend/integration` | Repository layer against embedded Postgres — 86.5% coverage |
+| Smoke | `make smoke` | 7 contract tests (health, auth endpoints, protected routes, MCP) |
+
+Build tags: `//go:build integration` and `//go:build smoke`.
+
+### Frontend
+
+| Layer | Command | What it covers |
+|-------|---------|----------------|
+| API specs | `make test/frontend` | 159 Vitest tests — full CRUD for every API client module |
+| Component | `make test/frontend` | 99 browser component tests via Playwright + Vitest |
+| E2E | `make test/e2e` | 10 Playwright tests — auth flows, protected routes, post creation golden path |
+
+E2E tests require a running stack and credentials:
+
+```bash
+E2E_USER_EMAIL=admin@example.com E2E_USER_PASSWORD=yourpassword make test/e2e
+```
+
+To test the first-run setup flow against a fresh DB: `E2E_FRESH_DB=true make test/e2e`.
+
+---
+
+## CI/CD
+
+**`ci.yml`** — every push and PR to `main`: lint → build → unit tests → integration tests → security scan → frontend quality → frontend tests → frontend build → smoke tests → gate job.
+
+**`e2e.yml`** — push to `main` and manual dispatch only: spins up full stack (Postgres → migrations → backend → frontend build), creates a test user, runs the 10 Playwright E2E tests. Requires GitHub Secrets `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`. Playwright report uploaded as artifact on failure.
