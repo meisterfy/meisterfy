@@ -12,8 +12,9 @@
             "settings": "./locales/{languageTag}/settings.json",
             "integrations": "./locales/{languageTag}/integrations.json",
             "tenants": "./locales/{languageTag}/tenants.json",
-            "advertising": "./locales/{languageTag}/advertising.json",
-            "social-media": "./locales/{languageTag}/social-media.json"
+            "ads": "./locales/{languageTag}/ads.json",
+            "social-media": "./locales/{languageTag}/social-media.json",
+            "permissions": "./locales/{languageTag}/permissions.json"
         }
     }
 }

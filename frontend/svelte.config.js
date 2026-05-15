@@ -15,9 +15,6 @@ const config = {
 		}),
 		paths: {
 			relative: false
-		},
-		alias: {
-			'@': path.resolve('./src')
 		}
 	}
 }

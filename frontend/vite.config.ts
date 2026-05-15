@@ -27,10 +27,12 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'json', 'html'],
 			include: ['src/lib/**'],
-			exclude: ['src/lib/paraglide/**', 'src/lib/vitest-examples/**'],
+			exclude: ['src/lib/paraglide/**', 'src/lib/vitest-examples/**', 'src/lib/**/*.d.ts'],
 			thresholds: {
-				lines: 30,
-				functions: 30,
+				'src/lib/api/**': {
+					lines: 70,
+					functions: 70,
+				},
 			}
 		},
 		projects: [
