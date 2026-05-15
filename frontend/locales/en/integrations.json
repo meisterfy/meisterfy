@@ -8,5 +8,13 @@
   "disconnect": "Disconnect",
   "test": "Test connection",
   "configure": "Configure",
-  "empty": "No integrations available."
+  "empty": "No integrations available.",
+  "roles": {
+    "ads": "Advertising",
+    "social_media": "Social Media",
+    "media": "Media & Storage",
+    "llm": "AI Providers",
+    "email": "Email",
+    "monitoring": "Monitoring"
+  }
 }
