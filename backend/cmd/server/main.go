@@ -88,7 +88,7 @@ func main() {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:              cfg.SentryDSN,
 			Environment:      cfg.AppEnv,
-			Release:          "rush-maestro@1.0.0",
+			Release:          "mkt-maestro@1.0.0",
 			TracesSampleRate: 0.2,
 		})
 		if err != nil {
@@ -135,7 +135,7 @@ func main() {
 
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
 
-	mcpSrv := mcpserver.NewServer("rush-maestro", "1.0.0")
+	mcpSrv := mcpserver.NewServer("mkt-maestro", "1.0.0")
 	adsFactory := makeAdsFactory(tenantRepo, integrationRepo, connectorResourceRepo)
 	llmSelector := llm.NewProviderSelector(integrationRepo)
 	mcptools.RegisterContentTools(mcpSrv, mcptools.ContentRepos{
