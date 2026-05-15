@@ -6,15 +6,15 @@
 	let { terms } = $props<{ terms: SearchTermRow[] }>()
 
 	const avgCost = $derived(
-		terms.length > 0 ? terms.reduce((s, t) => s + t.cost, 0) / terms.length : 0
+		terms.length > 0 ? terms.reduce((s: number, t: SearchTermRow) => s + t.cost, 0) / terms.length : 0
 	)
 
 	const converting = $derived(
-		[...terms.filter(t => t.conversions > 0)].sort((a, b) => b.conversions - a.conversions)
+		[...terms.filter((t: SearchTermRow) => t.conversions > 0)].sort((a, b) => b.conversions - a.conversions)
 	)
 
 	const wasted = $derived(
-		[...terms.filter(t => t.conversions === 0 && t.cost > avgCost)]
+		[...terms.filter((t: SearchTermRow) => t.conversions === 0 && t.cost > avgCost)]
 			.sort((a, b) => b.cost - a.cost)
 			.slice(0, 20)
 	)

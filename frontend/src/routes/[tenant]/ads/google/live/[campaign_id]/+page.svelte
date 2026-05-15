@@ -1,21 +1,36 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
 	import type { PageData } from './$types'
 	import { goto } from '$app/navigation'
-	import { navigating } from '$app/stores'
+	import { navigating } from '$app/state'
 	import { m } from '$lib/paraglide/messages'
 	import { Tabs } from 'bits-ui'
-
 	import TabTrigger from './tabs/tab-trigger.svelte'
 	import LiveTab from './tabs/live.svelte'
 	import HistoryTab from './tabs/history.svelte'
 	import SearchIntelligenceTab from './tabs/search-intelligence.svelte'
+	import AiReportTab from './tabs/ai-report.svelte'
 	import Header from './components/header.svelte'
+	import FloatingChat from '$lib/components/chat/floating-chat.svelte'
 	import { createCampaignActions } from '$lib/runes/campaign-actions.svelte'
+	import { createCampaignChat } from '$lib/stores/campaign-chat.svelte'
+	import { buildCampaignData, buildChatSystemPrompt } from '$lib/ai/campaign-context'
+	import Skeleton from './components/skeleton.svelte'
 
 	let { data } = $props<{ data: PageData }>()
 	const actions = createCampaignActions()
+	const chat    = createCampaignChat()
 
-	let isLoadingPeriod = $derived(!!$navigating)
+	// Build system prompt as soon as campaign data resolves — independent of the AI Report tab.
+	let chatSystemPrompt = $state('')
+	const { detail: detailP, searchTerms: searchTermsP, keywords: keywordsP, qualityScores: qualityScoresP } = untrack(() => data.streamed)
+	Promise.all([detailP, searchTermsP, keywordsP, qualityScoresP]).then(([detail, terms, kw, qs]) => {
+		if (detail) {
+			chatSystemPrompt = buildChatSystemPrompt(data.client.brand, buildCampaignData(detail, terms, kw, qs))
+		}
+	})
+
+	let isLoadingPeriod = $derived(!!navigating.to)
 
 	function setPeriod(days: number) {
 		const end = new Date()
@@ -32,20 +47,7 @@
 
 <div class="p-4 lg:p-8 gap-4">
 	{#await data.streamed.detail}
-		<div class="pb-4 flex flex-col lg:flex-row items-end justify-between gap-4 border-b border-white/10 animate-pulse">
-			<div class="flex flex-col gap-2">
-				<div class="h-4 w-4 rounded bg-slate-200 dark:bg-slate-700"></div>
-				<div class="h-10 w-72 rounded-lg bg-slate-200 dark:bg-slate-700"></div>
-				<div class="flex gap-2">
-					<div class="h-5 w-24 rounded bg-slate-100 dark:bg-slate-800"></div>
-					<div class="h-5 w-16 rounded bg-slate-100 dark:bg-slate-800"></div>
-				</div>
-			</div>
-			<div class="flex gap-2">
-				<div class="h-8 w-20 rounded-md bg-slate-100 dark:bg-slate-800"></div>
-				<div class="h-8 w-28 rounded-md bg-slate-200 dark:bg-slate-700"></div>
-			</div>
-		</div>
+		<Skeleton />
 	{:then detail}
 		<Header {detail} tenant={data.tenant} campaignId={data.campaignId} {actions} />
 	{/await}
@@ -63,6 +65,12 @@
 			</TabTrigger>
 			<TabTrigger value="search">
 				{m['ads:headings.search_intelligence']()}
+			</TabTrigger>
+			<TabTrigger value="ai">
+				<div class="flex items-center gap-1.5">
+					<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+					AI Report
+				</div>
 			</TabTrigger>
 		</Tabs.List>
 
@@ -90,5 +98,25 @@
 				keywords={data.streamed.keywords}
 			/>
 		</Tabs.Content>
+
+		<Tabs.Content value="ai">
+			<AiReportTab
+				tenant={data.tenant}
+				campaignId={data.campaignId}
+				brand={data.client.brand}
+				detail={data.streamed.detail}
+				searchTerms={data.streamed.searchTerms}
+				keywords={data.streamed.keywords}
+				qualityScores={data.streamed.qualityScores}
+				/>
+		</Tabs.Content>
 	</Tabs.Root>
 </div>
+
+<!-- Floating AI chat — persists across tab switches -->
+<FloatingChat
+	{chat}
+	systemPrompt={chatSystemPrompt}
+	tenantId={data.tenant}
+	campaignId={data.campaignId}
+/>
