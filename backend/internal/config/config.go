@@ -16,6 +16,8 @@ type Config struct {
 	MCPAPIKey        string
 	StoragePath      string
 	SentryDSN        string
+	DevFrontendURL   string
+	CredentialKey    string
 }
 
 func Load() (*Config, error) {
@@ -30,6 +32,8 @@ func Load() (*Config, error) {
 		MCPAPIKey:        os.Getenv("MCP_API_KEY"),
 		StoragePath:      getEnv("STORAGE_PATH", "./storage/images"),
 		SentryDSN:        os.Getenv("SENTRY_DSN"),
+		DevFrontendURL:   os.Getenv("DEV_FRONTEND_URL"),
+		CredentialKey:    os.Getenv("CREDENTIAL_ENCRYPTION_KEY"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -40,6 +44,18 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.JWTSecret) < 32 {
 		return nil, fmt.Errorf("JWT_SECRET must be at least 32 characters")
+	}
+	if cfg.AppEnv == "production" && cfg.MCPAPIKey == "" {
+		return nil, fmt.Errorf("MCP_API_KEY is required in production")
+	}
+	if cfg.CredentialKey != "" {
+		n := len(cfg.CredentialKey)
+		if n != 16 && n != 24 && n != 32 {
+			return nil, fmt.Errorf("CREDENTIAL_ENCRYPTION_KEY must be 16, 24, or 32 bytes (got %d)", n)
+		}
+	}
+	if cfg.AppEnv == "production" && cfg.CredentialKey == "" {
+		return nil, fmt.Errorf("CREDENTIAL_ENCRYPTION_KEY is required in production")
 	}
 
 	return cfg, nil
