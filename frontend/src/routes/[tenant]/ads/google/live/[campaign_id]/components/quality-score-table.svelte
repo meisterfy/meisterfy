@@ -5,7 +5,7 @@
 	let { keywords } = $props<{ keywords: KeywordQSRow[] }>()
 
 	const sorted = $derived([...keywords].sort((a, b) => a.qualityScore - b.qualityScore))
-	const lowQsCount = $derived(keywords.filter(k => k.qualityScore > 0 && k.qualityScore < 5).length)
+	const lowQsCount = $derived(keywords.filter((k: KeywordQSRow) => k.qualityScore > 0 && k.qualityScore < 5).length)
 
 	function qsBadge(qs: number) {
 		if (qs === 0) return { label: m['ads:analytics.quality_score_qs_na'](),   cls: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' }

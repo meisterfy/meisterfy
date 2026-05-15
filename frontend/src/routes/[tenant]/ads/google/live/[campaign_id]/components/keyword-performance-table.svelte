@@ -12,7 +12,7 @@
 
 	const filtered = $derived(
 		filter.trim()
-			? keywords.filter(k => k.keywordText.toLowerCase().includes(filter.toLowerCase()))
+			? keywords.filter((k: KeywordPerfRow) => k.keywordText.toLowerCase().includes(filter.toLowerCase()))
 			: keywords
 	)
 
