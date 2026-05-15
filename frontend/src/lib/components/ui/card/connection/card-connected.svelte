@@ -6,18 +6,20 @@
 	import { Pencil, Trash2, Link2, CircleCheck, CircleX, CircleAlert, UsersRound } from 'lucide-svelte'
 	import type { Integration, ProviderSchema } from '$lib/api/integrations'
 
-	let { 
-		integration, 
-		provider, 
+	let {
+		integration,
+		provider,
 		tenantOptions = [],
-		onEdit, 
-		onDelete
+		onEdit,
+		onDelete,
+		onConnect
 	} = $props<{
 		integration: Integration
 		provider: ProviderSchema
 		tenantOptions?: { value: string; label: string }[]
 		onEdit: () => void
 		onDelete: () => void
+		onConnect?: () => void
 	}>()
 
 	const STATUS_MAP = {
@@ -96,6 +98,13 @@
 					href={connectHref}
 					variant="primary"
 					label={integration.status === 'connected' ? 'Re-auth' : 'Connect'}
+					icon={Link2}
+				/>
+			{:else if onConnect && integration.status !== 'connected'}
+				<FooterBtn
+					onclick={onConnect}
+					variant="primary"
+					label="Connect"
 					icon={Link2}
 				/>
 			{/if}

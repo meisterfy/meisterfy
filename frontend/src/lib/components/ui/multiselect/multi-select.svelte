@@ -5,11 +5,13 @@
 	let {
 		value = $bindable<string[]>([]),
 		options,
-		placeholder = 'Select…'
+		placeholder = 'Select…',
+		onchange
 	}: {
-		value: string[]
+		value?: string[]
 		options: { value: string; label: string }[]
 		placeholder?: string
+		onchange?: (v: string[]) => void
 	} = $props()
 
 	let open = $state(false)
@@ -19,10 +21,14 @@
 		options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
 	)
 
-	const selectedLabels = $derived(value.map((v) => options.find((o) => o.value === v)?.label ?? v))
+	const selectedLabels = $derived((value ?? []).map((v) => options.find((o) => o.value === v)?.label ?? v))
 
 	function toggle(val: string) {
-		value = value.includes(val) ? value.filter((v) => v !== val) : [...value, val]
+		const next = (value ?? []).includes(val)
+			? (value ?? []).filter((v) => v !== val)
+			: [...(value ?? []), val]
+		value = next
+		onchange?.(next)
 	}
 </script>
 
@@ -31,7 +37,7 @@
 		class="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
 	>
 		<div class="flex min-w-0 flex-1 flex-wrap gap-1">
-			{#if value.length === 0}
+			{#if (value ?? []).length === 0}
 				<span class="text-slate-400">{placeholder}</span>
 			{:else}
 				{#each selectedLabels as label}
@@ -67,13 +73,13 @@
 					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
 				>
 					<div
-						class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {value.includes(
+						class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {(value ?? []).includes(
 							option.value
 						)
 							? 'border-indigo-600 bg-indigo-600'
 							: 'border-slate-300 dark:border-slate-600'}"
 					>
-						{#if value.includes(option.value)}
+						{#if (value ?? []).includes(option.value)}
 							<Check class="h-3 w-3 text-white" />
 						{/if}
 					</div>
