@@ -26,6 +26,7 @@ import (
 	"github.com/rush-maestro/rush-maestro/internal/connector/googleads"
 	"github.com/rush-maestro/rush-maestro/internal/domain"
 	"github.com/rush-maestro/rush-maestro/internal/provider/llm"
+	"github.com/rush-maestro/rush-maestro/internal/scheduler"
 	"github.com/rush-maestro/rush-maestro/internal/service/media"
 	mcpserver "github.com/rush-maestro/rush-maestro/internal/mcp"
 	mcpresources "github.com/rush-maestro/rush-maestro/internal/mcp/resources"
@@ -125,9 +126,11 @@ func main() {
 	campaignRepo       := repository.NewCampaignRepository(pool)
 	alertRepo          := repository.NewAlertRepository(pool)
 	agentRunRepo       := repository.NewAgentRunRepository(pool)
-	integrationRepo    := repository.NewIntegrationRepository(pool)
+	integrationRepo       := repository.NewIntegrationRepository(pool, []byte(cfg.CredentialKey))
 	metricsRepo           := repository.NewMetricsRepository(pool)
 	connectorResourceRepo := repository.NewConnectorResourceRepository(pool)
+	campaignReportRepo    := repository.NewCampaignReportRepository(pool)
+	auditLogRepo          := repository.NewAuditLogRepository(pool)
 	jwtSvc := domain.NewJWTService(cfg.JWTSecret)
 
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
@@ -158,133 +161,174 @@ func main() {
 	r.Use(middleware.SentryHubMiddleware)
 	r.Use(middleware.SentryRecovery)
 	r.Use(chimw.Recoverer)
-	r.Use(chimw.Timeout(30 * time.Second))
 	r.Use(middleware.RequestLogger)
 	r.Use(middleware.NPlus1Detector)
+	r.Use(middleware.SecurityHeaders)
+	r.Use(chimw.RequestSize(4 * 1024 * 1024)) // 4 MB global limit
 
 	r.Get("/health", api.NewHealthHandler(userRepo).Handle)
 
 	r.Post("/setup", api.NewSetupHandler(userRepo, tenantRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction()).Create)
 
 	authHandler         := api.NewAuthHandler(userRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction())
-	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo)
+	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo, auditLogRepo)
 	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
-	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo)
-	postsHandler        := api.NewAdminPostsHandler(postRepo)
+	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo, auditLogRepo)
+	postsHandler        := api.NewAdminPostsHandler(postRepo, auditLogRepo)
 	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
 	googleAdsHandler    := api.NewAdminGoogleAdsHandler(integrationRepo, connectorResourceRepo, tenantRepo, metricsRepo, alertRepo)
-	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo)
+	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo, auditLogRepo)
+	auditLogHandler     := api.NewAdminAuditLogHandler(auditLogRepo)
 	oauthGoogleAds      := api.NewOAuthGoogleAdsHandler(integrationRepo, cfg.BaseURL)
 	oauthMeta           := api.NewOAuthMetaHandler(integrationRepo, connectorResourceRepo, cfg.BaseURL)
 	metaPublish              := api.NewMetaPublishHandler(postRepo, integrationRepo, connectorResourceRepo, mediaResolver)
 	connectorResourcesHandler := api.NewConnectorResourcesHandler(connectorResourceRepo)
-	mediaHandler        := api.NewMediaHandler(cfg.StoragePath, postRepo)
-	aiGenerateHandler   := api.NewAIGenerateHandler(llmSelector)
+	mediaHandler            := api.NewMediaHandler(cfg.StoragePath, postRepo)
+	aiGenerateHandler       := api.NewAIGenerateHandler(llmSelector)
+	campaignReportsHandler  := api.NewCampaignReportsHandler(campaignReportRepo)
 
-	r.Route("/auth", func(r chi.Router) {
-		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-		r.Post("/login", authHandler.Login)
-		r.Post("/refresh", authHandler.Refresh)
-		r.Post("/logout", authHandler.Logout)
-		r.Group(func(r chi.Router) {
-			r.Use(middleware.AuthenticateAdmin(jwtSvc))
-			r.Get("/me", authHandler.Me)
-			r.Put("/me", authHandler.UpdateMe)
-			r.Post("/change-password", authHandler.ChangePassword)
-		})
-		// Google Ads OAuth — redirect-based flow, no auth middleware
-		r.Get("/google-ads/start", oauthGoogleAds.Start)
-		r.Get("/google-ads/callback", oauthGoogleAds.Callback)
-		// Meta OAuth
-		r.Get("/meta/start", oauthMeta.Start)
-		r.Get("/meta/callback", oauthMeta.Callback)
-	})
-
-	r.Route("/admin", func(r chi.Router) {
-		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-		r.Use(middleware.AuthenticateAdmin(jwtSvc))
-
-		r.With(middleware.RequirePermission("view-any:user")).Get("/users", usersHandler.List)
-		r.With(middleware.RequirePermission("create:user")).Post("/users", usersHandler.Create)
-		r.With(middleware.RequirePermission("view:user")).Get("/users/{id}", usersHandler.Get)
-		r.With(middleware.RequirePermission("update:user")).Put("/users/{id}", usersHandler.Update)
-		r.With(middleware.RequirePermission("delete:user")).Delete("/users/{id}", usersHandler.Delete)
-		r.With(middleware.RequirePermission("update:user")).Put("/users/{id}/role", usersHandler.AssignRole)
-
-		r.With(middleware.RequirePermission("view-any:role")).Get("/roles", rolesHandler.List)
-		r.With(middleware.RequirePermission("create:role")).Post("/roles", rolesHandler.Create)
-		r.With(middleware.RequirePermission("view:role")).Get("/roles/{id}", rolesHandler.Get)
-		r.With(middleware.RequirePermission("update:role")).Put("/roles/{id}/permissions", rolesHandler.SetPermissions)
-		r.With(middleware.RequirePermission("delete:role")).Delete("/roles/{id}", rolesHandler.Delete)
-		r.With(middleware.RequirePermission("view:role")).Get("/permissions", rolesHandler.ListPermissions)
-
-		// integrations
-		r.Get("/integrations", integrationsHandler.List)
-		r.Get("/integrations/providers", integrationsHandler.ListProviders)
-		r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations", integrationsHandler.Create)
-		r.Get("/integrations/{id}", integrationsHandler.Get)
-		r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}", integrationsHandler.Update)
-		r.With(middleware.RequirePermission("manage:integrations")).Delete("/integrations/{id}", integrationsHandler.Delete)
-		r.Post("/integrations/{id}/test", integrationsHandler.Test)
-		r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}/tenants", integrationsHandler.SetTenants)
-
-		// tenants
-		r.With(middleware.RequirePermission("view-any:tenant")).Get("/tenants", tenantsHandler.List)
-		r.With(middleware.RequirePermission("create:tenant")).Post("/tenants", tenantsHandler.Create)
-		r.Route("/tenants/{tenantId}", func(r chi.Router) {
-			r.With(middleware.RequirePermission("view:tenant")).Get("/", tenantsHandler.Get)
-			r.With(middleware.RequirePermission("update:tenant")).Put("/", tenantsHandler.Update)
-			r.With(middleware.RequirePermission("delete:tenant")).Delete("/", tenantsHandler.Delete)
-
-			// posts
-			r.Get("/posts", postsHandler.List)
-			r.With(middleware.RequirePermission("create:post")).Post("/posts", postsHandler.Create)
-			r.Get("/posts/{id}", postsHandler.Get)
-			r.With(middleware.RequirePermission("create:post")).Put("/posts/{id}", postsHandler.Update)
-			r.Patch("/posts/{id}/status", postsHandler.UpdateStatus)
-			r.With(middleware.RequirePermission("delete:post")).Delete("/posts/{id}", postsHandler.Delete)
-
-			// campaigns
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live", googleAdsHandler.LiveCampaigns)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}", googleAdsHandler.LiveCampaignDetail)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/devices", googleAdsHandler.LiveCampaignDevices)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/hourly", googleAdsHandler.LiveCampaignHourly)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/impression-share", googleAdsHandler.LiveCampaignImpressionShare)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/search-terms", googleAdsHandler.LiveCampaignSearchTerms)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/quality-scores", googleAdsHandler.LiveCampaignQualityScores)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/keywords", googleAdsHandler.LiveCampaignKeywords)
-			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/sync-history", googleAdsHandler.SyncHistory)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/metrics", googleAdsHandler.GetMetrics)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns", campaignsHandler.List)
-			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns", campaignsHandler.Create)
-			r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/{slug}", campaignsHandler.Get)
-			r.With(middleware.RequirePermission("manage:campaign")).Put("/campaigns/{slug}", campaignsHandler.Update)
-			r.With(middleware.RequirePermission("manage:campaign")).Delete("/campaigns/{id}", campaignsHandler.Delete)
-			r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/{id}/deploy", campaignsHandler.Deploy)
-
-			// generic connector resources
-			r.Get("/connectors", connectorResourcesHandler.List)
-
-			// meta publishing
-			r.Get("/meta/accounts", metaPublish.ListAccounts)
-			r.With(middleware.RequirePermission("publish:post")).Post("/meta/publish", metaPublish.Publish)
-		})
-	})
-
-	// Media file serving (public GET) and upload/delete (authenticated)
-	r.Get("/api/media/{tenantId}/{filename}", mediaHandler.Serve)
+	// All non-streaming routes get a 30s request timeout.
+	// The /ai/generate SSE endpoint is registered outside this group.
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-		r.Use(middleware.AuthenticateAdmin(jwtSvc))
-		r.Post("/api/media/{tenantId}/{postId}", mediaHandler.Upload)
-		r.Delete("/api/media/{tenantId}/{postId}", mediaHandler.Delete)
-	})
+		r.Use(chimw.Timeout(30 * time.Second))
 
+		r.Route("/auth", func(r chi.Router) {
+			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+			r.With(middleware.RateLimitLogin).Post("/login", authHandler.Login)
+			r.Post("/refresh", authHandler.Refresh)
+			r.Post("/logout", authHandler.Logout)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.AuthenticateAdmin(jwtSvc))
+				r.Get("/me", authHandler.Me)
+				r.Put("/me", authHandler.UpdateMe)
+				r.Post("/change-password", authHandler.ChangePassword)
+			})
+			// Google Ads OAuth — redirect-based flow, no auth middleware
+			r.Get("/google-ads/start", oauthGoogleAds.Start)
+			r.Get("/google-ads/callback", oauthGoogleAds.Callback)
+			// Meta OAuth
+			r.Get("/meta/start", oauthMeta.Start)
+			r.Get("/meta/callback", oauthMeta.Callback)
+		})
+	
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+	
+			r.With(middleware.RequirePermission("view-any:user")).Get("/users", usersHandler.List)
+			r.With(middleware.RequirePermission("create:user")).Post("/users", usersHandler.Create)
+			r.With(middleware.RequirePermission("view:user")).Get("/users/{id}", usersHandler.Get)
+			r.With(middleware.RequirePermission("update:user")).Put("/users/{id}", usersHandler.Update)
+			r.With(middleware.RequirePermission("delete:user")).Delete("/users/{id}", usersHandler.Delete)
+			r.With(middleware.RequirePermission("update:user")).Put("/users/{id}/role", usersHandler.AssignRole)
+	
+			r.With(middleware.RequirePermission("view-any:role")).Get("/roles", rolesHandler.List)
+			r.With(middleware.RequirePermission("create:role")).Post("/roles", rolesHandler.Create)
+			r.With(middleware.RequirePermission("view:role")).Get("/roles/{id}", rolesHandler.Get)
+			r.With(middleware.RequirePermission("update:role")).Put("/roles/{id}/permissions", rolesHandler.SetPermissions)
+			r.With(middleware.RequirePermission("delete:role")).Delete("/roles/{id}", rolesHandler.Delete)
+			r.With(middleware.RequirePermission("view:role")).Get("/permissions", rolesHandler.ListPermissions)
+	
+			// integrations
+			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations", integrationsHandler.List)
+			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations/providers", integrationsHandler.ListProviders)
+			r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations", integrationsHandler.Create)
+			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations/{id}", integrationsHandler.Get)
+			r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}", integrationsHandler.Update)
+			r.With(middleware.RequirePermission("manage:integrations")).Delete("/integrations/{id}", integrationsHandler.Delete)
+			r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations/{id}/test", integrationsHandler.Test)
+			r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}/tenants", integrationsHandler.SetTenants)
+	
+			// tenants
+			r.With(middleware.RequirePermission("view-any:tenant")).Get("/tenants", tenantsHandler.List)
+			r.With(middleware.RequirePermission("create:tenant")).Post("/tenants", tenantsHandler.Create)
+			r.Route("/tenants/{tenantId}", func(r chi.Router) {
+				r.Use(middleware.RequireTenantMatch)
+	
+				r.With(middleware.RequirePermission("view:tenant")).Get("/", tenantsHandler.Get)
+				r.With(middleware.RequirePermission("update:tenant")).Put("/", tenantsHandler.Update)
+				r.With(middleware.RequirePermission("delete:tenant")).Delete("/", tenantsHandler.Delete)
+	
+				// posts
+				r.With(middleware.RequirePermission("view:post")).Get("/posts", postsHandler.List)
+				r.With(middleware.RequirePermission("create:post")).Post("/posts", postsHandler.Create)
+				r.With(middleware.RequirePermission("view:post")).Get("/posts/{id}", postsHandler.Get)
+				r.With(middleware.RequirePermission("create:post")).Put("/posts/{id}", postsHandler.Update)
+				r.Patch("/posts/{id}/status", postsHandler.UpdateStatus)
+				r.With(middleware.RequirePermission("delete:post")).Delete("/posts/{id}", postsHandler.Delete)
+	
+				// campaigns
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live", googleAdsHandler.LiveCampaigns)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}", googleAdsHandler.LiveCampaignDetail)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/devices", googleAdsHandler.LiveCampaignDevices)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/hourly", googleAdsHandler.LiveCampaignHourly)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/impression-share", googleAdsHandler.LiveCampaignImpressionShare)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/search-terms", googleAdsHandler.LiveCampaignSearchTerms)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/quality-scores", googleAdsHandler.LiveCampaignQualityScores)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live/{campaignId}/keywords", googleAdsHandler.LiveCampaignKeywords)
+				r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/sync-history", googleAdsHandler.SyncHistory)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/metrics", googleAdsHandler.GetMetrics)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns", campaignsHandler.List)
+				r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns", campaignsHandler.Create)
+				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/{slug}", campaignsHandler.Get)
+				r.With(middleware.RequirePermission("manage:campaign")).Put("/campaigns/{slug}", campaignsHandler.Update)
+				r.With(middleware.RequirePermission("manage:campaign")).Delete("/campaigns/{id}", campaignsHandler.Delete)
+				r.With(middleware.RequirePermission("manage:campaign")).Post("/campaigns/{id}/deploy", campaignsHandler.Deploy)
+	
+				// AI reports (persist generated reports per campaign)
+				r.With(middleware.RequirePermission("view:report")).Get("/campaigns/{campaignId}/ai-reports", campaignReportsHandler.List)
+				r.With(middleware.RequirePermission("create:report")).Post("/campaigns/{campaignId}/ai-reports", campaignReportsHandler.Save)
+	
+				// generic connector resources
+				r.With(middleware.RequirePermission("view:integrations")).Get("/connectors", connectorResourcesHandler.List)
+	
+				// meta publishing
+				r.Get("/meta/accounts", metaPublish.ListAccounts)
+				r.With(middleware.RequirePermission("publish:post")).Post("/meta/publish", metaPublish.Publish)
+	
+				// audit log
+				r.With(middleware.RequirePermission("view-any:user")).Get("/audit-log", auditLogHandler.List)
+			})
+		})
+	
+		// Media file serving (public GET) and upload/delete (authenticated)
+		r.Get("/api/media/{tenantId}/{filename}", mediaHandler.Serve)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Post("/api/media/{tenantId}/{postId}", mediaHandler.Upload)
+			r.Delete("/api/media/{tenantId}/{postId}", mediaHandler.Delete)
+		})
+	
+	}) // end timeout group
+
+	// SSE streaming — no timeout middleware (would kill the stream at 30s)
 	r.Route("/ai", func(r chi.Router) {
 		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
 		r.Use(middleware.AuthenticateAdmin(jwtSvc))
 		r.Post("/generate", aiGenerateHandler.Generate)
 	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(chimw.Timeout(30 * time.Second))
+
+		// Tenant-scoped AI routes (providers list lives here to keep tenant context clear)
+		r.Route("/admin/tenants/{tenantId}/ai", func(r chi.Router) {
+			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(middleware.RequireTenantMatch)
+			r.Get("/providers", aiGenerateHandler.ListProviders)
+		})
+
+		// Tenant-scoped Google Ads status
+		r.Route("/admin/tenants/{tenantId}/google-ads", func(r chi.Router) {
+			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
+			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(middleware.RequireTenantMatch)
+			r.Get("/status", googleAdsHandler.Status)
+		})
+
+	}) // end timeout group
 
 	r.Route("/mcp", func(r chi.Router) {
 		r.Use(api.MCPAuthMiddleware(cfg.MCPAPIKey))
@@ -351,9 +395,15 @@ func main() {
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		WriteTimeout: 5 * time.Minute, // generous for SSE; chi Timeout(30s) protects regular routes
 		IdleTimeout:  60 * time.Second,
 	}
+
+	// Background scheduler — shares lifetime with the server process.
+	schedCtx, schedCancel := context.WithCancel(ctx)
+	defer schedCancel()
+	sched := scheduler.New(tenantRepo, agentRunRepo, metricsRepo, scheduler.AdsClientFactory(adsFactory), llmSelector)
+	go sched.Start(schedCtx)
 
 	go func() {
 		slog.Info("server starting", "port", cfg.Port)
@@ -368,6 +418,7 @@ func main() {
 	<-quit
 
 	slog.Info("shutting down...")
+	schedCancel()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
