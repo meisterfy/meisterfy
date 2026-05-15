@@ -1,6 +1,7 @@
 .PHONY: dev/backend dev/frontend build migrate/up migrate/down migrate/status \
         migrate/create test/backend test/backend/unit test/backend/integration \
-        test/backend/cover test/frontend lint sqlc
+        test/backend/cover test/frontend test/e2e test/e2e/ui test/e2e/report \
+        lint sqlc smoke smoke/remote
 
 # Dev Server
 
@@ -52,8 +53,23 @@ test/backend/integration:
 test/backend/cover:
 	cd backend && go test -race -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
 
+smoke:
+	cd backend && go test -tags=smoke -v ./smoke/...
+
+smoke/remote:
+	cd backend && SMOKE_TARGET_URL=$(URL) go test -tags=smoke -v ./smoke/...
+
 test/frontend:
 	cd frontend && bun run test
+
+test/e2e:
+	cd frontend && bunx playwright test
+
+test/e2e/ui:
+	cd frontend && bunx playwright test --ui
+
+test/e2e/report:
+	cd frontend && bunx playwright show-report
 
 # Quality
 

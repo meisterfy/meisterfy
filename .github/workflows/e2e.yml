@@ -1,0 +1,106 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Run backend migrations
+        working-directory: backend
+        run: go run ./cmd/migrate up
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          DATABASE_URL="postgres://test:test@localhost:5432/testdb?sslmode=disable" \
+          JWT_SECRET="e2e-test-secret-32-bytes-minimum!!" \
+          PORT=8181 \
+          go run ./cmd/server &
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8181/health && break
+            sleep 1
+          done
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
+
+      - name: Create test user via setup endpoint
+        run: |
+          curl -sf -X POST http://localhost:8181/setup \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"Admin Test","email":"${{ secrets.E2E_USER_EMAIL }}","password":"${{ secrets.E2E_USER_PASSWORD }}"}' \
+            || echo "Setup already done or skipped"
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        run: bun run build
+        env:
+          VITE_API_URL: http://localhost:8181
+
+      - name: Serve frontend
+        working-directory: frontend
+        run: |
+          bunx serve -s build -l 5173 &
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:5173 && break
+            sleep 1
+          done
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: bunx playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        working-directory: frontend
+        run: bunx playwright test
+        env:
+          E2E_BASE_URL: http://localhost:5173
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

@@ -176,6 +176,49 @@ jobs:
         working-directory: frontend
         run: bun run build
 
+  smoke-test:
+    name: Go — Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [go-build, go-test-integration]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+      - name: Run migrations
+        working-directory: backend
+        run: go run ./cmd/migrate up
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
+      - name: Start server in background
+        working-directory: backend
+        run: |
+          DATABASE_URL="postgres://test:test@localhost:5432/testdb?sslmode=disable" \
+          JWT_SECRET="ci-smoke-secret-32-bytes-minimum!" \
+          go run ./cmd/server &
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:8080/health && break
+            sleep 1
+          done
+      - name: Run smoke tests
+        working-directory: backend
+        run: go test -tags=smoke -v ./smoke/...
+
   # ===================== GATE =====================
 
   all-checks:
@@ -188,6 +231,7 @@ jobs:
       - go-test-unit
       - go-test-integration
       - go-security
+      - smoke-test
       - frontend-quality
       - frontend-test
       - frontend-build
