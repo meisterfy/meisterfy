@@ -1,4 +1,4 @@
-import { getCampaigns } from '$lib/api/campaigns'
+import { getCampaigns, getLiveCampaigns } from '$lib/api/campaigns'
 import { normalizeCampaign } from '$lib/utils/transforms'
 import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
@@ -10,6 +10,6 @@ export const load: PageLoad = ({ params, fetch }) => {
 
 	return {
 		campaigns,
-		streamed: { liveCampaigns: Promise.resolve([]) }
+		streamed: { liveCampaigns: withFallback(getLiveCampaigns(params.tenant, fetch), []) }
 	}
 }
