@@ -4,13 +4,13 @@ services:
     environment:
       POSTGRES_USER: maestro
       POSTGRES_PASSWORD: maestro
-      POSTGRES_DB: rush_maestro
+      POSTGRES_DB: mkt_maestro
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U maestro -d rush_maestro"]
+      test: ["CMD-SHELL", "pg_isready -U maestro -d mkt_maestro"]
       interval: 5s
       timeout: 5s
       retries: 5
