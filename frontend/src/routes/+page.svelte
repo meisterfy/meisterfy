@@ -3,6 +3,7 @@
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import type { PageData } from './$types'
+	import ProfileLink from '$lib/components/ui/toolbar/link/profile.svelte'
 
 	let { data } = $props<{ data: PageData }>()
 	let tenants = $derived(data.tenants ?? [])
@@ -42,13 +43,7 @@
 				>
 					<Settings class="h-4 w-4" />
 				</a>
-				<a
-					href="/profile"
-					class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-					title="Your Profile"
-				>
-					<User class="h-4 w-4" />
-				</a>
+				<ProfileLink />
 			</div>
 		{/snippet}
 	</Toolbar>

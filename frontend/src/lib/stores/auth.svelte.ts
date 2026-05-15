@@ -46,7 +46,12 @@ export const auth = {
 		_token = getToken()
 		try {
 			const data = await apiFetch<Record<string, unknown>>('/auth/me')
-			_user = (data['user'] ?? data['data'] ?? data) as AuthUser
+			const userBase = (data['user'] ?? data['data'] ?? data) as Record<string, unknown>
+			_user = {
+				...userBase,
+				tenant_id: (data['tenant_id'] ?? userBase['tenant_id'] ?? '') as string,
+				permissions: ((data['permissions'] ?? userBase['permissions']) as string[]) ?? []
+			} as AuthUser
 			if (_user?.locale) {
 				localeStore.init(_user.locale)
 			}

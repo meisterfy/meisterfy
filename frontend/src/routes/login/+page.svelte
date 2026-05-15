@@ -32,7 +32,11 @@
 			}
 			auth.setToken(data.access_token)
 			setToken(data.access_token)
-			if (data.user) auth.setUser(data.user)
+			if (data.user) auth.setUser({
+					...data.user,
+					tenant_id: data.tenant_id ?? data.user.tenant_id ?? '',
+					permissions: data.permissions ?? data.user.permissions ?? []
+				})
 			goto(data.needs_tenant ? '/tenants/new' : '/')
 		} catch {
 			error = m['auth:network_error']()

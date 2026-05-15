@@ -13,6 +13,7 @@ const toClient = (t: TenantResult) => ({
 		name: t.name,
 		niche: t.niche,
 		ads_monitoring: t.ads_monitoring,
+		report_prompts: t.report_prompts,
 		language: t.language,
 		location: t.location,
 		primary_persona: t.primary_persona,
