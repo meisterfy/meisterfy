@@ -37,4 +37,4 @@ sqlc:
 	sqlc generate
 
 docker-build:
-	docker build -t rush-maestro:latest ..
+	docker build -t mkt-maestro:latest ..

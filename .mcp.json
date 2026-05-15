@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "rush-maestro-mcp": {
+    "mkt-maestro-mcp": {
       "type": "http",
       "url": "http://localhost:5173/mcp"
     },
