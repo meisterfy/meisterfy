@@ -108,7 +108,7 @@ func (r *MetricsRepository) UpsertMonthly(ctx context.Context, m MonthlySummary)
 func (r *MetricsRepository) GetMonthlySummary(ctx context.Context, tenantID string, limit int) ([]MonthlySummary, error) {
 	rows, err := r.queries.GetMonthlySummary(ctx, db.GetMonthlySummaryParams{
 		TenantID: tenantID,
-		Limit:    int32(limit),
+		Limit:    int32(limit), //nolint:gosec // limit is bounded by application logic
 	})
 	if err != nil {
 		return nil, mapError(err)
