@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
+	import { resolve } from '$app/paths'
 	import type { PageData } from './$types'
 	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send } from 'lucide-svelte'
 	import { updatePost, updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
@@ -111,7 +112,11 @@
 				media_type: mediaType
 			})
 			if (status !== data.post.status) {
-				await updatePostStatus(data.client_id, data.post.id, status as import('$lib/api/posts').PostStatus)
+				await updatePostStatus(
+					data.client_id,
+					data.post.id,
+					status as import('$lib/api/posts').PostStatus
+				)
 			}
 			window.location.href = `/${data.client_id}/social`
 		} finally {
@@ -137,7 +142,7 @@
 >
 	<div class="flex items-center gap-4">
 		<a
-			href="/{data.client_id}/social"
+			href={resolve(`/${data.client_id}/social`)}
 			class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
 		>
 			<ArrowLeft class="h-5 w-5" />
@@ -337,7 +342,7 @@
 				<div
 					class="mb-4 grid gap-2 {data.post.media_files.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}"
 				>
-					{#each data.post.media_files as mediaFile}
+					{#each data.post.media_files as mediaFile (mediaFile)}
 						<div
 							class="group relative flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900"
 						>

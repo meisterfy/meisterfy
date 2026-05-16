@@ -30,9 +30,9 @@
 		pageSize?: number
 		searchPlaceholder?: string
 		searchColumn?: string
-		toolbar?: Snippet<[table: any]>
+		toolbar?: Snippet<[table: unknown]>
 		isLoading?: boolean
-		meta?: any
+		meta?: Record<string, unknown>
 	}>()
 
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: untrack(() => pageSize) })
@@ -158,9 +158,9 @@
 				</Table.Header>
 				<Table.Body class="divide-y divide-slate-200 dark:divide-slate-800">
 					{#if isLoading}
-						{#each Array(5) as _}
+						{#each Array(5) as _, i (i)}
 							<Table.Row class="animate-pulse">
-								{#each columns as _}
+								{#each columns as _, j (j)}
 									<Table.Cell class="px-6 py-4">
 										<div class="h-4 w-full rounded bg-slate-100 dark:bg-slate-800"></div>
 									</Table.Cell>
@@ -175,10 +175,7 @@
 							>
 								{#each row.getVisibleCells() as cell (cell.id)}
 									<Table.Cell class="px-6 py-4">
-										<FlexRender
-											content={cell.column.columnDef.cell}
-											context={cell.getContext()}
-										/>
+										<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 									</Table.Cell>
 								{/each}
 							</Table.Row>

@@ -11,7 +11,7 @@ export function createCampaignActions() {
 		try {
 			const res = await syncHistory(tenantId)
 			alert(`Synced ${res.rows} rows (${res.from} -> ${res.to})`)
-		} catch (e) {
+		} catch {
 			alert('Sync failed! Check Google Ads integration')
 		} finally {
 			syncing = false
@@ -31,6 +31,8 @@ export function createCampaignActions() {
 				const url = window.URL.createObjectURL(blob)
 				const a = document.createElement('a')
 				a.href = url
+				// not reactive state — Date is used inline to format a filename string
+				// eslint-disable-next-line svelte/prefer-svelte-reactivity
 				a.download = `report-${campaignId}-${new Date().toISOString().split('T')[0]}.pdf`
 				document.body.appendChild(a)
 				a.click()
@@ -46,8 +48,12 @@ export function createCampaignActions() {
 	}
 
 	return {
-		get syncing() { return syncing },
-		get exporting() { return exporting },
+		get syncing() {
+			return syncing
+		},
+		get exporting() {
+			return exporting
+		},
 		runSyncHistory,
 		exportReport
 	}

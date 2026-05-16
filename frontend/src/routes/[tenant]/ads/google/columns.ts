@@ -50,7 +50,8 @@ export const columns: ColumnDef<UnifiedCampaign>[] = [
 	{
 		accessorKey: 'impressions',
 		header: m['ads:labels.impressions'](),
-		cell: ({ row }) => (row.original.impressions !== undefined ? `${row.original.impressions} imp` : '-')
+		cell: ({ row }) =>
+			row.original.impressions !== undefined ? `${row.original.impressions} imp` : '-'
 	},
 	{
 		accessorKey: 'clicks',
@@ -63,7 +64,9 @@ export const columns: ColumnDef<UnifiedCampaign>[] = [
 		cell: ({ row, table }) =>
 			renderComponent(CampaignActions, {
 				campaign: row.original,
-				onDeploy: (table.options.meta as any)?.onDeploy
+				onDeploy: (table.options.meta as Record<string, unknown>)?.onDeploy as
+					| ((slug: string) => void)
+					| undefined
 			})
 	}
 ]

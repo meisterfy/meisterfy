@@ -3,12 +3,12 @@
 	import * as Select from '$lib/components/ui/select'
 	import { Input } from '$lib/components/ui/input'
 
-	let { 
-		searchQuery = $bindable(), 
-		selectedCategory = $bindable(), 
-		categories, 
+	let {
+		searchQuery = $bindable(),
+		selectedCategory = $bindable(),
+		categories,
 		categoryLabels,
-		onClear 
+		onClear
 	} = $props<{
 		searchQuery: string
 		selectedCategory: string
@@ -30,11 +30,7 @@
 
 	<div class="relative min-w-[240px]">
 		<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-		<Input
-			placeholder="Search connections..."
-			bind:value={searchQuery}
-			class="pl-9 pr-10"
-		/>
+		<Input placeholder="Search connections..." bind:value={searchQuery} class="pr-10 pl-9" />
 		{#if searchQuery}
 			<button
 				onclick={() => (searchQuery = '')}
@@ -46,12 +42,16 @@
 	</div>
 
 	<Select.Root type="single" bind:value={selectedCategory}>
-		<Select.Trigger class="w-[200px] bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-			{selectedCategory === 'all' ? 'All Categories' : (categoryLabels[selectedCategory] ?? selectedCategory)}
+		<Select.Trigger
+			class="w-[200px] border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+		>
+			{selectedCategory === 'all'
+				? 'All Categories'
+				: (categoryLabels[selectedCategory] ?? selectedCategory)}
 		</Select.Trigger>
 		<Select.Content>
 			<Select.Item value="all">All Categories</Select.Item>
-			{#each categories as group}
+			{#each categories as group (group)}
 				<Select.Item value={group}>{categoryLabels[group] ?? group}</Select.Item>
 			{/each}
 		</Select.Content>

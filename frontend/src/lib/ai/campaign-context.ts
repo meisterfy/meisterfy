@@ -1,6 +1,11 @@
 import { resolvePrompt } from './prompts'
 import type { ReportPrompts } from '$lib/api/tenants'
-import type { LiveCampaignDetail, SearchTermRow, KeywordPerfRow, KeywordQSRow } from '$lib/api/campaigns'
+import type {
+	LiveCampaignDetail,
+	SearchTermRow,
+	KeywordPerfRow,
+	KeywordQSRow
+} from '$lib/api/campaigns'
 
 export interface BrandContext {
 	name: string
@@ -22,18 +27,30 @@ export function buildCampaignData(
 	const budget = (d.campaign.budgetMicros / 1_000_000).toFixed(2)
 
 	const topTerms = terms
-		.sort((a, b) => b.clicks - a.clicks).slice(0, 10)
-		.map(t => `- "${t.term}" | clicks: ${t.clicks} | cost: R$${t.cost.toFixed(2)} | conv: ${t.conversions} | CTR: ${(t.ctr * 100).toFixed(1)}%`)
+		.sort((a, b) => b.clicks - a.clicks)
+		.slice(0, 10)
+		.map(
+			(t) =>
+				`- "${t.term}" | clicks: ${t.clicks} | cost: R$${t.cost.toFixed(2)} | conv: ${t.conversions} | CTR: ${(t.ctr * 100).toFixed(1)}%`
+		)
 		.join('\n')
 
 	const topKw = kw
-		.sort((a, b) => b.cost - a.cost).slice(0, 10)
-		.map(k => `- [${k.matchType}] "${k.keywordText}" | ${k.adGroupName} | cost: R$${k.cost.toFixed(2)} | CPA: R$${k.cpa.toFixed(2)} | conv: ${k.conversions}`)
+		.sort((a, b) => b.cost - a.cost)
+		.slice(0, 10)
+		.map(
+			(k) =>
+				`- [${k.matchType}] "${k.keywordText}" | ${k.adGroupName} | cost: R$${k.cost.toFixed(2)} | CPA: R$${k.cpa.toFixed(2)} | conv: ${k.conversions}`
+		)
 		.join('\n')
 
 	const lowQS = qs
-		.filter(k => k.qualityScore <= 5).slice(0, 5)
-		.map(k => `- "${k.keywordText}" QS: ${k.qualityScore}/10 | CTR: ${k.predictedCTR} | Creative: ${k.creativeQS} | Landing: ${k.postClickQS}`)
+		.filter((k) => k.qualityScore <= 5)
+		.slice(0, 5)
+		.map(
+			(k) =>
+				`- "${k.keywordText}" QS: ${k.qualityScore}/10 | CTR: ${k.predictedCTR} | Creative: ${k.creativeQS} | Landing: ${k.postClickQS}`
+		)
 		.join('\n')
 
 	return `Campaign: ${d.campaign.name}
@@ -55,5 +72,9 @@ ${lowQS || '(none found)'}`
 }
 
 export function buildChatSystemPrompt(brand: BrandContext, campaignData: string): string {
-	return resolvePrompt('instant', brand.report_prompts, brand) + '\n\nCAMPAIGN DATA (today):\n' + campaignData
+	return (
+		resolvePrompt('instant', brand.report_prompts, brand) +
+		'\n\nCAMPAIGN DATA (today):\n' +
+		campaignData
+	)
 }

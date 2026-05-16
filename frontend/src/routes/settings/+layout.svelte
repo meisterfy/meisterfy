@@ -28,8 +28,6 @@
 					{m['settings:title']()}
 				</span>
 			</div>
-
-
 		{/snippet}
 	</Toolbar>
 	<SubToolbar>

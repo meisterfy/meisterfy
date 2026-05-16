@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
 	import type { PageData } from './$types'
-	import { ArrowLeft, Save, Search, Target, DollarSign, LayoutList } from 'lucide-svelte'
+	import { resolve } from '$app/paths'
+	import { ArrowLeft, Save, Search, LayoutList } from 'lucide-svelte'
 	import { updateCampaign } from '$lib/api/campaigns'
 
 	let { data } = $props<{ data: PageData }>()
@@ -32,7 +33,7 @@
 >
 	<div class="flex items-center gap-4">
 		<a
-			href="/{data.tenant}/ads/google"
+			href={resolve(`/${data.tenant}/ads/google`)}
 			class="text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
 		>
 			<ArrowLeft class="h-5 w-5" />
@@ -105,7 +106,7 @@
 				<LayoutList class="h-5 w-5 text-indigo-500" /> Ad Groups
 			</h3>
 
-			{#each campaign.ad_groups as group, i}
+			{#each campaign.ad_groups as group, i (i)}
 				<div
 					class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
 				>
@@ -161,7 +162,7 @@
 							<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase"
 								>Headlines (Max 30 chars)</span
 							>
-							{#each group.responsive_search_ad.headlines as headline}
+							{#each group.responsive_search_ad.headlines as headline (headline)}
 								<div class="flex items-center gap-2">
 									<input
 										type="text"
@@ -184,7 +185,7 @@
 							<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase"
 								>Descriptions (Max 90 chars)</span
 							>
-							{#each group.responsive_search_ad.descriptions as description}
+							{#each group.responsive_search_ad.descriptions as description (description)}
 								<div class="flex items-center gap-2">
 									<input
 										type="text"

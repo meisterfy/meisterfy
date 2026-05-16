@@ -14,7 +14,7 @@
 			cost: 0,
 			conversions: 0,
 			impressions: 0,
-			days: 0,
+			days: 0
 		}))
 		for (const d of days) {
 			if (d.impressions > 0) {
@@ -27,9 +27,10 @@
 		}
 		return {
 			avgCosts: totals.map((t) => (t.days > 0 ? t.cost / t.days : 0)),
-			avgCpas: totals.map((t) =>
-				t.conversions > 0 ? t.cost / t.conversions : null,
-			) as (number | null)[],
+			avgCpas: totals.map((t) => (t.conversions > 0 ? t.cost / t.conversions : null)) as (
+				| number
+				| null
+			)[]
 		}
 	}
 

@@ -19,33 +19,47 @@
 
 	let { data } = $props<{ data: PageData }>()
 	const actions = createCampaignActions()
-	const chat    = createCampaignChat()
+	const chat = createCampaignChat()
 
 	// Build system prompt as soon as campaign data resolves — independent of the AI Report tab.
 	let chatSystemPrompt = $state('')
-	const { detail: detailP, searchTerms: searchTermsP, keywords: keywordsP, qualityScores: qualityScoresP } = untrack(() => data.streamed)
-	Promise.all([detailP, searchTermsP, keywordsP, qualityScoresP]).then(([detail, terms, kw, qs]) => {
-		if (detail) {
-			chatSystemPrompt = buildChatSystemPrompt(data.client.brand, buildCampaignData(detail, terms, kw, qs))
+	const {
+		detail: detailP,
+		searchTerms: searchTermsP,
+		keywords: keywordsP,
+		qualityScores: qualityScoresP
+	} = untrack(() => data.streamed)
+	Promise.all([detailP, searchTermsP, keywordsP, qualityScoresP]).then(
+		([detail, terms, kw, qs]) => {
+			if (detail) {
+				chatSystemPrompt = buildChatSystemPrompt(
+					data.client.brand,
+					buildCampaignData(detail, terms, kw, qs)
+				)
+			}
 		}
-	})
+	)
 
 	let isLoadingPeriod = $derived(!!navigating.to)
 
 	function setPeriod(days: number) {
 		const end = new Date()
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const start = new Date()
 		start.setDate(end.getDate() - days)
 		const fmt = (d: Date) => d.toISOString().split('T')[0]
+		// relative navigation — only updates query params, resolve() requires absolute paths
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(`?startDate=${fmt(start)}&endDate=${fmt(end)}`, { keepFocus: true })
 	}
 
 	function clearPeriod() {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto('?', { keepFocus: true })
 	}
 </script>
 
-<div class="p-4 lg:p-8 gap-4">
+<div class="gap-4 p-4 lg:p-8">
 	{#await data.streamed.detail}
 		<Skeleton />
 	{:then detail}
@@ -53,11 +67,11 @@
 	{/await}
 
 	<Tabs.Root value="live">
-		<Tabs.List class="flex items-center justify-start gap-2 lg:gap-4 py-4 border-b border-white/10">
+		<Tabs.List class="flex items-center justify-start gap-2 border-b border-white/10 py-4 lg:gap-4">
 			<TabTrigger value="live">
 				<div class="flex items-center gap-2">
 					{m['ads:headings.live_performance']()}
-					<span class="rounded-full bg-green-400/70 w-2 h-2 animate-pulse"></span>
+					<span class="h-2 w-2 animate-pulse rounded-full bg-green-400/70"></span>
 				</div>
 			</TabTrigger>
 			<TabTrigger value="history">
@@ -68,7 +82,16 @@
 			</TabTrigger>
 			<TabTrigger value="ai">
 				<div class="flex items-center gap-1.5">
-					<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+					<svg
+						class="h-3.5 w-3.5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						><path
+							d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+						/></svg
+					>
 					AI Report
 				</div>
 			</TabTrigger>
@@ -108,7 +131,7 @@
 				searchTerms={data.streamed.searchTerms}
 				keywords={data.streamed.keywords}
 				qualityScores={data.streamed.qualityScores}
-				/>
+			/>
 		</Tabs.Content>
 	</Tabs.Root>
 </div>

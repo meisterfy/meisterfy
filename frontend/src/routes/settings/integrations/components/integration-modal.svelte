@@ -6,7 +6,11 @@
 	import * as Select from '$lib/components/ui/select'
 	import type { IntegrationManager } from '../integrations.svelte'
 
-	let { manager, onSave, onTest }: {
+	let {
+		manager,
+		onSave,
+		onTest
+	}: {
 		manager: IntegrationManager
 		onSave: (e: SubmitEvent) => void
 		onTest: () => void
@@ -20,7 +24,7 @@
 			class="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
 		>
 			{#if manager.activeProvider}
-				<div class="flex items-center gap-3 mb-4">
+				<div class="mb-4 flex items-center gap-3">
 					<div class="h-10 w-10 shrink-0 text-slate-900 dark:text-white">
 						<ProviderIcon
 							provider={manager.activeProvider.provider}
@@ -30,7 +34,9 @@
 					</div>
 					<div>
 						<Dialog.Title class="text-base font-bold text-slate-900 dark:text-white">
-							{manager.editingId ? `Edit ${manager.activeProvider.display_name}` : `Add ${manager.activeProvider.display_name}`}
+							{manager.editingId
+								? `Edit ${manager.activeProvider.display_name}`
+								: `Add ${manager.activeProvider.display_name}`}
 						</Dialog.Title>
 						<Dialog.Description class="text-sm text-slate-500 dark:text-slate-400">
 							{manager.activeProvider.description}
@@ -38,19 +44,30 @@
 					</div>
 				</div>
 
-				{#snippet fieldGroup(fields: typeof manager.activeProvider.config_fields, label: string, isCredential: boolean)}
+				{#snippet fieldGroup(
+					fields: typeof manager.activeProvider.config_fields,
+					label: string,
+					isCredential: boolean
+				)}
 					{#if fields?.length}
 						<div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
 							<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">{label}</p>
 							{#each fields as field (field.key)}
 								<div>
-									<label for="field-{field.key}" class="mb-1 block text-xs font-semibold text-slate-500">
+									<label
+										for="field-{field.key}"
+										class="mb-1 block text-xs font-semibold text-slate-500"
+									>
 										{field.label}{#if field.required}<span class="text-red-400">*</span>{/if}
 									</label>
 									{#if field.type === 'select' && field.options?.length}
-										{@const selectedLabel = field.options.find((o) => o.value === manager.form[field.key])?.label ?? field.options[0]?.label}
+										{@const selectedLabel =
+											field.options.find((o) => o.value === manager.form[field.key])?.label ??
+											field.options[0]?.label}
 										<Select.Root type="single" bind:value={manager.form[field.key]}>
-											<Select.Trigger class="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+											<Select.Trigger
+												class="w-full border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800"
+											>
 												{selectedLabel}
 											</Select.Trigger>
 											<Select.Content>
@@ -65,7 +82,9 @@
 											type={!isCredential && field.type === 'url' ? 'url' : 'text'}
 											bind:value={manager.form[field.key]}
 											placeholder={field.placeholder ?? ''}
-											required={isCredential ? (field.required && !manager.editingId) : field.required}
+											required={isCredential
+												? field.required && !manager.editingId
+												: field.required}
 											class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 										/>
 									{/if}
@@ -106,7 +125,9 @@
 						</p>
 						<MultiSelect
 							value={manager.formTenants}
-							onchange={(v) => { manager.formTenants = v }}
+							onchange={(v) => {
+								manager.formTenants = v
+							}}
 							options={manager.tenantOptions}
 							placeholder="Select clients…"
 						/>

@@ -2,7 +2,8 @@
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte'
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import Skeleton from '$lib/components/ui/skeleton.svelte'
-	import { normPlatforms, BRAND_COLOR, type PostPlatform, type PostShape } from '$lib/social'
+	import { SvelteMap } from 'svelte/reactivity'
+	import { normPlatforms, BRAND_COLOR, type PostShape } from '$lib/social'
 
 	let {
 		posts = [],
@@ -21,15 +22,25 @@
 	let viewMonth = $state(today.getMonth())
 
 	const MONTHS = [
-		'January', 'February', 'March', 'April', 'May', 'June',
-		'July', 'August', 'September', 'October', 'November', 'December'
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
 	]
 	const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 	const calendarCells = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay()
 		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
-		const byDate = new Map<string, PostShape[]>()
+		const byDate = new SvelteMap<string, PostShape[]>()
 		for (const p of posts) {
 			if (!p.scheduled_date) continue
 			if (!byDate.has(p.scheduled_date)) byDate.set(p.scheduled_date, [])
@@ -48,10 +59,16 @@
 	})
 
 	function prevMonth() {
-		if (viewMonth === 0) { viewMonth = 11; viewYear-- } else viewMonth--
+		if (viewMonth === 0) {
+			viewMonth = 11
+			viewYear--
+		} else viewMonth--
 	}
 	function nextMonth() {
-		if (viewMonth === 11) { viewMonth = 0; viewYear++ } else viewMonth++
+		if (viewMonth === 11) {
+			viewMonth = 0
+			viewYear++
+		} else viewMonth++
 	}
 	function goToToday() {
 		viewYear = today.getFullYear()
@@ -69,22 +86,27 @@
 		<button
 			onclick={prevMonth}
 			class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-		><ChevronLeft class="h-5 w-5" /></button>
+			><ChevronLeft class="h-5 w-5" /></button
+		>
 		<button
 			onclick={goToToday}
 			class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-		>Today</button>
+			>Today</button
+		>
 		<button
 			onclick={nextMonth}
 			class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
-		><ChevronRight class="h-5 w-5" /></button>
+			><ChevronRight class="h-5 w-5" /></button
+		>
 	</div>
 </div>
 
 <!-- Day headers -->
 <div class="mb-1 grid grid-cols-7">
 	{#each DAYS as d (d)}
-		<div class="py-2 text-center text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
+		<div
+			class="py-2 text-center text-xs font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500"
+		>
 			{d}
 		</div>
 	{/each}
@@ -101,10 +123,12 @@
 			{#if cell.day}
 				<div class="mb-1 flex items-center justify-between px-0.5">
 					<span
-						class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold {isToday(cell.date)
+						class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold {isToday(
+							cell.date
+						)
 							? 'bg-indigo-500 text-white'
-							: 'text-slate-500 dark:text-slate-400'}"
-					>{cell.day}</span>
+							: 'text-slate-500 dark:text-slate-400'}">{cell.day}</span
+					>
 					<button
 						onclick={() => onCreatePost(cell.date!)}
 						aria-label="New post"
@@ -124,7 +148,9 @@
 							<button
 								onclick={() => onEditPost(post)}
 								class="flex w-full items-center gap-1 rounded px-1 py-0.5 text-left opacity-100 transition-opacity hover:opacity-80"
-								style="background: {post.status === 'published' ? 'rgb(220 252 231)' : 'rgb(254 243 199)'}"
+								style="background: {post.status === 'published'
+									? 'rgb(220 252 231)'
+									: 'rgb(254 243 199)'}"
 							>
 								{#each normPlatforms(post.platform).slice(0, 2) as plt (plt)}
 									<ProviderIcon

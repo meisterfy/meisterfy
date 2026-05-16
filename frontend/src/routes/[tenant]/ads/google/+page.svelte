@@ -1,7 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types'
-	import { Plus, Funnel, CircleAlert, CircleCheck, FileBraces, X, LoaderCircle } from 'lucide-svelte'
-	import { createCampaign, deployCampaign as apiDeployCampaign } from '$lib/api/campaigns'
+	import {
+		Plus,
+		Funnel,
+		CircleAlert,
+		CircleCheck,
+		FileBraces,
+		X,
+		LoaderCircle
+	} from 'lucide-svelte'
+	import { createCampaign } from '$lib/api/campaigns'
 	import { columns, type UnifiedCampaign } from './columns'
 	import DataTable from '$lib/components/ui/data-table/data-table.svelte'
 
@@ -11,7 +19,6 @@
 	let jsonInput = $state('')
 	let importError = $state('')
 	let isImporting = $state(false)
-	let deployingSlug = $state<string | null>(null)
 	let deployResult = $state<{ success: boolean; message: string } | null>(null)
 
 	// Combine local and live campaigns for the table
@@ -21,7 +28,7 @@
 	$effect(() => {
 		Promise.all([data.campaigns, data.streamed.liveCampaigns])
 			.then(([local, live]) => {
-				const unifiedLocal: UnifiedCampaign[] = (local as any[]).map((c: any) => ({
+				const unifiedLocal: UnifiedCampaign[] = (local as UnifiedCampaign[]).map((c) => ({
 					id: c.id,
 					name: c.id,
 					slug: c.slug,
@@ -31,7 +38,7 @@
 					tenant: data.tenant
 				}))
 
-				const unifiedLive: UnifiedCampaign[] = (live as any[]).map((c: any) => ({
+				const unifiedLive: UnifiedCampaign[] = (live as UnifiedCampaign[]).map((c) => ({
 					id: c.id,
 					name: c.name,
 					status: c.status,
@@ -85,30 +92,11 @@
 			isImporting = false
 		}
 	}
-
-	async function deployCampaign(slug: string) {
-		deployingSlug = slug
-		deployResult = null
-		try {
-			await apiDeployCampaign(data.tenant, slug)
-			deployResult = {
-				success: true,
-				message: 'Campaign deployed successfully. All assets created as PAUSED in Google Ads.'
-			}
-			setTimeout(() => window.location.reload(), 2000)
-		} catch {
-			deployResult = { success: false, message: 'Deploy failed.' }
-		} finally {
-			deployingSlug = null
-		}
-	}
 </script>
 
-<div class="mx-auto w-full lg:w-[1200px] xl:w-[1600px] max-w-full px-4 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto w-full max-w-full px-4 py-8 sm:px-6 lg:w-[1200px] lg:px-8 xl:w-[1600px]">
 	<div class="mb-6 flex items-center justify-between">
-		<h2 class="text-xl lg:text-3xl font-bold text-slate-900 dark:text-white">
-			Campaign Manager
-		</h2>
+		<h2 class="text-xl font-bold text-slate-900 lg:text-3xl dark:text-white">Campaign Manager</h2>
 		<div class="flex items-center gap-2">
 			<button
 				onclick={() => {
@@ -129,7 +117,7 @@
 		searchPlaceholder="Search campaigns..."
 		pageSize={50}
 	>
-		{#snippet toolbar(table)}
+		{#snippet toolbar(_)}
 			<button
 				class="rounded-md border border-slate-300 p-1.5 text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
 			>

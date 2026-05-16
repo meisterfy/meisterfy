@@ -4,7 +4,6 @@ import { normalizePost } from '$lib/utils/transforms'
 import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
-
 export const load: PageLoad = async ({ params, fetch }) => {
 	const [all, metaAccounts] = await Promise.all([
 		withFallback(getPosts(params.tenant, undefined, fetch), []),

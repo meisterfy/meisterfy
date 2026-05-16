@@ -16,7 +16,7 @@ export function createPerformanceTimelineConfig(history: HistoryEntry[]): ChartC
 					backgroundColor: 'rgba(59,130,246,0.1)',
 					yAxisID: 'y',
 					tension: 0.4,
-					fill: true,
+					fill: true
 				},
 				{
 					label: 'Impressions',
@@ -25,9 +25,9 @@ export function createPerformanceTimelineConfig(history: HistoryEntry[]): ChartC
 					backgroundColor: 'transparent',
 					yAxisID: 'y1',
 					tension: 0.4,
-					borderDash: [5, 5],
-				},
-			],
+					borderDash: [5, 5]
+				}
+			]
 		},
 		options: {
 			responsive: true,
@@ -35,9 +35,14 @@ export function createPerformanceTimelineConfig(history: HistoryEntry[]): ChartC
 			interaction: { mode: 'index', intersect: false },
 			scales: {
 				y: { type: 'linear', position: 'left', title: { display: true, text: 'Clicks' } },
-				y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Impressions' } },
-			},
-		},
+				y1: {
+					type: 'linear',
+					position: 'right',
+					grid: { drawOnChartArea: false },
+					title: { display: true, text: 'Impressions' }
+				}
+			}
+		}
 	}
 }
 
@@ -52,9 +57,9 @@ export function createDayOfWeekCostConfig(avgCosts: number[]): ChartConfiguratio
 					data: avgCosts,
 					backgroundColor: 'rgba(99,102,241,0.6)',
 					borderColor: '#6366f1',
-					borderWidth: 1,
-				},
-			],
+					borderWidth: 1
+				}
+			]
 		},
 		options: {
 			responsive: true,
@@ -62,14 +67,14 @@ export function createDayOfWeekCostConfig(avgCosts: number[]): ChartConfiguratio
 			plugins: {
 				tooltip: {
 					callbacks: {
-						label: (ctx) => `R$${Number(ctx.raw).toFixed(2)}`,
-					},
-				},
+						label: (ctx) => `R$${Number(ctx.raw).toFixed(2)}`
+					}
+				}
 			},
 			scales: {
-				y: { beginAtZero: true, title: { display: true, text: 'Cost (R$)' } },
-			},
-		},
+				y: { beginAtZero: true, title: { display: true, text: 'Cost (R$)' } }
+			}
+		}
 	}
 }
 
@@ -84,9 +89,9 @@ export function createDayOfWeekCpaConfig(avgCpas: (number | null)[]): ChartConfi
 					data: avgCpas,
 					backgroundColor: 'rgba(245,158,11,0.6)',
 					borderColor: '#f59e0b',
-					borderWidth: 1,
-				},
-			],
+					borderWidth: 1
+				}
+			]
 		},
 		options: {
 			responsive: true,
@@ -94,14 +99,14 @@ export function createDayOfWeekCpaConfig(avgCpas: (number | null)[]): ChartConfi
 			plugins: {
 				tooltip: {
 					callbacks: {
-						label: (ctx) => (ctx.raw != null ? `R$${Number(ctx.raw).toFixed(2)}` : ''),
-					},
-				},
+						label: (ctx) => (ctx.raw != null ? `R$${Number(ctx.raw).toFixed(2)}` : '')
+					}
+				}
 			},
 			scales: {
-				y: { beginAtZero: true, title: { display: true, text: 'CPA (R$)' } },
-			},
-		},
+				y: { beginAtZero: true, title: { display: true, text: 'CPA (R$)' } }
+			}
+		}
 	}
 }
 
@@ -118,21 +123,21 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 					backgroundColor: 'rgba(99,102,241,0.6)',
 					borderColor: '#6366f1',
 					borderWidth: 1,
-					yAxisID: 'yCost',
+					yAxisID: 'yCost'
 				},
 				{
 					type: 'line',
 					label: 'CPA (R$)',
-					data: history.map((d) => d.conversions > 0 ? d.cpa : null),
+					data: history.map((d) => (d.conversions > 0 ? d.cpa : null)),
 					borderColor: '#f59e0b',
 					backgroundColor: 'transparent',
 					pointBackgroundColor: '#f59e0b',
 					pointRadius: 4,
 					tension: 0.3,
 					yAxisID: 'yCpa',
-					spanGaps: false,
-				},
-			],
+					spanGaps: false
+				}
+			]
 		},
 		options: {
 			responsive: true,
@@ -143,16 +148,28 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 					callbacks: {
 						label: (ctx) => {
 							if (ctx.dataset.label === 'Cost (R$)') return `Cost: R$${Number(ctx.raw).toFixed(2)}`
-							if (ctx.dataset.label === 'CPA (R$)' && ctx.raw != null) return `CPA: R$${Number(ctx.raw).toFixed(2)}`
+							if (ctx.dataset.label === 'CPA (R$)' && ctx.raw != null)
+								return `CPA: R$${Number(ctx.raw).toFixed(2)}`
 							return ''
-						},
-					},
-				},
+						}
+					}
+				}
 			},
 			scales: {
-				yCost: { type: 'linear', position: 'left', title: { display: true, text: 'Cost (R$)' }, beginAtZero: true },
-				yCpa: { type: 'linear', position: 'right', title: { display: true, text: 'CPA (R$)' }, grid: { drawOnChartArea: false }, beginAtZero: true },
-			},
-		},
+				yCost: {
+					type: 'linear',
+					position: 'left',
+					title: { display: true, text: 'Cost (R$)' },
+					beginAtZero: true
+				},
+				yCpa: {
+					type: 'linear',
+					position: 'right',
+					title: { display: true, text: 'CPA (R$)' },
+					grid: { drawOnChartArea: false },
+					beginAtZero: true
+				}
+			}
+		}
 	}
 }

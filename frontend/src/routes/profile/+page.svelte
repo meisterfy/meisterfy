@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
+	import { resolve } from '$app/paths'
 	import { CircleCheck, User, Key, Globe, Clock, ArrowLeft } from 'lucide-svelte'
 	import { Input } from '$lib/components/ui/input'
 	import * as Select from '$lib/components/ui/select'
@@ -79,11 +80,11 @@
 
 <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
 	<header
-		class="border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:px-8"
+		class="border-b border-slate-200 bg-white px-4 py-4 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900"
 	>
 		<div class="mx-auto flex max-w-3xl items-center gap-4">
 			<a
-				href="/"
+				href={resolve('/')}
 				class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
 				title="Back to Dashboard"
 			>
@@ -101,7 +102,9 @@
 		<div
 			class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
 		>
-			<div class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+			<div
+				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
+			>
 				<User class="h-5 w-5 text-indigo-500" />
 				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Personal Information</h2>
 			</div>
@@ -141,7 +144,7 @@
 								{locales[locale] ?? locale}
 							</Select.Trigger>
 							<Select.Content>
-								{#each Object.entries(locales) as [key, label]}
+								{#each Object.entries(locales) as [key, label] (key)}
 									<Select.Item value={key}>{label}</Select.Item>
 								{/each}
 							</Select.Content>
@@ -159,7 +162,7 @@
 								{timezones[timezone] ?? timezone}
 							</Select.Trigger>
 							<Select.Content>
-								{#each Object.entries(timezones) as [key, label]}
+								{#each Object.entries(timezones) as [key, label] (key)}
 									<Select.Item value={key}>{label}</Select.Item>
 								{/each}
 							</Select.Content>
@@ -196,7 +199,9 @@
 		<div
 			class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
 		>
-			<div class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+			<div
+				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
+			>
 				<Key class="h-5 w-5 text-indigo-500" />
 				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Change Password</h2>
 			</div>
@@ -209,12 +214,7 @@
 					>
 						Current Password
 					</label>
-					<Input
-						id="profile-current-pwd"
-						type="password"
-						bind:value={currentPassword}
-						required
-					/>
+					<Input id="profile-current-pwd" type="password" bind:value={currentPassword} required />
 				</div>
 
 				<div class="grid gap-5 sm:grid-cols-2">
@@ -234,12 +234,7 @@
 						>
 							Confirm New Password
 						</label>
-						<Input
-							id="profile-confirm-pwd"
-							type="password"
-							bind:value={confirmPassword}
-							required
-						/>
+						<Input id="profile-confirm-pwd" type="password" bind:value={confirmPassword} required />
 					</div>
 				</div>
 

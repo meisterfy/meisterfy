@@ -37,8 +37,8 @@
 
 <Dropdown items={profileItems} align="end">
 	<div
-		class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 
-		text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 
+		class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5
+		text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900
 		dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
 	>
 		<User class="h-4 w-4" />

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state'
+	import { resolve } from '$app/paths'
 
 	const status = $derived(page.status)
 	const message = $derived(page.error?.message ?? '')
@@ -61,7 +62,7 @@
 		<!-- Actions -->
 		<div class="flex gap-2 pt-1">
 			<a
-				href="/"
+				href={resolve('/')}
 				class="flex-1 rounded-lg bg-slate-900 px-4 py-2.5 text-center text-sm
 					font-semibold text-white transition-colors hover:bg-slate-700
 					dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"

@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getTenants, getTenant, createTenant, updateTenant, deleteTenant, getGoogleAdsStatus } from './tenants'
+import {
+	getTenants,
+	getTenant,
+	createTenant,
+	updateTenant,
+	deleteTenant,
+	getGoogleAdsStatus
+} from './tenants'
 import type { Tenant } from './tenants'
 
 const mockTenant: Tenant = {

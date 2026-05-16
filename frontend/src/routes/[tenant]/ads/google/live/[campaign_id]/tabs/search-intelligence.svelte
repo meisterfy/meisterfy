@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { m } from '$lib/paraglide/messages'
 	import { isSmartManaged } from '$lib/api/campaigns'
-	import type { LiveCampaignDetail, SearchTermRow, KeywordQSRow, KeywordPerfRow } from '$lib/api/campaigns'
+	import type {
+		LiveCampaignDetail,
+		SearchTermRow,
+		KeywordQSRow,
+		KeywordPerfRow
+	} from '$lib/api/campaigns'
 
 	import SearchTermsTable from '../components/search-terms-table.svelte'
 	import QualityScoreTable from '../components/quality-score-table.svelte'
 	import KeywordPerformanceTable from '../components/keyword-performance-table.svelte'
 
-	let {
-		detail,
-		searchTerms,
-		qualityScores,
-		keywords,
-	} = $props<{
+	let { detail, searchTerms, qualityScores, keywords } = $props<{
 		detail: Promise<LiveCampaignDetail | null>
 		searchTerms: Promise<SearchTermRow[]>
 		qualityScores: Promise<KeywordQSRow[]>

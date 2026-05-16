@@ -1,9 +1,14 @@
-export function getDiffs(before: any, after: any, prefix = ''): { key: string; oldVal: any; newVal: any }[] {
-	let diffs: { key: string; oldVal: any; newVal: any }[] = []
+export function getDiffs(
+	before: Record<string, unknown>,
+	after: Record<string, unknown>,
+	prefix = ''
+): { key: string; oldVal: unknown; newVal: unknown }[] {
+	let diffs: { key: string; oldVal: unknown; newVal: unknown }[] = []
 	if (!before) before = {}
 	if (!after) after = {}
 
-	const isObject = (val: any) => val !== null && typeof val === 'object' && !Array.isArray(val)
+	const isObject = (val: unknown): val is Record<string, unknown> =>
+		val !== null && typeof val === 'object' && !Array.isArray(val)
 
 	const allKeys = new Set([...Object.keys(before), ...Object.keys(after)])
 	for (const key of allKeys) {

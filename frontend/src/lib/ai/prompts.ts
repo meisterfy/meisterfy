@@ -52,9 +52,21 @@ export const PROMPT_PARAMS: PromptParam[] = [
 	{ key: '[brand_name]', description: 'Brand / client name', example: 'Pórtico Imóveis' },
 	{ key: '[brand_niche]', description: 'Market niche or segment', example: 'Real estate' },
 	{ key: '[brand_location]', description: 'Geographic target', example: 'São Paulo, SP' },
-	{ key: '[brand_persona]', description: 'Primary target audience persona', example: 'First-time homebuyers aged 28–45' },
-	{ key: '[brand_tone]', description: 'Communication tone / voice', example: 'Professional and trustworthy' },
-	{ key: '[brand_instructions]', description: 'Additional custom instructions', example: 'Always mention financing options' }
+	{
+		key: '[brand_persona]',
+		description: 'Primary target audience persona',
+		example: 'First-time homebuyers aged 28–45'
+	},
+	{
+		key: '[brand_tone]',
+		description: 'Communication tone / voice',
+		example: 'Professional and trustworthy'
+	},
+	{
+		key: '[brand_instructions]',
+		description: 'Additional custom instructions',
+		example: 'Always mention financing options'
+	}
 ]
 
 interface BrandData {

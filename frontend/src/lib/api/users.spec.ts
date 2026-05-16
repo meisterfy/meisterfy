@@ -11,7 +11,9 @@ afterEach(() => vi.restoreAllMocks())
 
 describe('updateMe', () => {
 	it('sends PUT to /auth/me', async () => {
-		const mock = stubFetch({ data: { id: 'u1', name: 'Alice', email: 'alice@example.com', locale: 'en' } })
+		const mock = stubFetch({
+			data: { id: 'u1', name: 'Alice', email: 'alice@example.com', locale: 'en' }
+		})
 		await updateMe({ name: 'Alice', email: 'alice@example.com', locale: 'en' })
 		const [url, init] = mock.mock.calls[0] as [string, RequestInit]
 		expect(url).toContain('/auth/me')
@@ -19,8 +21,15 @@ describe('updateMe', () => {
 	})
 
 	it('sends all fields in the body', async () => {
-		const mock = stubFetch({ data: { id: 'u1', name: 'Bob', email: 'bob@example.com', locale: 'pt' } })
-		await updateMe({ name: 'Bob', email: 'bob@example.com', locale: 'pt', timezone: 'America/Sao_Paulo' })
+		const mock = stubFetch({
+			data: { id: 'u1', name: 'Bob', email: 'bob@example.com', locale: 'pt' }
+		})
+		await updateMe({
+			name: 'Bob',
+			email: 'bob@example.com',
+			locale: 'pt',
+			timezone: 'America/Sao_Paulo'
+		})
 		const [, init] = mock.mock.calls[0] as [string, RequestInit]
 		const body = JSON.parse(init.body as string)
 		expect(body.name).toBe('Bob')
@@ -35,7 +44,9 @@ describe('updateMe', () => {
 
 	it('throws on error response', async () => {
 		stubFetch({ error: 'email already taken' }, false, 409)
-		await expect(updateMe({ name: 'X', email: 'taken@example.com', locale: 'en' })).rejects.toThrow('email already taken')
+		await expect(updateMe({ name: 'X', email: 'taken@example.com', locale: 'en' })).rejects.toThrow(
+			'email already taken'
+		)
 	})
 })
 
@@ -59,6 +70,8 @@ describe('changePassword', () => {
 
 	it('throws on wrong current password', async () => {
 		stubFetch({ error: 'current password incorrect' }, false, 422)
-		await expect(changePassword({ current_password: 'wrong', new_password: 'new123!' })).rejects.toThrow('current password incorrect')
+		await expect(
+			changePassword({ current_password: 'wrong', new_password: 'new123!' })
+		).rejects.toThrow('current password incorrect')
 	})
 })

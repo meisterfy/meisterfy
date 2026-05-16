@@ -63,7 +63,13 @@ describe('listTenantUsers', () => {
 describe('createTenantUser', () => {
 	it('sends POST to /admin/users', async () => {
 		const mock = stubFetch({ data: mockUser })
-		await createTenantUser('t1', { name: 'Alice', email: 'a@b.com', password: 'pass', role_id: 'r1', locale: 'en' })
+		await createTenantUser('t1', {
+			name: 'Alice',
+			email: 'a@b.com',
+			password: 'pass',
+			role_id: 'r1',
+			locale: 'en'
+		})
 		const [url, init] = mock.mock.calls[0] as [string, RequestInit]
 		expect(url).toContain('/admin/users')
 		expect(init.method).toBe('POST')
@@ -71,7 +77,13 @@ describe('createTenantUser', () => {
 
 	it('includes tenant_id in the body', async () => {
 		const mock = stubFetch({ data: mockUser })
-		await createTenantUser('t1', { name: 'Alice', email: 'a@b.com', password: 'pass', role_id: 'r1', locale: 'en' })
+		await createTenantUser('t1', {
+			name: 'Alice',
+			email: 'a@b.com',
+			password: 'pass',
+			role_id: 'r1',
+			locale: 'en'
+		})
 		const [, init] = mock.mock.calls[0] as [string, RequestInit]
 		const body = JSON.parse(init.body as string)
 		expect(body.tenant_id).toBe('t1')
@@ -81,7 +93,13 @@ describe('createTenantUser', () => {
 	it('throws on validation error', async () => {
 		stubFetch({ error: 'email in use' }, false, 409)
 		await expect(
-			createTenantUser('t1', { name: 'X', email: 'dup@b.com', password: 'pass', role_id: 'r1', locale: 'en' })
+			createTenantUser('t1', {
+				name: 'X',
+				email: 'dup@b.com',
+				password: 'pass',
+				role_id: 'r1',
+				locale: 'en'
+			})
 		).rejects.toThrow('email in use')
 	})
 })
@@ -164,7 +182,9 @@ describe('createRole', () => {
 
 	it('throws on duplicate name', async () => {
 		stubFetch({ error: 'role already exists' }, false, 409)
-		await expect(createRole({ name: 'editor', permissions: [] })).rejects.toThrow('role already exists')
+		await expect(createRole({ name: 'editor', permissions: [] })).rejects.toThrow(
+			'role already exists'
+		)
 	})
 })
 

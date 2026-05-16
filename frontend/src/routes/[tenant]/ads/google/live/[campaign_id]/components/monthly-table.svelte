@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity'
 	import { m } from '$lib/paraglide/messages'
 	import type { DbHistoryDay } from '$lib/api/campaigns'
 	import { brl } from '$lib/utils/format'
@@ -17,7 +18,7 @@
 	}
 
 	function groupByMonth(days: DbHistoryDay[]): MonthRow[] {
-		const map = new Map<string, MonthRow>()
+		const map = new SvelteMap<string, MonthRow>()
 		for (const d of days) {
 			const month = d.date.substring(0, 7)
 			if (!map.has(month)) {
@@ -29,7 +30,7 @@
 					impressions: 0,
 					cpa: null,
 					ctr: null,
-					activeDays: 0,
+					activeDays: 0
 				})
 			}
 			const row = map.get(month)!
@@ -50,7 +51,7 @@
 	function trend(
 		cur: number | null,
 		prev: number | null,
-		lowerIsBetter = false,
+		lowerIsBetter = false
 	): 'up' | 'down' | null {
 		if (cur === null || prev === null || cur === prev) return null
 		const improved = lowerIsBetter ? cur < prev : cur > prev
@@ -81,7 +82,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each rows as row, i}
+				{#each rows as row, i (row.month)}
 					{@const prev = rows[i + 1]}
 					{@const cpaTrend = prev ? trend(row.cpa, prev.cpa, true) : null}
 					{@const convTrend = prev ? trend(row.conversions, prev.conversions) : null}
@@ -90,15 +91,13 @@
 						<td class="py-2 text-right text-slate-700 dark:text-slate-300">{brl(row.cost)}</td>
 						<td class="py-2 text-right text-slate-700 dark:text-slate-300">
 							{row.conversions}
-							{#if convTrend === 'up'}<span class="text-emerald-500">↑</span>{:else if convTrend === 'down'}<span
-									class="text-red-500">↓</span
-								>{/if}
+							{#if convTrend === 'up'}<span class="text-emerald-500">↑</span
+								>{:else if convTrend === 'down'}<span class="text-red-500">↓</span>{/if}
 						</td>
 						<td class="py-2 text-right text-slate-700 dark:text-slate-300">
 							{row.cpa !== null ? brl(row.cpa) : '—'}
-							{#if cpaTrend === 'up'}<span class="text-emerald-500">↑</span>{:else if cpaTrend === 'down'}<span
-									class="text-red-500">↓</span
-								>{/if}
+							{#if cpaTrend === 'up'}<span class="text-emerald-500">↑</span
+								>{:else if cpaTrend === 'down'}<span class="text-red-500">↓</span>{/if}
 						</td>
 						<td class="py-2 text-right text-slate-700 dark:text-slate-300">
 							{row.ctr !== null ? row.ctr.toFixed(2) + '%' : '—'}

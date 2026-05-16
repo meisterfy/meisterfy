@@ -30,7 +30,7 @@
 							top3.includes(i) ? '#10b981' : '#6366f1'
 						),
 						yAxisID: 'y',
-						order: 2,
+						order: 2
 					},
 					{
 						label: 'Cost (R$)',
@@ -41,30 +41,30 @@
 						pointRadius: 0,
 						borderWidth: 1.5,
 						yAxisID: 'y1',
-						order: 1,
-					},
-				],
+						order: 1
+					}
+				]
 			},
 			options: {
 				responsive: true,
 				maintainAspectRatio: false,
 				plugins: {
-					legend: { position: 'bottom' as const },
+					legend: { position: 'bottom' as const }
 				},
 				scales: {
 					y: {
 						type: 'linear' as const,
 						position: 'left' as const,
-						title: { display: true, text: 'Conversions' },
+						title: { display: true, text: 'Conversions' }
 					},
 					y1: {
 						type: 'linear' as const,
 						position: 'right' as const,
 						title: { display: true, text: 'Cost (R$)' },
-						grid: { drawOnChartArea: false },
-					},
-				},
-			},
+						grid: { drawOnChartArea: false }
+					}
+				}
+			}
 		}
 	})
 
@@ -82,10 +82,14 @@
 	})
 </script>
 
-<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+<div
+	class="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+>
 	<div>
-		<h3 class="text-lg font-bold text-slate-900 dark:text-white">Hourly Performance Distribution</h3>
-		<p class="text-xs text-slate-400 mt-0.5">Top hours highlighted in green</p>
+		<h3 class="text-lg font-bold text-slate-900 dark:text-white">
+			Hourly Performance Distribution
+		</h3>
+		<p class="mt-0.5 text-xs text-slate-400">Top hours highlighted in green</p>
 	</div>
 
 	{#if !hasConversions}

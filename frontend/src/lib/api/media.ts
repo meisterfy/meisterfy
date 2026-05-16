@@ -1,6 +1,10 @@
 import { apiFetch, getToken } from './client'
 
-export async function uploadMedia(tenant: string, postId: string, files: FileList): Promise<string[]> {
+export async function uploadMedia(
+	tenant: string,
+	postId: string,
+	files: FileList
+): Promise<string[]> {
 	const fd = new FormData()
 	for (let i = 0; i < files.length; i++) fd.append('file', files[i])
 	// FormData/multipart upload — cannot use apiFetch (would override Content-Type)

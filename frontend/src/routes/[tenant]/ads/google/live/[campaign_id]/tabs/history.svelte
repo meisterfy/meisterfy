@@ -27,14 +27,14 @@
 			totalCost,
 			totalConversions: totalConv,
 			daysActive: monthRows.filter((d) => d.impressions > 0).length,
-			avgCpa: totalConv > 0 ? totalCost / totalConv : 0,
+			avgCpa: totalConv > 0 ? totalCost / totalConv : 0
 		}
 	}
 </script>
 
 <div class="space-y-6 py-6">
 	{#await dbHistory}
-		<div class="space-y-4 animate-pulse">
+		<div class="animate-pulse space-y-4">
 			<div class="h-24 rounded-xl bg-slate-50 dark:bg-slate-800/50"></div>
 			<div class="h-64 rounded-xl bg-slate-100 dark:bg-slate-800"></div>
 		</div>

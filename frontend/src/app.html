@@ -32,7 +32,9 @@
 				animation: spin 0.7s linear infinite;
 			}
 			@keyframes spin {
-				to { transform: rotate(360deg); }
+				to {
+					transform: rotate(360deg);
+				}
 			}
 		</style>
 	</head>
@@ -44,14 +46,20 @@
 		<script>
 			const overlay = document.getElementById('app-loading')
 			const observer = new MutationObserver(() => {
-				const ready = document.querySelector('[data-sveltekit-hydrated]') || document.body.children.length > 1
+				const ready =
+					document.querySelector('[data-sveltekit-hydrated]') || document.body.children.length > 1
 				if (ready) {
 					overlay.classList.add('done')
 					setTimeout(() => overlay.remove(), 220)
 					observer.disconnect()
 				}
 			})
-			observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-sveltekit-hydrated'] })
+			observer.observe(document.body, {
+				childList: true,
+				subtree: true,
+				attributes: true,
+				attributeFilter: ['data-sveltekit-hydrated']
+			})
 		</script>
 	</body>
 </html>

@@ -10,8 +10,8 @@ export default defineConfig({
 		paraglideVitePlugin({
 			project: './project.inlang',
 			outdir: './src/lib/paraglide',
-			strategy: ['cookie', 'baseLocale'],
-		}),
+			strategy: ['cookie', 'baseLocale']
+		})
 	],
 	server: {
 		proxy: {
@@ -31,8 +31,8 @@ export default defineConfig({
 			thresholds: {
 				'src/lib/api/**': {
 					lines: 70,
-					functions: 70,
-				},
+					functions: 70
+				}
 			}
 		},
 		projects: [

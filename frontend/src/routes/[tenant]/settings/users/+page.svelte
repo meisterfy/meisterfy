@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from 'svelte'
 	import { Users, UserX, Eye, EyeOff } from 'lucide-svelte'
 	import { m } from '$lib/paraglide/messages'
 	import { auth } from '$lib/stores/auth.svelte'
@@ -45,7 +44,9 @@
 	let invitePassword = $state('')
 	let inviteShowPwd = $state(false)
 	let inviteRoleId = $state('')
-	$effect(() => { if (roles.length && !inviteRoleId) inviteRoleId = roles[0].id })
+	$effect(() => {
+		if (roles.length && !inviteRoleId) inviteRoleId = roles[0].id
+	})
 	let inviteLocale = $state('pt-BR')
 	let inviteLoading = $state(false)
 	let inviteError = $state<string | null>(null)
@@ -58,8 +59,12 @@
 
 	function avatarColor(id: string) {
 		const colors = [
-			'bg-indigo-500', 'bg-emerald-500', 'bg-violet-500',
-			'bg-rose-500', 'bg-amber-500', 'bg-cyan-500'
+			'bg-indigo-500',
+			'bg-emerald-500',
+			'bg-violet-500',
+			'bg-rose-500',
+			'bg-amber-500',
+			'bg-cyan-500'
 		]
 		let hash = 0
 		for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffff
@@ -67,13 +72,18 @@
 	}
 
 	function initials(name: string) {
-		return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+		return name
+			.split(' ')
+			.slice(0, 2)
+			.map((w) => w[0])
+			.join('')
+			.toUpperCase()
 	}
 
 	async function handleRoleChange(user: AdminUser, roleId: string) {
 		try {
 			await assignUserRole(user.id, roleId)
-			const matched = roles.find(r => r.id === roleId)
+			const matched = roles.find((r) => r.id === roleId)
 			user.role = matched ? { id: roleId, name: matched.name } : user.role
 			users = [...users]
 			showToast(m['settings:users_toast_role_updated']())
@@ -88,7 +98,7 @@
 		confirmDeactivateUser = null
 		try {
 			await deactivateTenantUser(target.id)
-			users = users.filter(u => u.id !== target.id)
+			users = users.filter((u) => u.id !== target.id)
 			showToast(m['settings:users_toast_deactivated']())
 		} catch {
 			showToast('Failed to deactivate user', true)
@@ -113,16 +123,16 @@
 			inviteEmail = ''
 			invitePassword = ''
 			showToast(m['settings:users_toast_invited']())
-		} catch (e: any) {
-			inviteError = e?.status === 409
-				? m['settings:users_error_email_taken']()
-				: 'Something went wrong'
+		} catch (e: unknown) {
+			const err = e as { status?: number }
+			inviteError =
+				err?.status === 409 ? m['settings:users_error_email_taken']() : 'Something went wrong'
 		} finally {
 			inviteLoading = false
 		}
 	}
 
-	let columns = $derived<ColumnDef<AdminUser, any>[]>([
+	let columns = $derived<ColumnDef<AdminUser, unknown>[]>([
 		{
 			accessorKey: 'name',
 			header: m['settings:users_col_name'](),
@@ -144,17 +154,25 @@
 			header: m['settings:users_col_status'](),
 			cell: ({ row }) => renderSnippet(statusCell, { user: row.original })
 		},
-		...(canManage ? [{
-			id: 'actions',
-			header: '',
-			cell: ({ row }) => renderSnippet(actionsCell, { user: row.original })
-		} as ColumnDef<AdminUser, any>] : [])
+		...(canManage
+			? [
+					{
+						id: 'actions',
+						header: '',
+						cell: ({ row }) => renderSnippet(actionsCell, { user: row.original })
+					} as ColumnDef<AdminUser, unknown>
+				]
+			: [])
 	])
 </script>
 
 {#snippet nameCell({ user }: { user: AdminUser })}
 	<div class="flex items-center gap-3">
-		<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white {avatarColor(user.id)}">
+		<div
+			class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white {avatarColor(
+				user.id
+			)}"
+		>
 			{initials(user.name)}
 		</div>
 		<span class="font-medium">{user.name}</span>
@@ -171,7 +189,7 @@
 			{#if !user.role}
 				<option value="">—</option>
 			{/if}
-			{#each roles as role}
+			{#each roles as role (role.id)}
 				<option value={role.id}>{role.name}</option>
 			{/each}
 		</select>
@@ -182,11 +200,15 @@
 
 {#snippet statusCell({ user }: { user: AdminUser })}
 	{#if user.is_active}
-		<span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+		<span
+			class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+		>
 			{m['settings:users_status_active']()}
 		</span>
 	{:else}
-		<span class="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
+		<span
+			class="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+		>
 			{m['settings:users_status_inactive']()}
 		</span>
 	{/if}
@@ -209,25 +231,28 @@
 {#if isLoading}
 	<SettingsSkeleton rows={6} />
 {:else}
-<div class="flex flex-col gap-6 p-6">
-	<SectionTitle title={`${m['settings:users_title']()} (${users.length})`}>
-		{#snippet icon()}
-			<Users class="text-muted-foreground h-5 w-5" />
-		{/snippet}
-		{#if canManage}
-			<Button onclick={() => (showInviteModal = true)} class="flex items-center gap-2 h-9 px-3 text-sm">
-				+ {m['settings:users_invite']()}
-			</Button>
-		{/if}
-	</SectionTitle>
+	<div class="flex flex-col gap-6 p-6">
+		<SectionTitle title={`${m['settings:users_title']()} (${users.length})`}>
+			{#snippet icon()}
+				<Users class="text-muted-foreground h-5 w-5" />
+			{/snippet}
+			{#if canManage}
+				<Button
+					onclick={() => (showInviteModal = true)}
+					class="flex h-9 items-center gap-2 px-3 text-sm"
+				>
+					+ {m['settings:users_invite']()}
+				</Button>
+			{/if}
+		</SectionTitle>
 
-	<DataTable 
-		data={users} 
-		{columns} 
-		searchColumn="name" 
-		searchPlaceholder={m['settings:users_search_placeholder']?.() ?? 'Search users...'}
-	/>
-</div>
+		<DataTable
+			data={users}
+			{columns}
+			searchColumn="name"
+			searchPlaceholder={m['settings:users_search_placeholder']?.() ?? 'Search users...'}
+		/>
+	</div>
 {/if}
 
 <!-- deactivate confirm dialog -->
@@ -238,9 +263,7 @@
 				{m['settings:users_deactivate_confirm']({ name: confirmDeactivateUser.name })}
 			</p>
 			<div class="flex justify-end gap-2">
-				<Button variant="outline" onclick={() => (confirmDeactivateUser = null)}>
-					Cancel
-				</Button>
+				<Button variant="outline" onclick={() => (confirmDeactivateUser = null)}>Cancel</Button>
 				<Button variant="red" onclick={handleDeactivate}>
 					{m['settings:users_deactivate_confirm_btn']()}
 				</Button>
@@ -285,7 +308,7 @@
 						/>
 						<button
 							type="button"
-							class="text-muted-foreground absolute right-3 top-2.5"
+							class="text-muted-foreground absolute top-2.5 right-3"
 							onclick={() => (inviteShowPwd = !inviteShowPwd)}
 						>
 							{#if inviteShowPwd}
@@ -307,7 +330,7 @@
 							class="border-border bg-background w-full rounded-md border px-3 py-2 text-sm focus:ring-indigo-500"
 							bind:value={inviteRoleId}
 						>
-							{#each roles as role}
+							{#each roles as role (role.id)}
 								<option value={role.id}>{role.name}</option>
 							{/each}
 						</select>
@@ -333,8 +356,12 @@
 				{/if}
 			</div>
 
-			<div class="mt-6 flex justify-end gap-2 border-t border-border pt-4">
-				<Button variant="outline" onclick={() => (showInviteModal = false)} disabled={inviteLoading}>
+			<div class="border-border mt-6 flex justify-end gap-2 border-t pt-4">
+				<Button
+					variant="outline"
+					onclick={() => (showInviteModal = false)}
+					disabled={inviteLoading}
+				>
 					Cancel
 				</Button>
 				<Button onclick={handleInvite} disabled={inviteLoading}>
@@ -348,7 +375,7 @@
 <!-- toast -->
 {#if toast}
 	<div
-		class="fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg {toastError
+		class="fixed right-6 bottom-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg {toastError
 			? 'bg-destructive text-destructive-foreground'
 			: 'bg-foreground text-background'}"
 	>

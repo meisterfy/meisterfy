@@ -34,7 +34,7 @@
 		{ value: 'professional', label: 'Professional' },
 		{ value: 'casual', label: 'Casual' },
 		{ value: 'inspirational', label: 'Inspirational' },
-		{ value: 'educational', label: 'Educational' },
+		{ value: 'educational', label: 'Educational' }
 	]
 
 	const PROVIDER_LABELS: Record<string, string> = {
@@ -42,7 +42,7 @@
 		openai: 'ChatGPT (OpenAI)',
 		gemini: 'Gemini (Google)',
 		groq: 'Groq',
-		kimi: 'Kimi (Moonshot)',
+		kimi: 'Kimi (Moonshot)'
 	}
 
 	$effect(() => {
@@ -104,7 +104,7 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 					provider: selectedProvider ?? undefined,
 					system: buildSystemPrompt(),
 					messages: [{ role: 'user', content: `Topic: ${topic.trim()}` }],
-					max_tokens: 4096,
+					max_tokens: 4096
 				},
 				(chunk) => {
 					if (!chunk.done) rawJson += chunk.content
@@ -127,7 +127,7 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 					title: d.title?.trim() || 'AI Draft',
 					content: d.content?.trim() || '',
 					platforms: platforms as string[],
-					status: 'draft',
+					status: 'draft'
 				})
 				created.push({ ...normalizePost(post), media_files: [] })
 			}
@@ -137,7 +137,8 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Generation failed'
 			if (error.includes('no connected llm') || error.includes('not connected')) {
-				error = 'No LLM connected. Go to Settings → Integrations and add a Claude, OpenAI, Gemini, Groq, or Kimi key, then assign it to this client.'
+				error =
+					'No LLM connected. Go to Settings → Integrations and add a Claude, OpenAI, Gemini, Groq, or Kimi key, then assign it to this client.'
 			}
 		} finally {
 			isGenerating = false
@@ -148,7 +149,9 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 
 <Drawer bind:open>
 	<div class="flex h-full flex-col">
-		<div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+		<div
+			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
+		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="h-5 w-5 text-indigo-500" />
 				<h2 class="text-lg font-bold text-slate-900 dark:text-white">Generate Drafts with AI</h2>
@@ -167,15 +170,19 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 				{#if isLoadingProviders}
 					<div class="h-9 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800"></div>
 				{:else if availableProviders.length === 0}
-					<div class="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+					<div
+						class="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+					>
 						<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
-						<p>No AI provider connected for this client. Go to <strong>Settings → Integrations</strong> and add a Claude, OpenAI, Gemini, Groq, or Kimi key.</p>
+						<p>
+							No AI provider connected for this client. Go to <strong
+								>Settings → Integrations</strong
+							> and add a Claude, OpenAI, Gemini, Groq, or Kimi key.
+						</p>
 					</div>
 				{:else if availableProviders.length > 1}
 					<div>
-						<label for="ai-provider" class={labelCls}>
-							AI Provider
-						</label>
+						<label for="ai-provider" class={labelCls}> AI Provider </label>
 						<div class="relative">
 							<select
 								id="ai-provider"
@@ -186,12 +193,16 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 									<option value={p.name}>{PROVIDER_LABELS[p.name] ?? p.name}</option>
 								{/each}
 							</select>
-							<ChevronDown class="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+							<ChevronDown
+								class="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2 text-slate-400"
+							/>
 						</div>
 					</div>
 				{:else}
 					<p class="text-xs text-slate-400">
-						Using <span class="font-medium text-slate-600 dark:text-slate-300">{PROVIDER_LABELS[availableProviders[0].name] ?? availableProviders[0].name}</span>
+						Using <span class="font-medium text-slate-600 dark:text-slate-300"
+							>{PROVIDER_LABELS[availableProviders[0].name] ?? availableProviders[0].name}</span
+						>
 					</p>
 				{/if}
 
@@ -233,15 +244,19 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 				</div>
 
 				{#if error}
-					<div class="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+					<div
+						class="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400"
+					>
 						<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
 						<p>{error}</p>
 					</div>
 				{/if}
 
 				{#if isGenerating && progress}
-					<div class="flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400">
-						<Loader2 class="h-4 w-4 animate-spin shrink-0" />
+					<div
+						class="flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2.5 text-sm text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400"
+					>
+						<Loader2 class="h-4 w-4 shrink-0 animate-spin" />
 						<p>{progress}</p>
 					</div>
 				{/if}

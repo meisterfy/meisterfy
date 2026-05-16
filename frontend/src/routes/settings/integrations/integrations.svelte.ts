@@ -18,7 +18,7 @@ export class IntegrationManager {
 		media: m['integrations:roles.media'](),
 		llm: m['integrations:roles.llm'](),
 		email: m['integrations:roles.email'](),
-		monitoring: m['integrations:roles.monitoring'](),
+		monitoring: m['integrations:roles.monitoring']()
 	}
 
 	integrations = $state<Integration[]>([])
@@ -45,9 +45,9 @@ export class IntegrationManager {
 	constructor() {}
 
 	async init(data: {
-        data: Promise<{ integrations: Integration[], providers: ProviderSchema[] }>;
-        tenants: Promise<Tenant[]>
-    }) {
+		data: Promise<{ integrations: Integration[]; providers: ProviderSchema[] }>
+		tenants: Promise<Tenant[]>
+	}) {
 		const [d, t] = await Promise.all([data.data, data.tenants])
 		if (d) {
 			this.integrations = [...(d.integrations ?? [])]
@@ -95,7 +95,7 @@ export class IntegrationManager {
 		this.resetModalState()
 		this.editingId = null
 		this.activeProvider = provider
-		for (const f of (provider.config_fields ?? [])) {
+		for (const f of provider.config_fields ?? []) {
 			if (f.type === 'select' && f.options?.length) {
 				this.form[f.key] = f.options[0].value
 			}
@@ -176,7 +176,9 @@ export class IntegrationManager {
 				toast.success('Connected successfully.')
 			} else {
 				this.integrations = this.integrations.map((i) =>
-					i.id === id ? { ...i, status: 'error', error_message: result.error ?? 'Connection failed' } : i
+					i.id === id
+						? { ...i, status: 'error', error_message: result.error ?? 'Connection failed' }
+						: i
 				)
 				toast.error(result.error ?? 'Connection failed.')
 			}
@@ -209,7 +211,10 @@ export class IntegrationManager {
 			tenant_ids: this.formTenants
 		}
 
-		const allFields = [...(this.activeProvider.config_fields ?? []), ...(this.activeProvider.credential_fields ?? [])]
+		const allFields = [
+			...(this.activeProvider.config_fields ?? []),
+			...(this.activeProvider.credential_fields ?? [])
+		]
 
 		for (const f of allFields) {
 			payload[f.key] = this.form[f.key]?.trim() || null

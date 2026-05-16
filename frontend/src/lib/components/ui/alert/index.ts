@@ -1,7 +1,7 @@
-import Root from './alert.svelte';
+import Root from './alert.svelte'
 
 export {
 	Root,
 	//
 	Root as Alert
-};
+}
