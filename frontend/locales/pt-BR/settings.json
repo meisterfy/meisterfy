@@ -95,6 +95,7 @@
 	"users_col_status": "Status",
 	"users_status_active": "Ativo",
 	"users_status_inactive": "Inativo",
+	"users_search_placeholder": "Buscar usuários...",
 	"users_empty": "Nenhum membro encontrado.",
 	"users_deactivate_confirm": "Desativar {name}? O acesso será revogado imediatamente.",
 	"users_deactivate_confirm_btn": "Desativar",

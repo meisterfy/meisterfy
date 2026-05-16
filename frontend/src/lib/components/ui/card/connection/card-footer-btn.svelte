@@ -2,7 +2,6 @@
 	import type { Component } from 'svelte'
 	import { Icon as LucideIcon } from 'lucide-svelte'
 	import type { IconProps } from 'lucide-svelte'
-	import { resolve } from '$app/paths'
 
 	let {
 		href,
@@ -44,7 +43,8 @@
 </script>
 
 {#if href}
-	<a href={resolve(href as string)} class={classes} {title}>
+	<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+	<a {href} class={classes} {title}>
 		{#if Icon}<Icon class={variant === 'badge' ? 'h-3 w-3' : 'h-4 w-4'} />{/if}
 		{#if label}<span>{label}</span>{/if}
 	</a>

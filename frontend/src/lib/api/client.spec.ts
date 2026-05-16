@@ -54,7 +54,7 @@ describe('apiFetch', () => {
 
 	it('throws with status and message on non-ok response', async () => {
 		stubFetch({ ok: false, status: 422, json: async () => ({ error: 'Validation failed' }) })
-		const err = await apiFetch('/test').catch((e) => e)
+		const err = (await apiFetch('/test').catch((e) => e)) as { message: string; status: number }
 		expect(err.message).toBe('Validation failed')
 		expect(err.status).toBe(422)
 	})
@@ -66,7 +66,7 @@ describe('apiFetch', () => {
 			statusText: 'Internal Server Error',
 			json: async () => ({})
 		})
-		const err = await apiFetch('/test').catch((e) => e)
+		const err = (await apiFetch('/test').catch((e) => e)) as { message: string }
 		expect(err.message).toBe('Request failed')
 	})
 
@@ -92,7 +92,7 @@ describe('apiFetch', () => {
 			.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
 			.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
 		vi.stubGlobal('fetch', mock)
-		const err = await apiFetch('/test').catch((e) => e)
+		const err = (await apiFetch('/test').catch((e) => e)) as { message: string; status: number }
 		expect(err.message).toBe('Unauthorized')
 		expect(err.status).toBe(401)
 	})
@@ -107,7 +107,7 @@ describe('apiFetchData', () => {
 
 	it('throws on non-ok response', async () => {
 		stubFetch({ ok: false, status: 404, json: async () => ({ error: 'Not found' }) })
-		const err = await apiFetchData('/test').catch((e) => e)
+		const err = (await apiFetchData('/test').catch((e) => e)) as { message: string }
 		expect(err.message).toBe('Not found')
 	})
 })

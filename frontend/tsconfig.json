@@ -12,5 +12,6 @@
 		"strict": true,
 		"moduleResolution": "bundler",
 		"types": ["bun-types"]
-	}
+	},
+	"exclude": ["src/paraglide/**"]
 }

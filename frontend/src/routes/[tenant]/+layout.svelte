@@ -18,13 +18,13 @@
 
 	const navMain = $derived([
 		{
-			href: `/${page.params.tenant}/social`,
+			href: `/${page.params.tenant}/social` as `/${string}/social`,
 			label: 'Social',
 			icon: Share2,
 			active: currentPath.includes('/social')
 		},
 		{
-			href: `/${page.params.tenant}/ads/google`,
+			href: `/${page.params.tenant}/ads/google` as `/${string}/ads/google`,
 			label: 'Google Ads',
 			icon: Target,
 			active: currentPath.includes('/ads/google')
@@ -34,7 +34,7 @@
 	const clientMenuItems = $derived<MenuItem[]>([
 		{ type: 'header', label: 'Switch Client' },
 		{ type: 'separator' },
-		...data.clients.map((t) => ({
+		...data.clients.map((t: { id: string; brand: { name: string } }) => ({
 			label: t.brand.name,
 			href: `/${t.id}/social`,
 			icon: BrandIcon,
@@ -114,7 +114,7 @@
 						</a>
 					{/each}
 					<a
-						href={resolve(`/${page.params.tenant}/settings`)}
+						href={resolve(`/${page.params.tenant}/settings` as `/${string}/settings`)}
 						onclick={() => (isMobileMenuOpen = false)}
 						class="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium {currentPath.includes(
 							'/settings'

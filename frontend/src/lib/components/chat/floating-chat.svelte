@@ -6,7 +6,7 @@
 		chat,
 		systemPrompt,
 		tenantId,
-		campaignId
+		campaignId: _campaignId
 	}: {
 		chat: CampaignChatStore
 		systemPrompt: string
@@ -28,7 +28,7 @@
 		const text = input.trim()
 		if (!text || chat.busy) return
 		input = ''
-		chat.send({ tenant_id: tenantId, campaign_id: campaignId, system: systemPrompt }, text)
+		chat.send({ tenant_id: tenantId, system: systemPrompt }, text)
 	}
 
 	function onKeydown(e: KeyboardEvent) {

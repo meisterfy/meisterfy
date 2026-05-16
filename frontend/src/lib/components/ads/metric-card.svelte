@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { TrendingUp, TrendingDown } from 'lucide-svelte'
-	import type { Component } from 'svelte'
+	import { TrendingUp, TrendingDown, Icon as LucideIcon } from 'lucide-svelte'
 
 	interface Delta {
 		pct: string
@@ -15,7 +14,7 @@
 		subtitle,
 		delta
 	} = $props<{
-		icon: Component<{ class?: string }>
+		icon: typeof LucideIcon
 		theme?: 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose' | 'slate'
 		label: string
 		value: string | number

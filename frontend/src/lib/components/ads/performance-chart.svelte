@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Chart, registerables, type ChartConfiguration } from 'chart.js'
-	import type { Component } from 'svelte'
+	import { Icon as LucideIcon } from 'lucide-svelte'
 
 	Chart.register(...registerables)
 
@@ -15,7 +15,7 @@
 		title?: string
 		source?: string
 		note?: string
-		icon?: Component<{ class?: string }>
+		icon?: typeof LucideIcon
 	}>()
 
 	let canvas = $state<HTMLCanvasElement | undefined>()

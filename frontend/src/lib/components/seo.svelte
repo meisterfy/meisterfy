@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_APP_NAME } from '$env/static/public'
+	import { env } from '$env/dynamic/public'
 
 	let {
 		title,
@@ -9,7 +9,8 @@
 		description?: string
 	} = $props()
 
-	let fullTitle = $derived(title ? `${title} - ${PUBLIC_APP_NAME}` : PUBLIC_APP_NAME)
+	const appName = env.PUBLIC_APP_NAME ?? 'Maestro'
+	let fullTitle = $derived(title ? `${title} - ${appName}` : appName)
 </script>
 
 <svelte:head>
