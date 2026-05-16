@@ -76,7 +76,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			var p struct {
 				ID string `json:"id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			t, err := repos.Tenants.GetByID(ctx, p.ID)
 			if err != nil {
 				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, p.ID))
@@ -112,7 +114,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Instructions *string  `json:"instructions"`
 				Hashtags     []string `json:"hashtags"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Language == "" {
 				p.Language = "pt_BR"
 			}
@@ -160,7 +164,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Instructions *string  `json:"instructions"`
 				Hashtags     []string `json:"hashtags"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			t, err := repos.Tenants.GetByID(ctx, p.ID)
 			if err != nil {
 				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, p.ID))
@@ -208,7 +214,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				TenantID string  `json:"tenant_id"`
 				Status   *string `json:"status"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			var posts []*domain.Post
 			var err error
 			if p.Status != nil && *p.Status != "" {
@@ -236,7 +244,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			var p struct {
 				ID string `json:"id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			post, err := repos.Posts.GetByID(ctx, p.ID)
 			if err != nil {
 				return mcp.ErrResult(fmt.Sprintf(`Post "%s" not found`, p.ID))
@@ -266,7 +276,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				Hashtags  []string `json:"hashtags"`
 				MediaType *string  `json:"media_type"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			var id string
 			if p.Title != nil && *p.Title != "" {
 				id = time.Now().Format("2006-01-02") + "_" + slugify(*p.Title)
@@ -306,7 +318,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				TenantID string `json:"tenant_id"`
 				Status   string `json:"status"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			var publishedAt *time.Time
 			if p.Status == "published" {
 				now := time.Now()
@@ -334,7 +348,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				ID       string `json:"id"`
 				TenantID string `json:"tenant_id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if err := repos.Posts.Delete(ctx, p.ID, p.TenantID); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -355,7 +371,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			var p struct {
 				TenantID string `json:"tenant_id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			campaigns, err := repos.Campaigns.List(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
@@ -388,7 +406,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				TenantID string `json:"tenant_id"`
 				Slug     string `json:"slug"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			campaign, err := repos.Campaigns.GetBySlug(ctx, p.TenantID, p.Slug)
 			if err != nil {
 				return mcp.ErrResult(fmt.Sprintf(`Campaign "%s" not found`, p.Slug))
