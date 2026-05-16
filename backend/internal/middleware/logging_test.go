@@ -12,7 +12,7 @@ import (
 
 func TestRequestLogger_PassesThrough(t *testing.T) {
 	t.Parallel()
-	h := RequestLogger(okHandler())
+	h := RequestLogger(slog.Default())(okHandler())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/health", nil))
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -21,13 +21,12 @@ func TestRequestLogger_PassesThrough(t *testing.T) {
 func TestRequestLogger_StatusCaptured(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
-	t.Cleanup(func() { slog.SetDefault(slog.Default()) })
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
 
 	errHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	})
-	h := RequestLogger(errHandler)
+	h := RequestLogger(logger)(errHandler)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/boom", nil))
 
@@ -38,10 +37,9 @@ func TestRequestLogger_StatusCaptured(t *testing.T) {
 func TestRequestLogger_LogsMethod(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
-	t.Cleanup(func() { slog.SetDefault(slog.Default()) })
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
 
-	h := RequestLogger(okHandler())
+	h := RequestLogger(logger)(okHandler())
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/api/posts", nil))
 
