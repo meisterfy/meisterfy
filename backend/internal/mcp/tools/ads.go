@@ -263,7 +263,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				Keywords            []string `json:"keywords"`
 				MatchType           string   `json:"match_type"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.MatchType == "" {
 				p.MatchType = "broad"
 			}
@@ -316,7 +318,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 					URL         string `json:"url"`
 				} `json:"sitelinks"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			client, _, err := factory(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
@@ -350,7 +354,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				CampaignID string `json:"campaign_id"`
 				Status     string `json:"status"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			client, _, err := factory(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
