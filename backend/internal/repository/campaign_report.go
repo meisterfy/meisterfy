@@ -101,7 +101,7 @@ func (r *CampaignReportRepository) List(ctx context.Context, tenantID, campaignI
 		TenantID:   tenantID,
 		CampaignID: campaignID,
 		ReportType: reportType,
-		Limit:      int32(limit),
+		Limit:      int32(limit), //nolint:gosec // limit is bounded by application logic
 	})
 	if err != nil {
 		return nil, mapError(err)
