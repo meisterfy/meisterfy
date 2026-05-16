@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { auth } from '$lib/stores/auth.svelte'
 	import { setToken } from '$lib/api/client'
 	import { Input } from '$lib/components/ui/input'
@@ -36,7 +37,8 @@
 			if (data.access_token) {
 				auth.setToken(data.access_token)
 				setToken(data.access_token)
-				if (data.user) auth.setUser({
+				if (data.user)
+					auth.setUser({
 						...data.user,
 						tenant_id: data.tenant_id ?? data.user.tenant_id ?? '',
 						permissions: data.permissions ?? data.user.permissions ?? []
@@ -52,7 +54,7 @@
 	}
 
 	function skip() {
-		goto(needsTenant ? '/tenants/new' : '/')
+		goto(resolve(needsTenant ? '/tenants/new' : '/'))
 	}
 </script>
 
@@ -95,15 +97,19 @@
 				<div
 					class="flex items-center gap-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
 				>
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
+					<div
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20"
+					>
 						<BarChart3 class="h-5 w-5 text-blue-600 dark:text-blue-400" />
 					</div>
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-slate-900 dark:text-white">Google Ads</p>
-						<p class="text-xs text-slate-500 dark:text-slate-400">Connect your ad account to track campaigns</p>
+						<p class="text-xs text-slate-500 dark:text-slate-400">
+							Connect your ad account to track campaigns
+						</p>
 					</div>
 					<a
-						href="/auth/google-ads/start"
+						href={resolve('/auth/google-ads/start')}
 						class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
 					>
 						Connect
@@ -113,15 +119,19 @@
 				<div
 					class="flex items-center gap-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
 				>
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-900/20">
+					<div
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-900/20"
+					>
 						<Sparkles class="h-5 w-5 text-violet-600 dark:text-violet-400" />
 					</div>
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-slate-900 dark:text-white">AI Provider</p>
-						<p class="text-xs text-slate-500 dark:text-slate-400">Add an API key to enable content generation</p>
+						<p class="text-xs text-slate-500 dark:text-slate-400">
+							Add an API key to enable content generation
+						</p>
 					</div>
 					<button
-						onclick={() => goto('/settings/integrations')}
+						onclick={() => goto(resolve('/settings/integrations'))}
 						class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
 					>
 						Configure
@@ -129,7 +139,10 @@
 				</div>
 			</div>
 
-			<Button onclick={skip} class="mt-6 w-full bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-600">
+			<Button
+				onclick={skip}
+				class="mt-6 w-full border border-slate-300 bg-transparent text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-800"
+			>
 				Skip for now
 			</Button>
 		{/if}

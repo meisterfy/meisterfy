@@ -28,13 +28,8 @@
 <div class="flex min-h-0 flex-1 flex-col">
 	<SubToolbar>
 		<div class="flex items-center gap-1">
-			{#each navItems as item}
-				<SubToolbarLink
-					href={item.href}
-					label={item.label}
-					icon={item.icon}
-					active={item.active}
-				/>
+			{#each navItems as item (item.label)}
+				<SubToolbarLink href={item.href} label={item.label} icon={item.icon} active={item.active} />
 			{/each}
 		</div>
 	</SubToolbar>

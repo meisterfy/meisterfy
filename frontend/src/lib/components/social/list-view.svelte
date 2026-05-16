@@ -1,6 +1,6 @@
-<!-- eslint-disable svelte/no-navigation-without-resolve -->
 <script lang="ts">
-	import { FileEdit, CheckCircle, Trash2, Send, Image as ImageIcon } from 'lucide-svelte'
+	import { FileEdit, CheckCircle, Trash2, Image as ImageIcon } from 'lucide-svelte'
+	import { resolve } from '$app/paths'
 
 	import type { Post, PostStatus } from '$lib/api/posts'
 	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
@@ -35,8 +35,9 @@
 					<tr class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
 						<td class="px-6 py-4 font-mono text-slate-500">{post.id.split('_')[0]}</td>
 						<td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-							<a href="/{clientId}/social/{post.filename}" class="hover:text-indigo-600"
-								>{post.title}</a
+							<a
+								href={resolve(`/${clientId}/social/${post.filename}`)}
+								class="hover:text-indigo-600">{post.title}</a
 							>
 						</td>
 						<td class="px-6 py-4">
@@ -84,7 +85,7 @@
 								{/if}
 
 								<a
-									href="/{clientId}/social/{post.filename}"
+									href={resolve(`/${clientId}/social/${post.filename}`)}
 									title="Edit Post"
 									class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
 								>

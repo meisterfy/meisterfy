@@ -27,6 +27,9 @@
 	<Label for={id} class="mb-1 block text-xs font-medium text-slate-500">{label}</Label>
 	<div class="relative">
 		<Input {id} type="number" {min} {max} {step} bind:value class="pr-8" />
-		<span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{suffix}</span>
+		<span
+			class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400"
+			>{suffix}</span
+		>
 	</div>
 </div>

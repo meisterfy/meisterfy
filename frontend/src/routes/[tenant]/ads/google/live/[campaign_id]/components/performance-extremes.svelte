@@ -53,7 +53,7 @@
 				<p class="mb-3 text-xs font-semibold tracking-wide text-emerald-600 uppercase">
 					{m['ads:analytics.best_days']()}
 				</p>
-				{#each extremes.best as d}
+				{#each extremes.best as d (d.date)}
 					<div
 						class="flex justify-between border-b border-slate-50 py-1.5 text-sm dark:border-slate-800"
 					>
@@ -67,7 +67,7 @@
 				<p class="mb-3 text-xs font-semibold tracking-wide text-red-500 uppercase">
 					{m['ads:analytics.worst_days']()}
 				</p>
-				{#each extremes.worst as d}
+				{#each extremes.worst as d (d.date)}
 					<div
 						class="flex justify-between border-b border-slate-50 py-1.5 text-sm dark:border-slate-800"
 					>

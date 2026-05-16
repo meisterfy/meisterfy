@@ -15,7 +15,12 @@
 </script>
 
 {#if logoSvg}
-	<div {style} class="object-contain [&>svg]:h-full [&>svg]:w-full [&>svg]:object-contain {className}">
+	<div
+		{style}
+		class="object-contain [&>svg]:h-full [&>svg]:w-full [&>svg]:object-contain {className}"
+	>
+		<!-- SVG from trusted source (admin-configured integration logos stored in DB, never user-provided) -->
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		{@html logoSvg}
 	</div>
 {:else if logoPng}
@@ -26,4 +31,3 @@
 		class="object-contain {className}"
 	/>
 {/if}
-

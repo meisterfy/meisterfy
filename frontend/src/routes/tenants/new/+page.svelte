@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { auth } from '$lib/stores/auth.svelte'
 	import { apiFetch } from '$lib/api/client'
 
@@ -32,7 +33,7 @@
 			})
 			// Refresh token: now the user has role_owner on the new tenant.
 			await auth.restoreSession()
-			goto('/')
+			goto(resolve('/'))
 		} catch (err) {
 			error = (err as { message?: string })?.message ?? 'Failed to create client'
 		} finally {

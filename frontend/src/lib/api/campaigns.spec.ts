@@ -325,7 +325,10 @@ describe('isSmartManaged', () => {
 	})
 
 	it('returns false when impressions are non-zero', () => {
-		const active: AdGroup = { ...smartGroup, metrics: { impressions: 100, clicks: 5, cost: '10', conversions: 1 } }
+		const active: AdGroup = {
+			...smartGroup,
+			metrics: { impressions: 100, clicks: 5, cost: '10', conversions: 1 }
+		}
 		expect(isSmartManaged([active])).toBe(false)
 	})
 })

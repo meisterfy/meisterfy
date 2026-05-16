@@ -1,7 +1,9 @@
 import { apiFetch, apiFetchData } from './client'
 import type { AuthUser } from '$lib/stores/auth.svelte'
 
-export const updateMe = (body: Pick<AuthUser, 'name' | 'email' | 'locale'> & { timezone?: string }) =>
+export const updateMe = (
+	body: Pick<AuthUser, 'name' | 'email' | 'locale'> & { timezone?: string }
+) =>
 	apiFetchData<AuthUser>('/auth/me', {
 		method: 'PUT',
 		body: JSON.stringify(body)

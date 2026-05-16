@@ -7,7 +7,7 @@
 		title,
 		description,
 		aside,
-        header,
+		header,
 		footer,
 		children,
 		class: className = '',
@@ -24,24 +24,24 @@
 </script>
 
 <div class="flex flex-col gap-6 lg:flex-row lg:gap-8 {className}" {...restProps}>
-	<div class="lg:w-1/3 shrink-0 flex flex-col">
+	<div class="flex shrink-0 flex-col lg:w-1/3">
 		{#if aside}
 			{@render aside()}
 		{:else}
 			{#if title}
-				<h2 class="text-base font-semibold text-text">
-                    {title}
-                </h2>
+				<h2 class="text-text text-base font-semibold">
+					{title}
+				</h2>
 			{/if}
 			{#if description}
-				<p class="mt-1 text-sm text-text/70">
-                    {description}
-                </p>
+				<p class="text-text/70 mt-1 text-sm">
+					{description}
+				</p>
 			{/if}
 		{/if}
 	</div>
 
-	<div class="flex-1 min-w-0">
+	<div class="min-w-0 flex-1">
 		<Card {header} {footer}>
 			{@render children()}
 		</Card>

@@ -1,11 +1,11 @@
 {
-  "save": "Salvar",
-  "cancel": "Cancelar",
-  "loading": "Carregando...",
-  "error_generic": "Algo deu errado. Tente novamente.",
-  "confirm_delete": "Tem certeza que deseja excluir?",
-  "back_to_app": "Voltar ao painel",
-  "no_options": "Nenhuma opção encontrada",
-  "previous": "Anterior",
-  "next": "Próximo"
+	"save": "Salvar",
+	"cancel": "Cancelar",
+	"loading": "Carregando...",
+	"error_generic": "Algo deu errado. Tente novamente.",
+	"confirm_delete": "Tem certeza que deseja excluir?",
+	"back_to_app": "Voltar ao painel",
+	"no_options": "Nenhuma opção encontrada",
+	"previous": "Anterior",
+	"next": "Próximo"
 }

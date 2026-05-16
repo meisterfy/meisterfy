@@ -26,7 +26,6 @@
 	--background-color-light: var(--color-slate-900);
 }
 
-
 /* Fix calendar/clock picker icons in dark mode */
 .dark input[type='date']::-webkit-calendar-picker-indicator,
 .dark input[type='time']::-webkit-calendar-picker-indicator {

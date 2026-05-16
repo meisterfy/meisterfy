@@ -1,8 +1,23 @@
 <script lang="ts">
 	import { untrack } from 'svelte'
-	import { FileEdit, Check, ImagePlus, Plus, Pencil, CalendarPlus, Send, Trash2, Sparkles } from 'lucide-svelte'
+	import {
+		FileEdit,
+		Check,
+		ImagePlus,
+		Plus,
+		Pencil,
+		CalendarPlus,
+		Send,
+		Trash2,
+		Sparkles
+	} from 'lucide-svelte'
 	import type { PageData } from './$types'
-	import { PLATFORM_CONFIG as PLATFORM, normPlatforms, type PostShape, type PostPlatform } from '$lib/social'
+	import {
+		PLATFORM_CONFIG as PLATFORM,
+		normPlatforms,
+		type PostShape,
+		type PostPlatform
+	} from '$lib/social'
 	import { updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import StatusBadge from '$lib/components/ui/status-badge/status-badge.svelte'
@@ -243,28 +258,39 @@
 <AiDraftGenerator
 	bind:open={showAiGenerator}
 	tenant={data.tenant}
-	onCreated={(created) => { drafts = [...created, ...drafts] }}
+	onCreated={(created) => {
+		drafts = [...created, ...drafts]
+	}}
 />
 
 <CreateDraftDrawer
 	bind:open={showCreate}
 	tenant={data.tenant}
-	onCreated={(draft) => { drafts = [draft, ...drafts] }}
+	onCreated={(draft) => {
+		drafts = [draft, ...drafts]
+	}}
 />
 
 <EditDraftDrawer
 	bind:open={showEdit}
 	draft={selectedForEdit}
 	tenant={data.tenant}
-	onSaved={(updated) => { drafts = drafts.map((d) => d.id === updated.id ? updated : d) }}
-	onDeleted={(id) => { drafts = drafts.filter((d) => d.id !== id); if (selectedForEdit?.id === id) showEdit = false }}
+	onSaved={(updated) => {
+		drafts = drafts.map((d) => (d.id === updated.id ? updated : d))
+	}}
+	onDeleted={(id) => {
+		drafts = drafts.filter((d) => d.id !== id)
+		if (selectedForEdit?.id === id) showEdit = false
+	}}
 />
 
 <ScheduleDrawer
 	bind:open={showSchedule}
 	draft={selectedForSchedule}
 	tenant={data.tenant}
-	onScheduled={(id) => { drafts = drafts.filter((d) => d.id !== id) }}
+	onScheduled={(id) => {
+		drafts = drafts.filter((d) => d.id !== id)
+	}}
 />
 
 <PublishDrawer
@@ -272,7 +298,9 @@
 	draft={selectedForPublish}
 	tenant={data.tenant}
 	{metaAccounts}
-	onPublished={(id) => { drafts = drafts.filter((d) => d.id !== id) }}
+	onPublished={(id) => {
+		drafts = drafts.filter((d) => d.id !== id)
+	}}
 />
 
 <!-- Platform badge snippet used in the list -->

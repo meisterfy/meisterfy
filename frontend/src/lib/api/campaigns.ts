@@ -25,7 +25,10 @@ export const getCampaigns = (tenantId: string, fetchFn?: typeof fetch) =>
 export const getCampaign = (tenantId: string, slug: string) =>
 	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns/${slug}`)
 
-export const createCampaign = (tenantId: string, body: { slug: string; data: Record<string, string | number | boolean | null | object> }) =>
+export const createCampaign = (
+	tenantId: string,
+	body: { slug: string; data: Record<string, string | number | boolean | null | object> }
+) =>
 	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns`, {
 		method: 'POST',
 		body: JSON.stringify(body)
@@ -34,7 +37,11 @@ export const createCampaign = (tenantId: string, body: { slug: string; data: Rec
 export const deleteCampaign = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/campaigns/${id}`, { method: 'DELETE' })
 
-export const updateCampaign = (tenantId: string, slug: string, data: Record<string, string | number | boolean | null | object>) =>
+export const updateCampaign = (
+	tenantId: string,
+	slug: string,
+	data: Record<string, string | number | boolean | null | object>
+) =>
 	apiFetchData<Campaign>(`/admin/tenants/${tenantId}/campaigns/${slug}`, {
 		method: 'PUT',
 		body: JSON.stringify({ data })
@@ -129,7 +136,12 @@ export const syncHistory = (tenantId: string) =>
 		{ method: 'POST' }
 	)
 
-export const getDbMetrics = (tenantId: string, days: number, campaignId: string, fetchFn?: typeof fetch) =>
+export const getDbMetrics = (
+	tenantId: string,
+	days: number,
+	campaignId: string,
+	fetchFn?: typeof fetch
+) =>
 	apiFetchData<DbHistoryDay[]>(
 		`/admin/tenants/${tenantId}/metrics?days=${days}&campaign_id=${campaignId}`,
 		{},
@@ -137,78 +149,78 @@ export const getDbMetrics = (tenantId: string, days: number, campaignId: string,
 	)
 
 export interface DeviceRow {
-  device: string
-  cost: number
-  conversions: number
-  clicks: number
-  impressions: number
-  cpa: number
-  ctr: number
+	device: string
+	cost: number
+	conversions: number
+	clicks: number
+	impressions: number
+	cpa: number
+	ctr: number
 }
 
 export interface HourlyRow {
-  hour: number
-  cost: number
-  conversions: number
-  clicks: number
-  impressions: number
+	hour: number
+	cost: number
+	conversions: number
+	clicks: number
+	impressions: number
 }
 
 export interface ImpressionShareStats {
-  wonShare: number
-  lostBudget: number
-  lostRank: number
+	wonShare: number
+	lostBudget: number
+	lostRank: number
 }
 
 export const getDeviceBreakdown = (
-  tenantId: string,
-  campaignId: string,
-  params: { startDate?: string; endDate?: string },
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	params: { startDate?: string; endDate?: string },
+	fetchFn?: typeof fetch
 ) => {
-  const qs = new URLSearchParams()
-  if (params.startDate) qs.set('startDate', params.startDate)
-  if (params.endDate) qs.set('endDate', params.endDate)
-  const query = qs.toString() ? `?${qs.toString()}` : ''
-  return apiFetchData<DeviceRow[]>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/devices${query}`,
-    {},
-    fetchFn
-  )
+	const qs = new URLSearchParams()
+	if (params.startDate) qs.set('startDate', params.startDate)
+	if (params.endDate) qs.set('endDate', params.endDate)
+	const query = qs.toString() ? `?${qs.toString()}` : ''
+	return apiFetchData<DeviceRow[]>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/devices${query}`,
+		{},
+		fetchFn
+	)
 }
 
 export const getHourlyBreakdown = (
-  tenantId: string,
-  campaignId: string,
-  params: { startDate?: string; endDate?: string },
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	params: { startDate?: string; endDate?: string },
+	fetchFn?: typeof fetch
 ) => {
-  const qs = new URLSearchParams()
-  if (params.startDate) qs.set('startDate', params.startDate)
-  if (params.endDate) qs.set('endDate', params.endDate)
-  const query = qs.toString() ? `?${qs.toString()}` : ''
-  return apiFetchData<HourlyRow[]>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/hourly${query}`,
-    {},
-    fetchFn
-  )
+	const qs = new URLSearchParams()
+	if (params.startDate) qs.set('startDate', params.startDate)
+	if (params.endDate) qs.set('endDate', params.endDate)
+	const query = qs.toString() ? `?${qs.toString()}` : ''
+	return apiFetchData<HourlyRow[]>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/hourly${query}`,
+		{},
+		fetchFn
+	)
 }
 
 export const getImpressionShare = (
-  tenantId: string,
-  campaignId: string,
-  params: { startDate?: string; endDate?: string },
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	params: { startDate?: string; endDate?: string },
+	fetchFn?: typeof fetch
 ) => {
-  const qs = new URLSearchParams()
-  if (params.startDate) qs.set('startDate', params.startDate)
-  if (params.endDate) qs.set('endDate', params.endDate)
-  const query = qs.toString() ? `?${qs.toString()}` : ''
-  return apiFetchData<ImpressionShareStats | null>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/impression-share${query}`,
-    {},
-    fetchFn
-  )
+	const qs = new URLSearchParams()
+	if (params.startDate) qs.set('startDate', params.startDate)
+	if (params.endDate) qs.set('endDate', params.endDate)
+	const query = qs.toString() ? `?${qs.toString()}` : ''
+	return apiFetchData<ImpressionShareStats | null>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/impression-share${query}`,
+		{},
+		fetchFn
+	)
 }
 
 export const isSmartManaged = (adGroups: AdGroup[]) =>
@@ -217,79 +229,79 @@ export const isSmartManaged = (adGroups: AdGroup[]) =>
 	adGroups[0].metrics.impressions === 0
 
 export interface SearchTermRow {
-  term: string
-  status: string
-  clicks: number
-  impressions: number
-  cost: number
-  conversions: number
-  cpa: number
-  ctr: number
+	term: string
+	status: string
+	clicks: number
+	impressions: number
+	cost: number
+	conversions: number
+	cpa: number
+	ctr: number
 }
 
 export interface KeywordQSRow {
-  keywordText: string
-  matchType: string
-  adGroupName: string
-  qualityScore: number
-  creativeQS: string
-  postClickQS: string
-  predictedCTR: string
+	keywordText: string
+	matchType: string
+	adGroupName: string
+	qualityScore: number
+	creativeQS: string
+	postClickQS: string
+	predictedCTR: string
 }
 
 export interface KeywordPerfRow {
-  keywordText: string
-  matchType: string
-  adGroupName: string
-  clicks: number
-  impressions: number
-  cost: number
-  conversions: number
-  cpa: number
-  ctr: number
+	keywordText: string
+	matchType: string
+	adGroupName: string
+	clicks: number
+	impressions: number
+	cost: number
+	conversions: number
+	cpa: number
+	ctr: number
 }
 
 export const getSearchTerms = (
-  tenantId: string,
-  campaignId: string,
-  params: { startDate?: string; endDate?: string },
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	params: { startDate?: string; endDate?: string },
+	fetchFn?: typeof fetch
 ) => {
-  const qs = new URLSearchParams()
-  if (params.startDate) qs.set('startDate', params.startDate)
-  if (params.endDate) qs.set('endDate', params.endDate)
-  const query = qs.toString() ? `?${qs.toString()}` : ''
-  return apiFetchData<SearchTermRow[]>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/search-terms${query}`,
-    {},
-    fetchFn
-  )
+	const qs = new URLSearchParams()
+	if (params.startDate) qs.set('startDate', params.startDate)
+	if (params.endDate) qs.set('endDate', params.endDate)
+	const query = qs.toString() ? `?${qs.toString()}` : ''
+	return apiFetchData<SearchTermRow[]>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/search-terms${query}`,
+		{},
+		fetchFn
+	)
 }
 
 export const getKeywordQualityScores = (
-  tenantId: string,
-  campaignId: string,
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	fetchFn?: typeof fetch
 ) =>
-  apiFetchData<KeywordQSRow[]>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/quality-scores`,
-    {},
-    fetchFn
-  )
+	apiFetchData<KeywordQSRow[]>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/quality-scores`,
+		{},
+		fetchFn
+	)
 
 export const getKeywordPerformance = (
-  tenantId: string,
-  campaignId: string,
-  params: { startDate?: string; endDate?: string },
-  fetchFn?: typeof fetch
+	tenantId: string,
+	campaignId: string,
+	params: { startDate?: string; endDate?: string },
+	fetchFn?: typeof fetch
 ) => {
-  const qs = new URLSearchParams()
-  if (params.startDate) qs.set('startDate', params.startDate)
-  if (params.endDate) qs.set('endDate', params.endDate)
-  const query = qs.toString() ? `?${qs.toString()}` : ''
-  return apiFetchData<KeywordPerfRow[]>(
-    `/admin/tenants/${tenantId}/campaigns/live/${campaignId}/keywords${query}`,
-    {},
-    fetchFn
-  )
+	const qs = new URLSearchParams()
+	if (params.startDate) qs.set('startDate', params.startDate)
+	if (params.endDate) qs.set('endDate', params.endDate)
+	const query = qs.toString() ? `?${qs.toString()}` : ''
+	return apiFetchData<KeywordPerfRow[]>(
+		`/admin/tenants/${tenantId}/campaigns/live/${campaignId}/keywords${query}`,
+		{},
+		fetchFn
+	)
 }

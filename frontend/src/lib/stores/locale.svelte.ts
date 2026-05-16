@@ -33,7 +33,7 @@ export const localeStore = {
 		setLocale(locale)
 		await apiFetch('/auth/me', {
 			method: 'PUT',
-			body: JSON.stringify({ locale }),
+			body: JSON.stringify({ locale })
 		})
-	},
+	}
 }

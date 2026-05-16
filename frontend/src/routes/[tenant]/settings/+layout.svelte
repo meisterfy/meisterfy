@@ -54,7 +54,7 @@
 <div class="flex min-h-0 flex-1 flex-col">
 	<SubToolbar>
 		<div class="flex items-center gap-1">
-			{#each navItems as item}
+			{#each navItems as item (item.label)}
 				{#if item.show}
 					<SubToolbarLink
 						href={item.href}

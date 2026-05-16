@@ -21,7 +21,9 @@
 		options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
 	)
 
-	const selectedLabels = $derived((value ?? []).map((v) => options.find((o) => o.value === v)?.label ?? v))
+	const selectedLabels = $derived(
+		(value ?? []).map((v) => options.find((o) => o.value === v)?.label ?? v)
+	)
 
 	function toggle(val: string) {
 		const next = (value ?? []).includes(val)
@@ -40,7 +42,7 @@
 			{#if (value ?? []).length === 0}
 				<span class="text-slate-400">{placeholder}</span>
 			{:else}
-				{#each selectedLabels as label}
+				{#each selectedLabels as label (label)}
 					<span
 						class="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
 					>
@@ -66,16 +68,16 @@
 			/>
 		</div>
 		<div class="mt-1 max-h-48 overflow-y-auto">
-			{#each filtered as option}
+			{#each filtered as option (option.value)}
 				<button
 					type="button"
 					onclick={() => toggle(option.value)}
 					class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
 				>
 					<div
-						class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {(value ?? []).includes(
-							option.value
-						)
+						class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {(
+							value ?? []
+						).includes(option.value)
 							? 'border-indigo-600 bg-indigo-600'
 							: 'border-slate-300 dark:border-slate-600'}"
 					>

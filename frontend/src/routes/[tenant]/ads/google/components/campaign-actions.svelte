@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Activity, SquarePen, Trash2, Send, LoaderCircle } from 'lucide-svelte'
+	import { resolve } from '$app/paths'
+	import { Activity, SquarePen, Trash2, Send } from 'lucide-svelte'
 	import type { UnifiedCampaign } from '../columns'
 
 	let { campaign, onDeploy } = $props<{
@@ -16,7 +17,7 @@
 >
 	{#if campaign.type === 'live'}
 		<a
-			href="/{campaign.tenant}/ads/google/live/{campaign.id}"
+			href={resolve(`/${campaign.tenant}/ads/google/live/${campaign.id}`)}
 			class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
 			title="View Detailed Report"
 		>
@@ -33,7 +34,7 @@
 			</button>
 		{/if}
 		<a
-			href="/{campaign.tenant}/ads/google/{campaign.slug}"
+			href={resolve(`/${campaign.tenant}/ads/google/${campaign.slug}`)}
 			class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
 			title="Edit"
 		>

@@ -26,11 +26,11 @@
 <div class="w-full px-4 py-8 sm:px-6 lg:px-8">
 	{#if manager.isLoading}
 		<div class="space-y-8">
-			{#each Array(2) as _}
+			{#each Array(2) as _, i (i)}
 				<section>
 					<Skeleton class="mb-3 h-4 w-24" />
 					<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-						{#each Array(8) as _}
+						{#each Array(8) as _, j (j)}
 							<div
 								class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
 							>
@@ -50,10 +50,7 @@
 		</div>
 	{:else}
 		{#if manager.integrations.length > 0}
-			<IntegrationSection 
-				title="Connected" 
-				description="Your active service integrations."
-			>
+			<IntegrationSection title="Connected" description="Your active service integrations.">
 				{#each manager.integrations as integration (integration.id)}
 					{@const provider = manager.providerForIntegration(integration)}
 					{#if provider}
@@ -76,12 +73,10 @@
 					<h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
 						Connections
 					</h2>
-					<p class="text-sm text-slate-500">
-						Browse and add new integrations to your workspace.
-					</p>
+					<p class="text-sm text-slate-500">Browse and add new integrations to your workspace.</p>
 				</div>
 
-				<IntegrationFilters 
+				<IntegrationFilters
 					bind:searchQuery={manager.searchQuery}
 					bind:selectedCategory={manager.selectedCategory}
 					categories={manager.GROUP_ORDER}
@@ -100,9 +95,7 @@
 				<div
 					class="rounded-xl border border-dashed border-slate-200 p-12 text-center dark:border-slate-700"
 				>
-					<p class="text-sm text-slate-400">
-						No connections match your filters.
-					</p>
+					<p class="text-sm text-slate-400">No connections match your filters.</p>
 					<button
 						onclick={() => manager.clearFilters()}
 						class="mt-2 text-sm font-medium text-indigo-600 hover:underline"
@@ -117,9 +110,7 @@
 			<div
 				class="rounded-xl border border-dashed border-slate-200 p-12 text-center dark:border-slate-700"
 			>
-				<p class="text-sm text-slate-400">
-					No providers available.
-				</p>
+				<p class="text-sm text-slate-400">No providers available.</p>
 			</div>
 		{/if}
 	{/if}

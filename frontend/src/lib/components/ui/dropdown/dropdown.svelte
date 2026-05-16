@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui'
 	import { goto } from '$app/navigation'
+	import { resolve } from '$app/paths'
 	import { ChevronRight, Check } from 'lucide-svelte'
 	import type { Snippet } from 'svelte'
 	import type { MenuItem } from '$lib/types/menu'
@@ -20,13 +21,13 @@
 			item.onclick()
 		}
 		if ('href' in item && item.href) {
-			goto(item.href)
+			goto(resolve(item.href))
 		}
 	}
 </script>
 
 {#snippet renderItems(menuItems: MenuItem[])}
-	{#each menuItems as item}
+	{#each menuItems as item, i (i)}
 		{#if 'type' in item && item.type === 'header'}
 			<DropdownMenu.Group>
 				<DropdownMenu.GroupHeading class="px-2 py-1.5 text-xs font-semibold text-slate-500">
@@ -38,7 +39,7 @@
 		{:else if 'children' in item && item.children}
 			<DropdownMenu.Sub>
 				<DropdownMenu.SubTrigger
-					class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 hover:cursor-pointer"
+					class="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 transition-colors hover:cursor-pointer hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
 				>
 					{#if item.icon}
 						<item.icon class="h-4 w-4 text-slate-400" />

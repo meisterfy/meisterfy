@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths'
 	import { Search } from 'lucide-svelte'
 
 	let { name, id, slug, type, objective, tenant } = $props<{
@@ -21,7 +22,9 @@
 	{/if}
 	<div>
 		<a
-			href={type === 'live' ? `/${tenant}/ads/google/live/${id}` : `/${tenant}/ads/google/${slug}`}
+			href={resolve(
+				type === 'live' ? `/${tenant}/ads/google/live/${id}` : `/${tenant}/ads/google/${slug}`
+			)}
 			class="block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white"
 		>
 			{type === 'live' ? name : id}

@@ -28,7 +28,8 @@
 	</Button>
 	{#if saved}
 		<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-			<CircleCheck class="h-4 w-4" /> {savedText}
+			<CircleCheck class="h-4 w-4" />
+			{savedText}
 		</span>
 	{/if}
 </div>

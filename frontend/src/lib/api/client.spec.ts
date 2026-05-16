@@ -60,15 +60,25 @@ describe('apiFetch', () => {
 	})
 
 	it('falls back to statusText when error body has no error field', async () => {
-		stubFetch({ ok: false, status: 500, statusText: 'Internal Server Error', json: async () => ({}) })
+		stubFetch({
+			ok: false,
+			status: 500,
+			statusText: 'Internal Server Error',
+			json: async () => ({})
+		})
 		const err = await apiFetch('/test').catch((e) => e)
 		expect(err.message).toBe('Request failed')
 	})
 
 	it('retries after successful 401 token refresh', async () => {
-		const mock = vi.fn()
+		const mock = vi
+			.fn()
 			.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
-			.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'refreshed' }) })
+			.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: async () => ({ access_token: 'refreshed' })
+			})
 			.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ result: 'ok' }) })
 		vi.stubGlobal('fetch', mock)
 		const result = await apiFetch<{ result: string }>('/test')
@@ -77,7 +87,8 @@ describe('apiFetch', () => {
 	})
 
 	it('throws Unauthorized when refresh fails on 401', async () => {
-		const mock = vi.fn()
+		const mock = vi
+			.fn()
 			.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
 			.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })
 		vi.stubGlobal('fetch', mock)

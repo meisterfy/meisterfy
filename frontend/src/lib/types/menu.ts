@@ -7,7 +7,7 @@ export type MenuItem =
 	| {
 			label: string
 			icon?: typeof Icon | Snippet
-			iconProps?: Record<string, any>
+			iconProps?: Record<string, unknown>
 			href?: string
 			onclick?: () => void
 			variant?: 'default' | 'danger' | 'indigo'

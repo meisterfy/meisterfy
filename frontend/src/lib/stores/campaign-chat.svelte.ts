@@ -20,20 +20,34 @@ export interface CampaignChatStore {
 }
 
 export function createCampaignChat(): CampaignChatStore {
-	let messages  = $state<ChatMessage[]>([])
-	let isOpen    = $state(false)
-	let busy      = $state(false)
+	let messages = $state<ChatMessage[]>([])
+	let isOpen = $state(false)
+	let busy = $state(false)
 	let controller: AbortController | null = null
 
 	return {
-		get messages() { return messages },
-		get isOpen()   { return isOpen },
-		get busy()     { return busy },
+		get messages() {
+			return messages
+		},
+		get isOpen() {
+			return isOpen
+		},
+		get busy() {
+			return busy
+		},
 
-		open()   { isOpen = true },
-		close()  { isOpen = false },
-		toggle() { isOpen = !isOpen },
-		clear()  { messages = [] },
+		open() {
+			isOpen = true
+		},
+		close() {
+			isOpen = false
+		},
+		toggle() {
+			isOpen = !isOpen
+		},
+		clear() {
+			messages = []
+		},
 
 		abort() {
 			controller?.abort()
@@ -52,7 +66,7 @@ export function createCampaignChat(): CampaignChatStore {
 			controller = new AbortController()
 
 			// Build history: exclude the empty assistant placeholder we just pushed
-			const history: typeof messages = messages.slice(0, -1).map(m => ({
+			const history: typeof messages = messages.slice(0, -1).map((m) => ({
 				role: m.role,
 				content: m.content
 			}))
@@ -62,7 +76,10 @@ export function createCampaignChat(): CampaignChatStore {
 					{
 						...req,
 						task_type: 'chat',
-						messages: history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+						messages: history.map((m) => ({
+							role: m.role as 'user' | 'assistant',
+							content: m.content
+						}))
 					},
 					(chunk) => {
 						if (!chunk.done) messages[messages.length - 1].content += chunk.content
@@ -71,7 +88,8 @@ export function createCampaignChat(): CampaignChatStore {
 				)
 			} catch (e: unknown) {
 				if ((e as Error)?.name !== 'AbortError') {
-					messages[messages.length - 1].content = '⚠ Error: ' + ((e as Error)?.message ?? 'generation failed')
+					messages[messages.length - 1].content =
+						'⚠ Error: ' + ((e as Error)?.message ?? 'generation failed')
 				}
 			} finally {
 				if (messages.length > 0) messages[messages.length - 1].streaming = false

@@ -63,12 +63,16 @@
 			{#if value.length === 0}
 				<span class="text-slate-400">{placeholder}</span>
 			{:else}
-				{#each value as plt}
+				{#each value as plt (plt)}
 					{@const cfg = PLATFORM_CONFIG[plt]}
 					<span
 						class="flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
 					>
-						<ProviderIcon provider={plt} class="h-3 w-3 shrink-0" style="color: {BRAND_COLOR[plt]}" />
+						<ProviderIcon
+							provider={plt}
+							class="h-3 w-3 shrink-0"
+							style="color: {BRAND_COLOR[plt]}"
+						/>
 						{cfg?.label ?? plt}
 						<button
 							type="button"
@@ -92,7 +96,7 @@
 		<div
 			class="absolute top-full left-0 z-50 mt-1 w-full min-w-52 rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
 		>
-			{#each PLATFORM_ORDER as plt}
+			{#each PLATFORM_ORDER as plt (plt)}
 				{@const cfg = PLATFORM_CONFIG[plt]}
 				{@const selected = value.includes(plt)}
 				<button
@@ -111,7 +115,11 @@
 							<Check class="h-3 w-3 text-white" />
 						{/if}
 					</div>
-					<ProviderIcon provider={plt} class="h-3.5 w-3.5 shrink-0" style="color: {BRAND_COLOR[plt]}" />
+					<ProviderIcon
+						provider={plt}
+						class="h-3.5 w-3.5 shrink-0"
+						style="color: {BRAND_COLOR[plt]}"
+					/>
 					<span class="text-slate-700 dark:text-slate-300">{cfg?.label ?? plt}</span>
 				</button>
 			{/each}

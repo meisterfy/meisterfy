@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchData } from './client'
+import { apiFetchData } from './client'
 
 export interface AIReport {
 	id: string
@@ -13,19 +13,29 @@ export interface AIReport {
 	model: string | null
 }
 
-export const listAIReports = (tenantId: string, campaignId: string, type = 'instant', limit = 10, fetchFn?: typeof fetch) =>
+export const listAIReports = (
+	tenantId: string,
+	campaignId: string,
+	type = 'instant',
+	limit = 10,
+	fetchFn?: typeof fetch
+) =>
 	apiFetchData<AIReport[]>(
 		`/admin/tenants/${tenantId}/campaigns/${campaignId}/ai-reports?type=${type}&limit=${limit}`,
 		{},
 		fetchFn
 	)
 
-export const saveAIReport = (tenantId: string, campaignId: string, body: {
-	content: string
-	report_type?: string
-	model?: string | null
-}) =>
-	apiFetchData<AIReport>(
-		`/admin/tenants/${tenantId}/campaigns/${campaignId}/ai-reports`,
-		{ method: 'POST', body: JSON.stringify(body) }
-	)
+export const saveAIReport = (
+	tenantId: string,
+	campaignId: string,
+	body: {
+		content: string
+		report_type?: string
+		model?: string | null
+	}
+) =>
+	apiFetchData<AIReport>(`/admin/tenants/${tenantId}/campaigns/${campaignId}/ai-reports`, {
+		method: 'POST',
+		body: JSON.stringify(body)
+	})

@@ -4,7 +4,6 @@ import { redirect, isRedirect } from '@sveltejs/kit'
 import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
-
 export const load: PageLoad = async ({ fetch }) => {
 	try {
 		const [tenants, integrationsData] = await Promise.all([

@@ -1,15 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state'
-	import {
-		Share2,
-		Target,
-		Menu,
-		X,
-		ChevronDown,
-		List,
-		Plus,
-		Settings
-	} from 'lucide-svelte'
+	import { Share2, Target, Menu, X, ChevronDown, List, Plus, Settings } from 'lucide-svelte'
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import ProfileLink from '$lib/components/ui/toolbar/link/profile.svelte'
 	import BrandIcon from '$lib/components/ui/brand-icon.svelte'
@@ -17,8 +8,8 @@
 	import type { Snippet } from 'svelte'
 	import type { LayoutData } from './$types'
 	import type { MenuItem } from '$lib/types/menu'
-	import * as m from '$lib/paraglide/messages.js'
 	import Footer from '$lib/components/layout/footer.svelte'
+	import { resolve } from '$app/paths'
 
 	let { data, children } = $props<{ data: LayoutData; children: Snippet }>()
 
@@ -43,7 +34,7 @@
 	const clientMenuItems = $derived<MenuItem[]>([
 		{ type: 'header', label: 'Switch Client' },
 		{ type: 'separator' },
-		...data.clients.map((t: any) => ({
+		...data.clients.map((t) => ({
 			label: t.brand.name,
 			href: `/${t.id}/social`,
 			icon: BrandIcon,
@@ -73,10 +64,10 @@
 
 			<!-- Desktop Navigation -->
 			<nav class="hidden items-center gap-1 md:flex">
-				{#each navMain as item}
+				{#each navMain as item (item.href)}
 					{@const Icon = item.icon}
 					<a
-						href={item.href}
+						href={resolve(item.href)}
 						class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {item.active
 							? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
 							: 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}"
@@ -109,10 +100,10 @@
 				<div
 					class="border-t border-slate-200 bg-white px-2 pt-2 pb-3 md:hidden dark:border-slate-800 dark:bg-slate-900"
 				>
-					{#each navMain as item}
+					{#each navMain as item (item.href)}
 						{@const Icon = item.icon}
 						<a
-							href={item.href}
+							href={resolve(item.href)}
 							onclick={() => (isMobileMenuOpen = false)}
 							class="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium {item.active
 								? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
@@ -123,7 +114,7 @@
 						</a>
 					{/each}
 					<a
-						href="/{page.params.tenant}/settings"
+						href={resolve(`/${page.params.tenant}/settings`)}
 						onclick={() => (isMobileMenuOpen = false)}
 						class="flex items-center gap-3 rounded-md px-3 py-2 text-base font-medium {currentPath.includes(
 							'/settings'
@@ -139,11 +130,8 @@
 		{/snippet}
 	</Toolbar>
 
-	<main
-		class="flex min-w-0 flex-1 flex-col print:h-auto print:flex-none print:overflow-visible"
-	>
+	<main class="flex min-w-0 flex-1 flex-col print:h-auto print:flex-none print:overflow-visible">
 		{@render children()}
 	</main>
 	<Footer />
 </div>
-

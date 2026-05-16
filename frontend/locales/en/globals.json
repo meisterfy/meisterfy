@@ -1,11 +1,11 @@
 {
-  "save": "Save",
-  "cancel": "Cancel",
-  "loading": "Loading...",
-  "error_generic": "Something went wrong. Please try again.",
-  "confirm_delete": "Are you sure you want to delete this?",
-  "back_to_app": "Back to dashboard",
-  "no_options": "No options found",
-  "previous": "Previous",
-  "next": "Next"
+	"save": "Save",
+	"cancel": "Cancel",
+	"loading": "Loading...",
+	"error_generic": "Something went wrong. Please try again.",
+	"confirm_delete": "Are you sure you want to delete this?",
+	"back_to_app": "Back to dashboard",
+	"no_options": "No options found",
+	"previous": "Previous",
+	"next": "Next"
 }

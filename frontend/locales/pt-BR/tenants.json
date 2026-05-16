@@ -1,6 +1,6 @@
 {
-  "empty": "Nenhum cliente encontrado",
-  "create": "Novo Cliente",
-  "create_first": "Crie seu primeiro cliente",
-  "switch": "Trocar Cliente"
+	"empty": "Nenhum cliente encontrado",
+	"create": "Novo Cliente",
+	"create_first": "Crie seu primeiro cliente",
+	"switch": "Trocar Cliente"
 }

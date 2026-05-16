@@ -1,6 +1,6 @@
 {
-  "empty": "No clients found",
-  "create": "New Client",
-  "create_first": "Create your first client",
-  "switch": "Switch Client"
+	"empty": "No clients found",
+	"create": "New Client",
+	"create_first": "Create your first client",
+	"switch": "Switch Client"
 }

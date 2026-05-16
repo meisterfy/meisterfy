@@ -56,7 +56,14 @@
 				hashtags: tags,
 				platforms: editPlatforms
 			})
-			onSaved({ ...draft, title: editTitle, content: editContent, hashtags: tags, platform: editPlatforms, media_files: editMediaFiles })
+			onSaved({
+				...draft,
+				title: editTitle,
+				content: editContent,
+				hashtags: tags,
+				platform: editPlatforms,
+				media_files: editMediaFiles
+			})
 			open = false
 		} finally {
 			isSaving = false
@@ -158,7 +165,11 @@
 					</div>
 					<div>
 						<label for="edit-content" class={labelCls}>Content</label>
-						<textarea id="edit-content" bind:value={editContent} rows="8" class="{inputCls} resize-y"
+						<textarea
+							id="edit-content"
+							bind:value={editContent}
+							rows="8"
+							class="{inputCls} resize-y"
 						></textarea>
 					</div>
 					<div>
