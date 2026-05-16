@@ -36,7 +36,7 @@ export const load: PageLoad = async ({ fetch }) => {
 		if (isRedirect(err)) throw err
 		const status = (err as { status?: number })?.status
 		if (!status || status === 401 || status === 403) {
-			redirect(302, '/login')
+			throw redirect(302, '/login')
 		}
 		throw err
 	}

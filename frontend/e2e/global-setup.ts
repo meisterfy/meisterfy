@@ -18,7 +18,7 @@ export default async function globalSetup(config: FullConfig) {
 		return
 	}
 
-	const baseURL = config.projects[0].use.baseURL ?? 'http://localhost:5173'
+	const baseURL = process.env.E2E_BASE_URL ?? config.projects[0].use.baseURL ?? 'http://localhost:5173'
 	const browser = await chromium.launch()
 	const page = await browser.newPage()
 

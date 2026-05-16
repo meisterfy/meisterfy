@@ -2,5 +2,5 @@ import { redirect } from '@sveltejs/kit'
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ params }) => {
-	redirect(302, `/${params.tenant}/settings/general`)
+	throw redirect(302, `/${params.tenant}/settings/general`)
 }
