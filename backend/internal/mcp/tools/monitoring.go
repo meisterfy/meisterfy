@@ -35,7 +35,9 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				TenantID string `json:"tenant_id"`
 				Days     int    `json:"days"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Days <= 0 {
 				p.Days = 30
 			}
@@ -66,7 +68,9 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				TenantID string `json:"tenant_id"`
 				Months   int    `json:"months"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Months <= 0 {
 				p.Months = 6
 			}
@@ -93,7 +97,9 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				TenantID string `json:"tenant_id"`
 				Date     string `json:"date"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Date == "" {
 				p.Date = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 			}
@@ -127,7 +133,9 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				TenantID string `json:"tenant_id"`
 				Month    string `json:"month"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Month == "" {
 				p.Month = time.Now().AddDate(0, -1, 0).Format("2006-01")
 			}
