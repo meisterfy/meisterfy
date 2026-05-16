@@ -78,9 +78,9 @@ jobs:
           VITE_API_URL: http://localhost:8181
 
       - name: Serve frontend
-        working-directory: frontend
         run: |
-          bunx serve -s ../backend/cmd/server/ui/dist -l 5173 &
+          cp backend/cmd/server/ui/dist/200.html backend/cmd/server/ui/dist/index.html
+          bunx serve -s backend/cmd/server/ui/dist -l 5173 &
           for i in $(seq 1 15); do
             curl -sf http://localhost:5173 && break
             sleep 1
