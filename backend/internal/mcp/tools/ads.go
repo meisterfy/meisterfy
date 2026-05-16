@@ -28,7 +28,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			var p struct {
 				TenantID string `json:"tenant_id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			client, _, err := factory(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
@@ -56,7 +58,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			client, _, err := factory(ctx, p.TenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
@@ -86,7 +90,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				CampaignID string `json:"campaign_id"`
 				Days       int    `json:"days"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Days <= 0 {
 				p.Days = 30
 			}
@@ -120,7 +126,9 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				CampaignID string `json:"campaign_id"`
 				Days       int    `json:"days"`
 			}
-			json.Unmarshal(args, &p)
+			if err := json.Unmarshal(args, &p); err != nil {
+				return mcp.ErrResult("invalid arguments: " + err.Error())
+			}
 			if p.Days <= 0 {
 				p.Days = 7
 			}

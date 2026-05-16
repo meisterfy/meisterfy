@@ -267,7 +267,7 @@ func (h *AdminUsersHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = h.rbacRepo.RemoveAllRolesForUserInTenant(r.Context(), id, claims.TenantID)
-	if claims != nil && h.audit != nil {
+	if h.audit != nil {
 		h.audit.AsyncLog(domain.AuditEntry{
 			TenantID: claims.TenantID, UserID: claims.UserID, UserName: claims.UserName,
 			Action: "user.deactivated", EntityType: "user", EntityID: id, EntityName: &u.Name,

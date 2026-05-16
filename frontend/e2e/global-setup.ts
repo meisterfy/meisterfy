@@ -11,6 +11,10 @@ export default async function globalSetup(config: FullConfig) {
 	const password = process.env.E2E_USER_PASSWORD
 	if (!email || !password) {
 		console.log('[global-setup] Skipping: E2E_USER_EMAIL or E2E_USER_PASSWORD not set')
+		fs.mkdirSync(path.dirname(AUTH_FILE), { recursive: true })
+		if (!fs.existsSync(AUTH_FILE)) {
+			fs.writeFileSync(AUTH_FILE, JSON.stringify({ cookies: [], origins: [] }))
+		}
 		return
 	}
 

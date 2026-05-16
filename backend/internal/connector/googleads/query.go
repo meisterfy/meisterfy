@@ -90,7 +90,7 @@ func num(row QueryResult, keys ...string) float64 {
 		return v
 	case string:
 		var f float64
-		fmt.Sscanf(v, "%f", &f)
+		_, _ = fmt.Sscanf(v, "%f", &f)
 		return f
 	}
 	return 0
