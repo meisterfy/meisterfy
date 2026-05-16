@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui'
 	import { goto } from '$app/navigation'
-	import { resolve } from '$app/paths'
 	import { ChevronRight, Check } from 'lucide-svelte'
 	import type { Snippet } from 'svelte'
 	import type { MenuItem } from '$lib/types/menu'
@@ -21,7 +20,8 @@
 			item.onclick()
 		}
 		if ('href' in item && item.href) {
-			goto(resolve(item.href))
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(item.href)
 		}
 	}
 </script>

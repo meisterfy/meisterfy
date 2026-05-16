@@ -95,6 +95,7 @@
 	"users_col_status": "Status",
 	"users_status_active": "Active",
 	"users_status_inactive": "Inactive",
+	"users_search_placeholder": "Search users...",
 	"users_empty": "No team members found.",
 	"users_deactivate_confirm": "Deactivate {name}? They will lose access immediately.",
 	"users_deactivate_confirm_btn": "Deactivate",

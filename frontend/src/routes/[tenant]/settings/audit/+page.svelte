@@ -117,7 +117,9 @@
 
 {#snippet actionsCell({ entry }: { entry: AuditEntry })}
 	{@const hasBefore = entry.before != null && Object.keys(entry.before).length > 0}
-	{@const diffs = hasBefore ? getDiffs(entry.before, entry.after) : []}
+	{@const diffs = hasBefore
+		? getDiffs(entry.before as Record<string, unknown>, entry.after as Record<string, unknown>)
+		: []}
 	{#if diffs.length > 0 && !entry.action.endsWith('.created')}
 		<div class="flex justify-end">
 			<Button
@@ -209,7 +211,10 @@
 		</div>
 
 		{#if selectedEntry}
-			{@const diffs = getDiffs(selectedEntry.before, selectedEntry.after)}
+			{@const diffs = getDiffs(
+				selectedEntry.before as Record<string, unknown>,
+				selectedEntry.after as Record<string, unknown>
+			)}
 			<div class="flex-1 space-y-6 overflow-y-auto bg-slate-50 p-6 dark:bg-slate-950">
 				<div
 					class="border-border grid grid-cols-2 gap-4 rounded-lg border bg-white p-4 text-sm shadow-sm dark:bg-slate-900"

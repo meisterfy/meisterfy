@@ -137,6 +137,9 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: bun install --frozen-lockfile
+      - name: Generate i18n messages
+        working-directory: frontend
+        run: bun run paraglide:build
       - name: Lint
         working-directory: frontend
         run: bun run lint

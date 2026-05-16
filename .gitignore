@@ -24,7 +24,7 @@ opencode.jsonc
 Thumbs.db
 
 # DB
-db/
+/db/
 
 # AIPIM Local State
 .project/*.db

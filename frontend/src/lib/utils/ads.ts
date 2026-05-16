@@ -1,7 +1,7 @@
 import { m } from '$lib/paraglide/messages'
 
 export function formatStrategy(strategy: string) {
-	const _m = m as Record<string, () => string>
+	const _m = m as unknown as Record<string, () => string>
 	const maps: Record<string, string> = {
 		TARGET_SPEND: _m['ads:strategies.target_spend'](),
 		TARGET_CPA: _m['ads:strategies.target_cpa'](),
