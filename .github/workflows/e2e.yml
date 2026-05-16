@@ -40,6 +40,16 @@ jobs:
         with:
           bun-version: latest
 
+      # Frontend must be built before the backend starts: main.go embeds ui/dist at
+      # compile time (//go:embed all:ui/dist), so the directory must exist first.
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        run: bun run build
+
       - name: Run backend migrations
         working-directory: backend
         run: go run ./cmd/migrate up
@@ -53,38 +63,22 @@ jobs:
           JWT_SECRET="e2e-test-secret-32-bytes-minimum!!" \
           PORT=8181 \
           go run ./cmd/server &
-          for i in $(seq 1 20); do
+          for i in $(seq 1 30); do
             curl -sf http://localhost:8181/health && break
             sleep 1
           done
+          curl -sf http://localhost:8181/health || { echo "Backend failed to start"; exit 1; }
         env:
           DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
 
-      - name: Create test user via setup endpoint
+      # Create the first admin so health returns setup_required:false.
+      # Uses fixed test credentials; the || guard handles the "already done" 404.
+      - name: Bootstrap first admin
         run: |
-          curl -sf -X POST http://localhost:8181/setup \
+          curl -f -X POST http://localhost:8181/setup \
             -H 'Content-Type: application/json' \
-            -d '{"name":"Admin Test","email":"${{ secrets.E2E_USER_EMAIL }}","password":"${{ secrets.E2E_USER_PASSWORD }}"}' \
-            || echo "Setup already done or skipped"
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: bun install --frozen-lockfile
-
-      - name: Build frontend
-        working-directory: frontend
-        run: bun run build
-        env:
-          VITE_API_URL: http://localhost:8181
-
-      - name: Serve frontend
-        run: |
-          cp backend/cmd/server/ui/dist/200.html backend/cmd/server/ui/dist/index.html
-          bunx serve -s backend/cmd/server/ui/dist -l 5173 &
-          for i in $(seq 1 15); do
-            curl -sf http://localhost:5173 && break
-            sleep 1
-          done
+            -d '{"name":"Admin Test","email":"e2e@example.com","password":"testpass123"}' \
+            || echo "Setup already done"
 
       - name: Install Playwright browsers
         working-directory: frontend
@@ -94,7 +88,9 @@ jobs:
         working-directory: frontend
         run: bunx playwright test
         env:
-          E2E_BASE_URL: http://localhost:5173
+          # Backend at 8181 serves both the API and the embedded SPA — no separate
+          # static server needed, no CORS issues, matches the production setup.
+          E2E_BASE_URL: http://localhost:8181
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 

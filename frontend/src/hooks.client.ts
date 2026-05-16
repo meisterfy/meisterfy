@@ -14,5 +14,9 @@ if (SENTRY_DSN) {
 }
 
 export async function init() {
-	await auth.restoreSession()
+	try {
+		await auth.restoreSession()
+	} catch {
+		// Network error during session restore — app boots unauthenticated
+	}
 }
