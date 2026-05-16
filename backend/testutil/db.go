@@ -75,7 +75,7 @@ func startEmbedded(ctx context.Context, migrationsDir string) (*PostgresContaine
 		Database("testdb").
 		Username("test").
 		Password("test").
-		Port(uint32(port))
+		Port(uint32(port)) //nolint:gosec // port is a valid TCP port number (1-65535)
 
 	ep := embeddedpostgres.NewDatabase(cfg)
 	if err := ep.Start(); err != nil {

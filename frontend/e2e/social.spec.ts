@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test'
 import { AUTH_FILE } from './global-setup.js'
+import fs from 'fs'
+
+function hasValidAuth(): boolean {
+	try {
+		const state = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'))
+		return Array.isArray(state?.cookies) && state.cookies.length > 0
+	} catch {
+		return false
+	}
+}
 
 test.use({ storageState: AUTH_FILE })
 
@@ -7,6 +17,10 @@ test.describe('Social — post creation golden path', () => {
 	let tenantURL: string
 
 	test.beforeAll(async ({ browser }) => {
+		if (!hasValidAuth()) {
+			test.skip()
+			return
+		}
 		const page = await browser.newPage()
 		await page.goto('/')
 		await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10_000 })

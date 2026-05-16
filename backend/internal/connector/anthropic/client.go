@@ -16,7 +16,7 @@ import (
 
 const anthropicAPI = "https://api.anthropic.com/v1/messages"
 
-type AnthropicProvider struct {
+type AnthropicProvider struct { //nolint:revive // name is intentional for clarity across packages
 	apiKey             string
 	defaultModel       string
 	defaultTemperature float64

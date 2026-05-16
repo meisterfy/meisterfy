@@ -9,7 +9,7 @@ const kimiAPI = "https://api.moonshot.ai/v1/chat/completions"
 
 const defaultModel = "kimi-k2.6"
 
-type KimiProvider struct {
+type KimiProvider struct { //nolint:revive // name is intentional for clarity across packages
 	*openai.OpenAIProvider
 }
 

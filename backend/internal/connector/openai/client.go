@@ -17,7 +17,7 @@ import (
 
 const openaiAPI = "https://api.openai.com/v1/chat/completions"
 
-type OpenAIProvider struct {
+type OpenAIProvider struct { //nolint:revive // name is intentional for clarity across packages
 	apiKey             string
 	baseURL            string
 	defaultModel       string

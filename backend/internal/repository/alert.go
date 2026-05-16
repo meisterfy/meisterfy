@@ -68,7 +68,7 @@ func (r *AlertRepository) Ignore(ctx context.Context, id string) error {
 func (r *AlertRepository) ListHistory(ctx context.Context, tenantID string, limit int) ([]AlertEvent, error) {
 	rows, err := r.queries.ListAlertHistory(ctx, db.ListAlertHistoryParams{
 		TenantID: tenantID,
-		Limit:    int32(limit),
+		Limit:    int32(limit), //nolint:gosec // limit is bounded by application logic
 	})
 	if err != nil {
 		return nil, mapError(err)

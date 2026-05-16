@@ -16,7 +16,7 @@ import (
 
 const geminiAPI = "https://generativelanguage.googleapis.com/v1beta/models"
 
-type GeminiProvider struct {
+type GeminiProvider struct { //nolint:revive // name is intentional for clarity across packages
 	apiKey             string
 	defaultModel       string
 	defaultTemperature float64

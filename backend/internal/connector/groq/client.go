@@ -9,7 +9,7 @@ const groqAPI = "https://api.groq.com/openai/v1/chat/completions"
 
 const defaultModel = "llama-3.3-70b-versatile"
 
-type GroqProvider struct {
+type GroqProvider struct { //nolint:revive // name is intentional for clarity across packages
 	*openai.OpenAIProvider
 }
 

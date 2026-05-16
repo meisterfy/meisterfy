@@ -15,8 +15,8 @@
 		"test": "npm run test:unit -- --run",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"paraglide:watch": "bunx @inlang/paraglide-js compile --project ./project.inlang --watch",
-		"paraglide:build": "bunx @inlang/paraglide-js compile --project ./project.inlang"
+		"paraglide:watch": "bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --watch",
+		"paraglide:build": "bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",

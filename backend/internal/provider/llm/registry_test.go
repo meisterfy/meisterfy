@@ -22,6 +22,7 @@ func (m *mockIntegrationRepo) GetForTenant(ctx context.Context, tenantID, provid
 }
 
 func TestProviderSelector_Resolve_Priority(t *testing.T) {
+	t.Parallel()
 	repo := &mockIntegrationRepo{integrations: map[string]*domain.Integration{
 		"t1/openai": {
 			Provider: domain.ProviderOpenAI,
@@ -49,6 +50,7 @@ func TestProviderSelector_Resolve_Priority(t *testing.T) {
 }
 
 func TestProviderSelector_Resolve_Fallback(t *testing.T) {
+	t.Parallel()
 	repo := &mockIntegrationRepo{integrations: map[string]*domain.Integration{
 		"t2/claude": {
 			Provider: domain.ProviderClaude,
@@ -76,6 +78,7 @@ func TestProviderSelector_Resolve_Fallback(t *testing.T) {
 }
 
 func TestProviderSelector_Resolve_NoProvider(t *testing.T) {
+	t.Parallel()
 	repo := &mockIntegrationRepo{integrations: map[string]*domain.Integration{}}
 	selector := NewProviderSelector(repo)
 	_, _, err := selector.Resolve(context.Background(), "t3")
@@ -85,6 +88,7 @@ func TestProviderSelector_Resolve_NoProvider(t *testing.T) {
 }
 
 func TestProviderSelector_ResolveAll_Order(t *testing.T) {
+	t.Parallel()
 	repo := &mockIntegrationRepo{integrations: map[string]*domain.Integration{
 		"t4/groq": {
 			Provider:          domain.ProviderGroq,
@@ -116,6 +120,7 @@ func TestProviderSelector_ResolveAll_Order(t *testing.T) {
 }
 
 func TestProviderSelector_ResolveAll_Empty(t *testing.T) {
+	t.Parallel()
 	repo := &mockIntegrationRepo{integrations: map[string]*domain.Integration{}}
 	selector := NewProviderSelector(repo)
 	candidates := selector.ResolveAll(context.Background(), "t5")
@@ -125,6 +130,7 @@ func TestProviderSelector_ResolveAll_Empty(t *testing.T) {
 }
 
 func TestGetProvider_Registered(t *testing.T) {
+	t.Parallel()
 	// Ensure built-in providers are registered via init in schema.go (indirectly).
 	// Since schema.go registers UI schemas, the LLM provider registry is separate.
 	// Register a test provider.
@@ -139,6 +145,7 @@ func TestGetProvider_Registered(t *testing.T) {
 }
 
 func TestGetProvider_Unknown(t *testing.T) {
+	t.Parallel()
 	_, err := GetProvider("nonexistent")
 	if err == nil {
 		t.Fatal("expected error for unknown provider")

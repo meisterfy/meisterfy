@@ -45,7 +45,7 @@ func (r *AuditLogRepository) Log(ctx context.Context, entry domain.AuditEntry) e
 }
 
 func (r *AuditLogRepository) List(ctx context.Context, filter domain.AuditLogFilter) ([]*domain.AuditEntry, int64, error) {
-	limit := int32(filter.Limit)
+	limit := int32(filter.Limit) //nolint:gosec // clamped to ≤200 below
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -73,7 +73,7 @@ func (r *AuditLogRepository) List(ctx context.Context, filter domain.AuditLogFil
 		return nil, 0, err
 	}
 
-	args = append(args, limit, int32(filter.Offset))
+	args = append(args, limit, int32(filter.Offset)) //nolint:gosec // offset is a page offset, bounded in practice
 	listSQL := fmt.Sprintf(
 		`SELECT id, tenant_id, user_id, user_name, action, entity_type, entity_id,
 		        entity_name, before, after, ip, created_at
