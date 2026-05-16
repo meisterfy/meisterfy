@@ -24,10 +24,11 @@ jobs:
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
-      - uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: backend
-          version: latest
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - name: Run golangci-lint
+        working-directory: backend
+        run: golangci-lint run --path-prefix=backend ./...
 
   go-build:
     name: Go Build

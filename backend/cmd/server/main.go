@@ -161,7 +161,7 @@ func main() {
 	r.Use(middleware.SentryHubMiddleware)
 	r.Use(middleware.SentryRecovery)
 	r.Use(chimw.Recoverer)
-	r.Use(middleware.RequestLogger)
+	r.Use(middleware.RequestLogger(slog.Default()))
 	r.Use(middleware.NPlus1Detector)
 	r.Use(middleware.SecurityHeaders)
 	r.Use(chimw.RequestSize(4 * 1024 * 1024)) // 4 MB global limit
