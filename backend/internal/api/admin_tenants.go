@@ -132,6 +132,12 @@ func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if req.Language == "" {
 		req.Language = "pt_BR"
 	}
+	if req.AdsMonitoring != nil {
+		if err := req.AdsMonitoring.Validate(); err != nil {
+			UnprocessableEntity(w, err.Error())
+			return
+		}
+	}
 
 	t := &domain.Tenant{
 		ID:             req.ID,
@@ -229,6 +235,10 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		t.Hashtags = req.Hashtags
 	}
 	if req.AdsMonitoring != nil {
+		if err := req.AdsMonitoring.Validate(); err != nil {
+			UnprocessableEntity(w, err.Error())
+			return
+		}
 		t.AdsMonitoring = req.AdsMonitoring
 	}
 	if req.ReportPrompts != nil {

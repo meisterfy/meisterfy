@@ -247,7 +247,7 @@ func TestUserRepository_ListForTenant(t *testing.T) {
 		t.Fatalf("assign role: %v", err)
 	}
 
-	users, err := repo.ListForTenant(ctx, "t-lft-1")
+	users, err := repo.ListForTenant(ctx, "t-lft-1", nil)
 	if err != nil {
 		t.Fatalf("list for tenant: %v", err)
 	}

@@ -24,7 +24,7 @@ type mockUserAdminRepo struct {
 	deleteErr error
 }
 
-func (m *mockUserAdminRepo) ListForTenant(_ context.Context, _ string) ([]*domain.User, error) {
+func (m *mockUserAdminRepo) ListForTenant(_ context.Context, _ string, _ *bool) ([]*domain.User, error) {
 	return m.users, m.listErr
 }
 func (m *mockUserAdminRepo) GetByID(_ context.Context, _ string) (*domain.User, error) {
@@ -38,6 +38,9 @@ func (m *mockUserAdminRepo) Update(_ context.Context, _ *domain.User) error {
 }
 func (m *mockUserAdminRepo) Delete(_ context.Context, _ string) error {
 	return m.deleteErr
+}
+func (m *mockUserAdminRepo) GetByEmail(_ context.Context, _ string) (*domain.User, error) {
+	return m.user, m.getErr
 }
 
 type mockUsersRBACRepo struct {

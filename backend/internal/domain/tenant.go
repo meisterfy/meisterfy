@@ -2,7 +2,13 @@ package domain
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
+)
+
+const (
+	DefaultMinCampaignAgeDays     = 14
+	DefaultAdjustmentIntervalDays = 7
 )
 
 type ReportPrompts struct {
@@ -26,12 +32,42 @@ type AdsMonitoringConfig struct {
 	AIReportWeekly  bool `json:"ai_report_weekly"`
 	AIReportMonthly bool `json:"ai_report_monthly"`
 
-	// adjustments (UI-only for now — backend logic not wired)
-	AdjustmentsEnabled bool    `json:"adjustments_enabled"`
-	MaxIncreasePct     float64 `json:"max_increase_pct"`
-	MaxIncreaseBRL     float64 `json:"max_increase_brl"`
-	MaxDecreasePct     float64 `json:"max_decrease_pct"`
-	MaxDecreaseBRL     float64 `json:"max_decrease_brl"`
+	// adjustments
+	AdjustmentsEnabled    bool    `json:"adjustments_enabled"`
+	MaxIncreasePct        float64 `json:"max_increase_pct"`
+	MaxIncreaseBRL        float64 `json:"max_increase_brl"`
+	MaxDecreasePct        float64 `json:"max_decrease_pct"`
+	MaxDecreaseBRL        float64 `json:"max_decrease_brl"`
+	SuggestionsEnabled    bool    `json:"suggestions_enabled"`
+	MinCampaignAgeDays    int     `json:"min_campaign_age_days"`
+	AdjustmentIntervalDays int    `json:"adjustment_interval_days"`
+}
+
+// EffectiveMinCampaignAgeDays returns the configured value or the default when zero.
+func (c *AdsMonitoringConfig) EffectiveMinCampaignAgeDays() int {
+	if c.MinCampaignAgeDays == 0 {
+		return DefaultMinCampaignAgeDays
+	}
+	return c.MinCampaignAgeDays
+}
+
+// EffectiveAdjustmentIntervalDays returns the configured value or the default when zero.
+func (c *AdsMonitoringConfig) EffectiveAdjustmentIntervalDays() int {
+	if c.AdjustmentIntervalDays == 0 {
+		return DefaultAdjustmentIntervalDays
+	}
+	return c.AdjustmentIntervalDays
+}
+
+// Validate checks that optional guard fields are within allowed ranges when provided.
+func (c *AdsMonitoringConfig) Validate() error {
+	if c.MinCampaignAgeDays != 0 && (c.MinCampaignAgeDays < 7 || c.MinCampaignAgeDays > 90) {
+		return fmt.Errorf("min_campaign_age_days must be between 7 and 90")
+	}
+	if c.AdjustmentIntervalDays != 0 && (c.AdjustmentIntervalDays < 3 || c.AdjustmentIntervalDays > 30) {
+		return fmt.Errorf("adjustment_interval_days must be between 3 and 30")
+	}
+	return nil
 }
 
 type Tenant struct {
