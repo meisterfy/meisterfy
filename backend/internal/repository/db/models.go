@@ -139,6 +139,21 @@ type MonthlySummary struct {
 	CreatedAt    time.Time      `json:"created_at"`
 }
 
+type PendingAdjustment struct {
+	ID                 string             `json:"id"`
+	TenantID           string             `json:"tenant_id"`
+	CampaignResourceID string             `json:"campaign_resource_id"`
+	AdjustmentType     string             `json:"adjustment_type"`
+	CurrentValue       float64            `json:"current_value"`
+	ProposedValue      float64            `json:"proposed_value"`
+	Reason             string             `json:"reason"`
+	Status             string             `json:"status"`
+	ExpiresAt          pgtype.Timestamptz `json:"expires_at"`
+	ResolvedAt         pgtype.Timestamptz `json:"resolved_at"`
+	ResolvedBy         *string            `json:"resolved_by"`
+	CreatedAt          time.Time          `json:"created_at"`
+}
+
 type Permission struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`

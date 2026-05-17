@@ -129,8 +129,9 @@ func main() {
 	integrationRepo       := repository.NewIntegrationRepository(pool, []byte(cfg.CredentialKey))
 	metricsRepo           := repository.NewMetricsRepository(pool)
 	connectorResourceRepo := repository.NewConnectorResourceRepository(pool)
-	campaignReportRepo    := repository.NewCampaignReportRepository(pool)
-	auditLogRepo          := repository.NewAuditLogRepository(pool)
+	campaignReportRepo         := repository.NewCampaignReportRepository(pool)
+	auditLogRepo               := repository.NewAuditLogRepository(pool)
+	pendingAdjustmentRepo      := repository.NewPendingAdjustmentRepository(pool)
 	jwtSvc := domain.NewJWTService(cfg.JWTSecret)
 
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
@@ -185,7 +186,8 @@ func main() {
 	connectorResourcesHandler := api.NewConnectorResourcesHandler(connectorResourceRepo)
 	mediaHandler            := api.NewMediaHandler(cfg.StoragePath, postRepo)
 	aiGenerateHandler       := api.NewAIGenerateHandler(llmSelector)
-	campaignReportsHandler  := api.NewCampaignReportsHandler(campaignReportRepo)
+	campaignReportsHandler           := api.NewCampaignReportsHandler(campaignReportRepo)
+	pendingAdjustmentsHandler        := api.NewAdminPendingAdjustmentsHandler(pendingAdjustmentRepo)
 
 	// All non-streaming routes get a 30s request timeout.
 	// The /ai/generate SSE endpoint is registered outside this group.
@@ -220,6 +222,7 @@ func main() {
 			r.With(middleware.RequirePermission("view:user")).Get("/users/{id}", usersHandler.Get)
 			r.With(middleware.RequirePermission("update:user")).Put("/users/{id}", usersHandler.Update)
 			r.With(middleware.RequirePermission("delete:user")).Delete("/users/{id}", usersHandler.Delete)
+			r.With(middleware.RequirePermission("update:user")).Post("/users/{id}/reactivate", usersHandler.Reactivate)
 			r.With(middleware.RequirePermission("update:user")).Put("/users/{id}/role", usersHandler.AssignRole)
 	
 			r.With(middleware.RequirePermission("view-any:role")).Get("/roles", rolesHandler.List)
@@ -286,6 +289,11 @@ func main() {
 				r.Get("/meta/accounts", metaPublish.ListAccounts)
 				r.With(middleware.RequirePermission("publish:post")).Post("/meta/publish", metaPublish.Publish)
 	
+				// pending adjustments
+				r.With(middleware.RequirePermission("view:campaign")).Get("/pending-adjustments", pendingAdjustmentsHandler.List)
+				r.With(middleware.RequirePermission("manage:campaign")).Post("/pending-adjustments/{id}/approve", pendingAdjustmentsHandler.Approve)
+				r.With(middleware.RequirePermission("manage:campaign")).Post("/pending-adjustments/{id}/reject", pendingAdjustmentsHandler.Reject)
+
 				// audit log
 				r.With(middleware.RequirePermission("view-any:user")).Get("/audit-log", auditLogHandler.List)
 			})
