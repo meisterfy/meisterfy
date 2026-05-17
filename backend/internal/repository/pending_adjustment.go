@@ -110,6 +110,42 @@ func (r *PendingAdjustmentRepository) ExpireOld(ctx context.Context) (int64, err
 	return n, mapError(err)
 }
 
+// CreateApplied inserts a pending_adjustment record with status='applied' for auto-applied adjustments.
+func (r *PendingAdjustmentRepository) CreateApplied(ctx context.Context, params CreatePendingAdjustmentParams) (PendingAdjustment, error) {
+	expiresAt := pgtype.Timestamptz{}
+	if params.ExpiresAt != nil {
+		expiresAt = pgtype.Timestamptz{Time: *params.ExpiresAt, Valid: true}
+	}
+	const q = `
+		INSERT INTO pending_adjustments (
+			id, tenant_id, campaign_resource_id, adjustment_type,
+			current_value, proposed_value, reason, status, expires_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'applied', $8)
+		RETURNING id, tenant_id, campaign_resource_id, adjustment_type,
+		          current_value, proposed_value, reason, status,
+		          expires_at, resolved_at, resolved_by, created_at`
+	row := r.pool.QueryRow(ctx, q,
+		domain.NewID(),
+		params.TenantID,
+		params.CampaignResourceID,
+		params.AdjustmentType,
+		params.CurrentValue,
+		params.ProposedValue,
+		params.Reason,
+		expiresAt,
+	)
+	var p db.PendingAdjustment
+	err := row.Scan(
+		&p.ID, &p.TenantID, &p.CampaignResourceID, &p.AdjustmentType,
+		&p.CurrentValue, &p.ProposedValue, &p.Reason, &p.Status,
+		&p.ExpiresAt, &p.ResolvedAt, &p.ResolvedBy, &p.CreatedAt,
+	)
+	if err != nil {
+		return PendingAdjustment{}, mapError(err)
+	}
+	return mapPendingAdjustment(p), nil
+}
+
 func mapPendingAdjustment(row db.PendingAdjustment) PendingAdjustment {
 	a := PendingAdjustment{
 		ID:                 row.ID,

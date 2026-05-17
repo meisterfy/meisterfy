@@ -207,6 +207,23 @@ func (c *Client) AddExtensions(ctx context.Context, campaignID string, callouts 
 	return calloutCount, sitelinkCount, nil
 }
 
+// UpdateTargetCPA sets the target CPA (in BRL) on a campaign using the Target CPA bid strategy.
+func (c *Client) UpdateTargetCPA(ctx context.Context, campaignID string, targetCPABRL float64) error {
+	ops := []map[string]any{
+		{
+			"update": map[string]any{
+				"resourceName": c.rn("campaigns", campaignID),
+				"targetCpa": map[string]any{
+					"targetCpaMicros": micros(targetCPABRL),
+				},
+			},
+			"updateMask": "target_cpa.target_cpa_micros",
+		},
+	}
+	_, err := c.Mutate(ctx, fmt.Sprintf("/customers/%s/campaigns:mutate", c.customerID), ops)
+	return err
+}
+
 // SetCampaignStatus pauses or enables a campaign.
 func (c *Client) SetCampaignStatus(ctx context.Context, campaignID, status string) error {
 	ops := []map[string]any{

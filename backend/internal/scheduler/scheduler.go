@@ -2,12 +2,14 @@ package scheduler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/mkt-maestro/mkt-maestro/internal/adjuster"
 	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
 	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
@@ -21,13 +23,18 @@ type AdsClientFactory func(ctx context.Context, tenantID string) (*googleads.Cli
 // Scheduler runs periodic jobs for all tenants based on their AdsMonitoringConfig flags.
 // Config is stored in Postgres (ads_monitoring JSONB); run history is logged to agent_runs.
 type Scheduler struct {
-	tenantRepo  interface {
+	tenantRepo interface {
 		List(ctx context.Context) ([]*domain.Tenant, error)
 	}
-	agentRunRepo *repository.AgentRunRepository
-	metricsRepo  *repository.MetricsRepository
-	adsFactory   AdsClientFactory
-	llmSelector  *llm.ProviderSelector
+	agentRunRepo     *repository.AgentRunRepository
+	metricsRepo      *repository.MetricsRepository
+	adsFactory       AdsClientFactory
+	llmSelector      *llm.ProviderSelector
+	adjuster         *adjuster.Engine
+	pendingAdjRepo   *repository.PendingAdjustmentRepository
+	auditLogRepo     *repository.AuditLogRepository
+	alertRepo        *repository.AlertRepository
+	connResourceRepo *repository.ConnectorResourceRepository
 }
 
 func New(
@@ -36,13 +43,23 @@ func New(
 	metricsRepo *repository.MetricsRepository,
 	adsFactory AdsClientFactory,
 	llmSelector *llm.ProviderSelector,
+	adj *adjuster.Engine,
+	pendingAdjRepo *repository.PendingAdjustmentRepository,
+	auditLogRepo *repository.AuditLogRepository,
+	alertRepo *repository.AlertRepository,
+	connResourceRepo *repository.ConnectorResourceRepository,
 ) *Scheduler {
 	return &Scheduler{
-		tenantRepo:   tenantRepo,
-		agentRunRepo: agentRunRepo,
-		metricsRepo:  metricsRepo,
-		adsFactory:   adsFactory,
-		llmSelector:  llmSelector,
+		tenantRepo:       tenantRepo,
+		agentRunRepo:     agentRunRepo,
+		metricsRepo:      metricsRepo,
+		adsFactory:       adsFactory,
+		llmSelector:      llmSelector,
+		adjuster:         adj,
+		pendingAdjRepo:   pendingAdjRepo,
+		auditLogRepo:     auditLogRepo,
+		alertRepo:        alertRepo,
+		connResourceRepo: connResourceRepo,
 	}
 }
 
@@ -98,6 +115,11 @@ func (s *Scheduler) tick(ctx context.Context, now time.Time) {
 		// Monthly AI report: 1st of month 08:00 UTC
 		if cfg.AIReportMonthly && now.Day() == 1 && now.Hour() == 8 && now.Minute() == 0 {
 			go s.runAIReport(ctx, t, "monthly")
+		}
+
+		// Daily campaign adjustment / suggestions: 03:00 UTC (00:00 BRT)
+		if (cfg.AdjustmentsEnabled || cfg.SuggestionsEnabled) && now.Hour() == 3 && now.Minute() == 0 {
+			go s.runAdjustmentJob(ctx, t)
 		}
 	}
 }
@@ -368,4 +390,180 @@ LOW QUALITY SCORE KEYWORDS (≤5):
 		m.Impressions, m.Clicks, m.Cost, m.CPA, m.Conversions, m.SearchImpressionShare,
 		topTerms, topKw, lowQS,
 	)
+}
+
+func (s *Scheduler) runAdjustmentJob(ctx context.Context, tenant *domain.Tenant) {
+	const jobType = "campaign_adjustment"
+	if s.alreadyRanToday(ctx, tenant.ID, jobType) {
+		return
+	}
+
+	jobCtx, cancel := context.WithTimeout(ctx, 30*time.Minute)
+	defer cancel()
+
+	cfg := tenant.AdsMonitoring
+
+	if _, err := s.pendingAdjRepo.ExpireOld(jobCtx); err != nil {
+		slog.Warn("scheduler: campaign_adjustment — expire old", "tenant", tenant.ID, "err", err)
+	}
+
+	resources, err := s.connResourceRepo.List(jobCtx, tenant.ID, domain.ProviderGoogleAds, "campaign")
+	if err != nil {
+		slog.Error("scheduler: campaign_adjustment — list resources", "tenant", tenant.ID, "err", err)
+		_ = s.agentRunRepo.Log(ctx, tenant.ID, agentName(jobType), "error", err.Error())
+		return
+	}
+
+	var adsClient *googleads.Client
+	if cfg.AdjustmentsEnabled {
+		client, _, clientErr := s.adsFactory(jobCtx, tenant.ID)
+		if clientErr != nil {
+			slog.Warn("scheduler: campaign_adjustment — no ads client", "tenant", tenant.ID, "err", clientErr)
+		} else {
+			adsClient = client
+		}
+	}
+
+	var applied, suggested, failed int
+
+	for _, res := range resources {
+		proposal, evalErr := s.adjuster.Evaluate(jobCtx, *res, *cfg)
+		if evalErr != nil {
+			slog.Error("scheduler: campaign_adjustment — evaluate", "tenant", tenant.ID, "resource", res.ID, "err", evalErr)
+			failed++
+			continue
+		}
+		if proposal == nil {
+			continue
+		}
+
+		if cfg.AdjustmentsEnabled {
+			if adsClient == nil {
+				campaignID := res.ResourceID
+				_ = s.alertRepo.Create(ctx, repository.AlertEvent{
+					ID:           domain.NewID(),
+					TenantID:     tenant.ID,
+					Level:        "CRITICAL",
+					Type:         "adjustment_failed",
+					CampaignID:   &campaignID,
+					CampaignName: res.ResourceName,
+					Message:      "Campaign adjustment failed: no Google Ads client available",
+				})
+				failed++
+				continue
+			}
+			if mutErr := s.applyMutation(jobCtx, adsClient, res, proposal); mutErr != nil {
+				slog.Error("scheduler: campaign_adjustment — mutate", "tenant", tenant.ID, "resource", res.ID, "err", mutErr)
+				campaignID := res.ResourceID
+				_ = s.alertRepo.Create(ctx, repository.AlertEvent{
+					ID:           domain.NewID(),
+					TenantID:     tenant.ID,
+					Level:        "CRITICAL",
+					Type:         "adjustment_failed",
+					CampaignID:   &campaignID,
+					CampaignName: res.ResourceName,
+					Message:      fmt.Sprintf("Campaign adjustment failed: %v", mutErr),
+				})
+				failed++
+				continue
+			}
+
+			_ = s.auditLogRepo.Log(jobCtx, domain.AuditEntry{
+				TenantID:   tenant.ID,
+				Action:     "campaign_auto_adjusted",
+				EntityType: "connector_resource",
+				EntityID:   res.ID,
+				EntityName: res.ResourceName,
+				After: map[string]any{
+					"type":           string(proposal.Type),
+					"current_value":  proposal.CurrentValue,
+					"proposed_value": proposal.ProposedValue,
+					"reason":         proposal.Reason,
+				},
+			})
+
+			res.Metadata["last_adjusted_at"] = time.Now().UTC().Format(time.RFC3339)
+			if metaErr := s.connResourceRepo.UpdateMetadata(jobCtx, res.ID, res.Metadata); metaErr != nil {
+				slog.Warn("scheduler: campaign_adjustment — update metadata", "resource", res.ID, "err", metaErr)
+			}
+
+			expiresAt := time.Now().UTC().AddDate(0, 0, 30)
+			_, _ = s.pendingAdjRepo.CreateApplied(jobCtx, repository.CreatePendingAdjustmentParams{
+				TenantID:           tenant.ID,
+				CampaignResourceID: res.ID,
+				AdjustmentType:     string(proposal.Type),
+				CurrentValue:       proposal.CurrentValue,
+				ProposedValue:      proposal.ProposedValue,
+				Reason:             proposal.Reason,
+				ExpiresAt:          &expiresAt,
+			})
+			applied++
+
+		} else if cfg.SuggestionsEnabled {
+			intervalDays := cfg.EffectiveAdjustmentIntervalDays()
+			expiresAt := time.Now().UTC().AddDate(0, 0, intervalDays)
+			adj, createErr := s.pendingAdjRepo.Create(jobCtx, repository.CreatePendingAdjustmentParams{
+				TenantID:           tenant.ID,
+				CampaignResourceID: res.ID,
+				AdjustmentType:     string(proposal.Type),
+				CurrentValue:       proposal.CurrentValue,
+				ProposedValue:      proposal.ProposedValue,
+				Reason:             proposal.Reason,
+				ExpiresAt:          &expiresAt,
+			})
+			if createErr != nil {
+				slog.Error("scheduler: campaign_adjustment — create suggestion", "resource", res.ID, "err", createErr)
+				failed++
+				continue
+			}
+
+			campaignID := res.ResourceID
+			var campaignNameStr string
+			if res.ResourceName != nil {
+				campaignNameStr = *res.ResourceName
+			}
+			details, _ := json.Marshal(map[string]any{
+				"campaign_name":         campaignNameStr,
+				"adjustment_type":       string(proposal.Type),
+				"current_value":         proposal.CurrentValue,
+				"proposed_value":        proposal.ProposedValue,
+				"reason":                proposal.Reason,
+				"pending_adjustment_id": adj.ID,
+			})
+			_ = s.alertRepo.Create(ctx, repository.AlertEvent{
+				ID:           domain.NewID(),
+				TenantID:     tenant.ID,
+				Level:        "INFO",
+				Type:         "adjustment_suggestion",
+				CampaignID:   &campaignID,
+				CampaignName: res.ResourceName,
+				Message:      fmt.Sprintf("Campaign adjustment suggested: %s from %.2f to %.2f", proposal.Type, proposal.CurrentValue, proposal.ProposedValue),
+				Details:      details,
+			})
+			suggested++
+		}
+	}
+
+	status := "success"
+	if failed > 0 && applied == 0 && suggested == 0 {
+		status = "error"
+	}
+	summary := fmt.Sprintf("applied=%d suggested=%d failed=%d resources=%d", applied, suggested, failed, len(resources))
+	_ = s.agentRunRepo.Log(ctx, tenant.ID, agentName(jobType), status, summary)
+	slog.Info("scheduler: campaign_adjustment done", "tenant", tenant.ID, "applied", applied, "suggested", suggested, "failed", failed)
+}
+
+func (s *Scheduler) applyMutation(ctx context.Context, client *googleads.Client, res *domain.ConnectorResource, proposal *adjuster.Proposal) error {
+	switch proposal.Type {
+	case adjuster.BidIncrease, adjuster.BidDecrease:
+		return client.UpdateTargetCPA(ctx, res.ResourceID, proposal.ProposedValue)
+	case adjuster.BudgetIncrease, adjuster.BudgetDecrease:
+		budgetID, _ := res.Metadata["budget_id"].(string)
+		if budgetID == "" {
+			return fmt.Errorf("budget_id missing from campaign metadata (resource %s)", res.ID)
+		}
+		return client.UpdateBudget(ctx, budgetID, proposal.ProposedValue)
+	default:
+		return fmt.Errorf("unknown adjustment type: %s", proposal.Type)
+	}
 }

@@ -75,6 +75,15 @@ func (r *ConnectorResourceRepository) Delete(ctx context.Context, id string) err
 	return mapError(r.queries.DeleteConnectorResource(ctx, id))
 }
 
+func (r *ConnectorResourceRepository) UpdateMetadata(ctx context.Context, id string, metadata map[string]any) error {
+	b, err := json.Marshal(metadata)
+	if err != nil {
+		return err
+	}
+	_, err = r.pool.Exec(ctx, `UPDATE connector_resources SET metadata = $1, updated_at = NOW() WHERE id = $2`, b, id)
+	return err
+}
+
 func mapConnectorResource(row db.ConnectorResource) *domain.ConnectorResource {
 	var metadata map[string]any
 	if len(row.Metadata) > 0 && string(row.Metadata) != "null" {

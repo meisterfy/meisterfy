@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
+	"github.com/mkt-maestro/mkt-maestro/internal/adjuster"
 	"github.com/mkt-maestro/mkt-maestro/internal/api"
 	"github.com/mkt-maestro/mkt-maestro/internal/config"
 	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
@@ -410,7 +411,12 @@ func main() {
 	// Background scheduler — shares lifetime with the server process.
 	schedCtx, schedCancel := context.WithCancel(ctx)
 	defer schedCancel()
-	sched := scheduler.New(tenantRepo, agentRunRepo, metricsRepo, scheduler.AdsClientFactory(adsFactory), llmSelector)
+	adjEngine := adjuster.New(metricsRepo, connectorResourceRepo)
+	sched := scheduler.New(
+		tenantRepo, agentRunRepo, metricsRepo,
+		scheduler.AdsClientFactory(adsFactory), llmSelector,
+		adjEngine, pendingAdjustmentRepo, auditLogRepo, alertRepo, connectorResourceRepo,
+	)
 	go sched.Start(schedCtx)
 
 	go func() {
