@@ -34,6 +34,7 @@ type accessClaims struct {
 	TenantID    string   `json:"tid"`
 	Permissions []string `json:"perms"`
 	UserName    string   `json:"uname,omitempty"`
+	SystemRole  string   `json:"sr,omitempty"`
 }
 
 type refreshClaims struct {
@@ -57,6 +58,7 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 		TenantID:    claims.TenantID,
 		Permissions: claims.Permissions,
 		UserName:    claims.UserName,
+		SystemRole:  claims.SystemRole,
 	}
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, ac).SignedString(s.secret)
 	if err != nil {
@@ -103,6 +105,7 @@ func (s *JWTService) ParseAccessToken(token string) (*UserClaims, error) {
 		TenantID:    ac.TenantID,
 		Permissions: ac.Permissions,
 		UserName:    ac.UserName,
+		SystemRole:  ac.SystemRole,
 	}, nil
 }
 

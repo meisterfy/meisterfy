@@ -19,6 +19,9 @@ WHERE id = $1;
 -- name: UpdateUserPassword :exec
 UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1;
 
+-- name: SetUserSystemRole :exec
+UPDATE users SET system_role = $2, updated_at = NOW() WHERE id = $1;
+
 -- name: DeleteUser :exec
 DELETE FROM users WHERE id = $1;
 

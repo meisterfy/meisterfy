@@ -125,6 +125,30 @@ type IntegrationTenant struct {
 	TenantID      string `json:"tenant_id"`
 }
 
+type LegalTermVersion struct {
+	ID             string          `json:"id"`
+	Version        int32           `json:"version"`
+	FallbackLocale string          `json:"fallback_locale"`
+	Translations   json.RawMessage `json:"translations"`
+	EffectiveAt    time.Time       `json:"effective_at"`
+	CreatedBy      *string         `json:"created_by"`
+	CreatedAt      time.Time       `json:"created_at"`
+}
+
+type McpApiKey struct {
+	ID         string             `json:"id"`
+	TenantID   string             `json:"tenant_id"`
+	Name       string             `json:"name"`
+	KeyPrefix  string             `json:"key_prefix"`
+	KeyHash    string             `json:"key_hash"`
+	Role       string             `json:"role"`
+	CreatedBy  *string            `json:"created_by"`
+	LastUsedAt pgtype.Timestamptz `json:"last_used_at"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	RevokedAt  pgtype.Timestamptz `json:"revoked_at"`
+	CreatedAt  time.Time          `json:"created_at"`
+}
+
 type MonthlySummary struct {
 	ID           string         `json:"id"`
 	TenantID     string         `json:"tenant_id"`
@@ -224,6 +248,15 @@ type User struct {
 	IsActive     bool      `json:"is_active"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+	SystemRole   string    `json:"system_role"`
+}
+
+type UserLegalAcceptance struct {
+	UserID     string    `json:"user_id"`
+	VersionID  string    `json:"version_id"`
+	LocaleSeen *string   `json:"locale_seen"`
+	AcceptedAt time.Time `json:"accepted_at"`
+	Ip         *string   `json:"ip"`
 }
 
 type UserTenantRole struct {

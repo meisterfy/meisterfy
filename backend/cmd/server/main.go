@@ -133,6 +133,8 @@ func main() {
 	campaignReportRepo         := repository.NewCampaignReportRepository(pool)
 	auditLogRepo               := repository.NewAuditLogRepository(pool)
 	pendingAdjustmentRepo      := repository.NewPendingAdjustmentRepository(pool)
+	mcpApiKeyRepo              := repository.NewMcpApiKeyRepository(pool)
+	legalRepo                  := repository.NewLegalRepository(pool)
 	jwtSvc := domain.NewJWTService(cfg.JWTSecret)
 
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
@@ -172,7 +174,7 @@ func main() {
 
 	r.Post("/setup", api.NewSetupHandler(userRepo, tenantRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction()).Create)
 
-	authHandler         := api.NewAuthHandler(userRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction())
+	authHandler         := api.NewAuthHandler(userRepo, rbacRepo, legalRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction())
 	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo, auditLogRepo)
 	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
 	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo, auditLogRepo)
@@ -189,6 +191,8 @@ func main() {
 	aiGenerateHandler       := api.NewAIGenerateHandler(llmSelector)
 	campaignReportsHandler           := api.NewCampaignReportsHandler(campaignReportRepo)
 	pendingAdjustmentsHandler        := api.NewAdminPendingAdjustmentsHandler(pendingAdjustmentRepo)
+	mcpKeysHandler                   := api.NewAdminMcpKeysHandler(mcpApiKeyRepo)
+	legalHandler                     := api.NewLegalHandler(legalRepo)
 
 	// All non-streaming routes get a 30s request timeout.
 	// The /ai/generate SSE endpoint is registered outside this group.
@@ -205,6 +209,7 @@ func main() {
 				r.Get("/me", authHandler.Me)
 				r.Put("/me", authHandler.UpdateMe)
 				r.Post("/change-password", authHandler.ChangePassword)
+				r.Post("/accept-terms", authHandler.AcceptTerms)
 			})
 			// Google Ads OAuth — redirect-based flow, no auth middleware
 			r.Get("/google-ads/start", oauthGoogleAds.Start)
@@ -234,14 +239,26 @@ func main() {
 			r.With(middleware.RequirePermission("view:role")).Get("/permissions", rolesHandler.ListPermissions)
 	
 			// integrations
-			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations", integrationsHandler.List)
-			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations/providers", integrationsHandler.ListProviders)
-			r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations", integrationsHandler.Create)
-			r.With(middleware.RequirePermission("view:integrations")).Get("/integrations/{id}", integrationsHandler.Get)
-			r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}", integrationsHandler.Update)
-			r.With(middleware.RequirePermission("manage:integrations")).Delete("/integrations/{id}", integrationsHandler.Delete)
-			r.With(middleware.RequirePermission("manage:integrations")).Post("/integrations/{id}/test", integrationsHandler.Test)
-			r.With(middleware.RequirePermission("manage:integrations")).Put("/integrations/{id}/tenants", integrationsHandler.SetTenants)
+			r.With(middleware.RequireSystemRole("platform_admin")).Get("/integrations", integrationsHandler.List)
+			r.With(middleware.RequireSystemRole("platform_admin")).Get("/integrations/providers", integrationsHandler.ListProviders)
+			r.With(middleware.RequireSystemRole("platform_admin")).Post("/integrations", integrationsHandler.Create)
+			r.With(middleware.RequireSystemRole("platform_admin")).Get("/integrations/{id}", integrationsHandler.Get)
+			r.With(middleware.RequireSystemRole("platform_admin")).Put("/integrations/{id}", integrationsHandler.Update)
+			r.With(middleware.RequireSystemRole("platform_admin")).Delete("/integrations/{id}", integrationsHandler.Delete)
+			r.With(middleware.RequireSystemRole("platform_admin")).Post("/integrations/{id}/test", integrationsHandler.Test)
+			r.With(middleware.RequireSystemRole("platform_admin")).Put("/integrations/{id}/tenants", integrationsHandler.SetTenants)
+
+			// system role management — platform admin only
+			r.With(middleware.RequireSystemRole("platform_admin")).Put("/users/{id}/system-role", usersHandler.SetSystemRole)
+
+			// legal terms — platform admin only
+			r.Route("/legal", func(r chi.Router) {
+				r.Use(middleware.RequireSystemRole("platform_admin"))
+				r.Get("/versions", legalHandler.List)
+				r.Post("/versions", legalHandler.Create)
+				r.Get("/versions/{id}", legalHandler.Get)
+				r.Put("/versions/{id}", legalHandler.Update)
+			})
 	
 			// tenants
 			r.With(middleware.RequirePermission("view-any:tenant")).Get("/tenants", tenantsHandler.List)
@@ -295,6 +312,11 @@ func main() {
 				r.With(middleware.RequirePermission("manage:campaign")).Post("/pending-adjustments/{id}/approve", pendingAdjustmentsHandler.Approve)
 				r.With(middleware.RequirePermission("manage:campaign")).Post("/pending-adjustments/{id}/reject", pendingAdjustmentsHandler.Reject)
 
+				// mcp api keys
+				r.With(middleware.RequirePermission("manage:mcp-keys")).Get("/mcp-keys", mcpKeysHandler.List)
+				r.With(middleware.RequirePermission("manage:mcp-keys")).Post("/mcp-keys", mcpKeysHandler.Create)
+				r.With(middleware.RequirePermission("manage:mcp-keys")).Delete("/mcp-keys/{keyId}", mcpKeysHandler.Revoke)
+
 				// audit log
 				r.With(middleware.RequirePermission("view-any:user")).Get("/audit-log", auditLogHandler.List)
 			})
@@ -340,7 +362,7 @@ func main() {
 	}) // end timeout group
 
 	r.Route("/mcp", func(r chi.Router) {
-		r.Use(api.MCPAuthMiddleware(cfg.MCPAPIKey))
+		r.Use(middleware.AuthenticateMCPKey(mcpApiKeyRepo))
 		r.Post("/", mcpSrv.ServeHTTP)
 		r.Get("/", mcpSrv.ServeHTTP)
 		r.Delete("/", mcpSrv.ServeHTTP)

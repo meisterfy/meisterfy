@@ -14,6 +14,7 @@ type User struct {
 	Locale       string
 	Timezone     string
 	IsActive     bool
+	SystemRole   string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -35,6 +36,7 @@ type UserClaims struct {
 	UserName    string
 	TenantID    string
 	Permissions []string
+	SystemRole  string
 }
 
 func (u *User) SetPassword(plain string) error {
@@ -57,4 +59,8 @@ func (c *UserClaims) HasPermission(name string) bool {
 		}
 	}
 	return false
+}
+
+func (c *UserClaims) IsPlatformAdmin() bool {
+	return c.SystemRole == "platform_admin"
 }

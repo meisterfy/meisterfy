@@ -20,6 +20,7 @@ type adminUserRepo interface {
 	Create(ctx context.Context, u *domain.User) error
 	Update(ctx context.Context, u *domain.User) error
 	Delete(ctx context.Context, id string) error
+	SetSystemRole(ctx context.Context, userID, role string) error
 }
 
 type adminRBACRepo interface {
@@ -46,15 +47,16 @@ type roleRef struct {
 }
 
 type userAdminResponse struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Locale    string    `json:"locale"`
-	Timezone  string    `json:"timezone"`
-	IsActive  bool      `json:"is_active"`
-	Role      *roleRef  `json:"role,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Email      string    `json:"email"`
+	Locale     string    `json:"locale"`
+	Timezone   string    `json:"timezone"`
+	IsActive   bool      `json:"is_active"`
+	SystemRole string    `json:"system_role"`
+	Role       *roleRef  `json:"role,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 func effectiveTenantID(r *http.Request, claims *domain.UserClaims) string {
@@ -411,13 +413,46 @@ func (h *AdminUsersHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
 
 func toUserAdminResponse(u *domain.User) userAdminResponse {
 	return userAdminResponse{
-		ID:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		Locale:    u.Locale,
-		Timezone:  u.Timezone,
-		IsActive:  u.IsActive,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		ID:         u.ID,
+		Name:       u.Name,
+		Email:      u.Email,
+		Locale:     u.Locale,
+		Timezone:   u.Timezone,
+		IsActive:   u.IsActive,
+		SystemRole: u.SystemRole,
+		CreatedAt:  u.CreatedAt,
+		UpdatedAt:  u.UpdatedAt,
 	}
+}
+
+func (h *AdminUsersHandler) SetSystemRole(w http.ResponseWriter, r *http.Request) {
+	callerClaims := middleware.UserClaimsFromContext(r.Context())
+	targetID := chi.URLParam(r, "id")
+
+	if callerClaims != nil && callerClaims.UserID == targetID {
+		Error(w, http.StatusUnprocessableEntity, "cannot change your own system role")
+		return
+	}
+
+	var req struct {
+		SystemRole string `json:"system_role"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		UnprocessableEntity(w, "invalid request body")
+		return
+	}
+	if req.SystemRole != "user" && req.SystemRole != "platform_admin" {
+		UnprocessableEntity(w, "system_role must be 'user' or 'platform_admin'")
+		return
+	}
+
+	if err := h.userRepo.SetSystemRole(r.Context(), targetID, req.SystemRole); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			NotFound(w)
+			return
+		}
+		InternalError(w)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

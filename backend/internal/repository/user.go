@@ -79,15 +79,21 @@ func (r *UserRepository) Delete(ctx context.Context, id string) error {
 	return mapError(r.queries.DeleteUser(ctx, id))
 }
 
-func (r *UserRepository) ListForTenant(ctx context.Context, tenantID string) ([]*domain.User, error) {
-	const q = `
-		SELECT u.id, u.name, u.email, u.password_hash, u.locale, u.timezone, u.is_active, u.created_at, u.updated_at
+func (r *UserRepository) ListForTenant(ctx context.Context, tenantID string, active *bool) ([]*domain.User, error) {
+	q := `
+		SELECT u.id, u.name, u.email, u.password_hash, u.locale, u.timezone, u.is_active, u.system_role, u.created_at, u.updated_at
 		FROM users u
 		JOIN user_tenant_roles utr ON utr.user_id = u.id
 		WHERE utr.tenant_id = $1
-		ORDER BY u.created_at DESC
 	`
-	rows, err := r.pool.Query(ctx, q, tenantID)
+	args := []any{tenantID}
+	if active != nil {
+		q += ` AND u.is_active = $2`
+		args = append(args, *active)
+	}
+	q += ` ORDER BY u.created_at DESC`
+
+	rows, err := r.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, mapError(err)
 	}
@@ -95,7 +101,7 @@ func (r *UserRepository) ListForTenant(ctx context.Context, tenantID string) ([]
 	var users []*domain.User
 	for rows.Next() {
 		var u db.User
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Locale, &u.Timezone, &u.IsActive, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.PasswordHash, &u.Locale, &u.Timezone, &u.IsActive, &u.SystemRole, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, err
 		}
 		users = append(users, mapUser(u))
@@ -107,6 +113,13 @@ func (r *UserRepository) Count(ctx context.Context) (int64, error) {
 	return r.queries.CountUsers(ctx)
 }
 
+func (r *UserRepository) SetSystemRole(ctx context.Context, userID, role string) error {
+	return mapError(r.queries.SetUserSystemRole(ctx, db.SetUserSystemRoleParams{
+		ID:         userID,
+		SystemRole: role,
+	}))
+}
+
 func mapUser(row db.User) *domain.User {
 	return &domain.User{
 		ID:           row.ID,
@@ -116,6 +129,7 @@ func mapUser(row db.User) *domain.User {
 		Locale:       row.Locale,
 		Timezone:     row.Timezone,
 		IsActive:     row.IsActive,
+		SystemRole:   row.SystemRole,
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,
 	}

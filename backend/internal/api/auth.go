@@ -24,6 +24,11 @@ type AuthHandler struct {
 		GetTenantsForUser(ctx context.Context, userID string) ([]string, error)
 		GetPermissionsForUser(ctx context.Context, userID, tenantID string) ([]string, error)
 	}
+	legalRepo interface {
+		GetLatestVersion(ctx context.Context) (*domain.LegalTermVersion, error)
+		HasUserAccepted(ctx context.Context, userID, versionID string) (bool, error)
+		RecordAcceptance(ctx context.Context, userID, versionID, locale, ip string) error
+	}
 	jwtSvc        *domain.JWTService
 	cookieDomain  string
 	secureCookies bool
@@ -40,6 +45,11 @@ func NewAuthHandler(
 		GetTenantsForUser(ctx context.Context, userID string) ([]string, error)
 		GetPermissionsForUser(ctx context.Context, userID, tenantID string) ([]string, error)
 	},
+	legalRepo interface {
+		GetLatestVersion(ctx context.Context) (*domain.LegalTermVersion, error)
+		HasUserAccepted(ctx context.Context, userID, versionID string) (bool, error)
+		RecordAcceptance(ctx context.Context, userID, versionID, locale, ip string) error
+	},
 	jwtSvc *domain.JWTService,
 	cookieDomain string,
 	secureCookies bool,
@@ -47,6 +57,7 @@ func NewAuthHandler(
 	return &AuthHandler{
 		userRepo:      userRepo,
 		rbacRepo:      rbacRepo,
+		legalRepo:     legalRepo,
 		jwtSvc:        jwtSvc,
 		cookieDomain:  cookieDomain,
 		secureCookies: secureCookies,
@@ -54,11 +65,19 @@ func NewAuthHandler(
 }
 
 type userResponse struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Locale   string `json:"locale"`
-	Timezone string `json:"timezone"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Locale     string `json:"locale"`
+	Timezone   string `json:"timezone"`
+	SystemRole string `json:"system_role"`
+}
+
+type pendingTermsPayload struct {
+	VersionID string             `json:"version_id"`
+	Version   int                `json:"version"`
+	Locale    string             `json:"locale"`
+	Blocks    []domain.TermBlock `json:"blocks"`
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -121,13 +140,18 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	h.setRefreshCookie(w, pair.RefreshToken)
 
-	JSON(w, http.StatusOK, map[string]any{
+	resp := map[string]any{
 		"access_token": pair.AccessToken,
 		"expires_at":   pair.ExpiresAt,
 		"tenant_id":    claims.TenantID,
+		"permissions":  claims.Permissions,
 		"tenants":      tenants,
 		"user":         toUserResponse(user),
-	})
+	}
+	if pt := h.buildPendingTerms(r.Context(), user); pt != nil {
+		resp["pending_terms"] = pt
+	}
+	JSON(w, http.StatusOK, resp)
 }
 
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
@@ -188,13 +212,18 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	h.setRefreshCookie(w, pair.RefreshToken)
 
 	tenants, _ := h.rbacRepo.GetTenantsForUser(r.Context(), user.ID)
-	JSON(w, http.StatusOK, map[string]any{
+	resp := map[string]any{
 		"access_token": pair.AccessToken,
 		"expires_at":   pair.ExpiresAt,
 		"tenant_id":    claims.TenantID,
+		"permissions":  claims.Permissions,
 		"tenants":      tenants,
 		"user":         toUserResponse(user),
-	})
+	}
+	if pt := h.buildPendingTerms(r.Context(), user); pt != nil {
+		resp["pending_terms"] = pt
+	}
+	JSON(w, http.StatusOK, resp)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -322,10 +351,69 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) issueBootstrapToken(user *domain.User) (domain.TokenPair, error) {
 	pair, err := h.jwtSvc.IssueTokenPair(domain.UserClaims{
 		UserID:      user.ID,
+		SystemRole:  user.SystemRole,
 		TenantID:    "",
 		Permissions: []string{"create:tenant", "view-any:tenant"},
 	})
 	return pair, err
+}
+
+func (h *AuthHandler) buildPendingTerms(ctx context.Context, user *domain.User) *pendingTermsPayload {
+	if h.legalRepo == nil {
+		return nil
+	}
+	latest, err := h.legalRepo.GetLatestVersion(ctx)
+	if err != nil || latest == nil {
+		return nil
+	}
+	accepted, err := h.legalRepo.HasUserAccepted(ctx, user.ID, latest.ID)
+	if err != nil || accepted {
+		return nil
+	}
+	locale := user.Locale
+	if locale == "" {
+		locale = latest.FallbackLocale
+	}
+	blocks, resolvedLocale := latest.ResolveBlocks(locale)
+	return &pendingTermsPayload{
+		VersionID: latest.ID,
+		Version:   latest.Version,
+		Locale:    resolvedLocale,
+		Blocks:    blocks,
+	}
+}
+
+func (h *AuthHandler) AcceptTerms(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
+	if claims == nil {
+		Unauthorized(w)
+		return
+	}
+
+	var req struct {
+		VersionID string `json:"version_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.VersionID == "" {
+		UnprocessableEntity(w, "version_id is required")
+		return
+	}
+
+	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
+	if err != nil {
+		Unauthorized(w)
+		return
+	}
+
+	ip := r.Header.Get("X-Real-IP")
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+
+	if err := h.legalRepo.RecordAcceptance(r.Context(), claims.UserID, req.VersionID, user.Locale, ip); err != nil {
+		InternalError(w)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *AuthHandler) issueTokens(ctx context.Context, user *domain.User, tenantID string) (domain.TokenPair, *domain.UserClaims, error) {
@@ -338,6 +426,7 @@ func (h *AuthHandler) issueTokens(ctx context.Context, user *domain.User, tenant
 		UserName:    user.Name,
 		TenantID:    tenantID,
 		Permissions: perms,
+		SystemRole:  user.SystemRole,
 	}
 	pair, err := h.jwtSvc.IssueTokenPair(claims)
 	if err != nil {
@@ -374,10 +463,11 @@ func (h *AuthHandler) clearRefreshCookie(w http.ResponseWriter) {
 
 func toUserResponse(u *domain.User) userResponse {
 	return userResponse{
-		ID:       u.ID,
-		Name:     u.Name,
-		Email:    u.Email,
-		Locale:   u.Locale,
-		Timezone: u.Timezone,
+		ID:         u.ID,
+		Name:       u.Name,
+		Email:      u.Email,
+		Locale:     u.Locale,
+		Timezone:   u.Timezone,
+		SystemRole: u.SystemRole,
 	}
 }

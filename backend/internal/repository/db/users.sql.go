@@ -58,7 +58,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at FROM users WHERE email = $1 LIMIT 1
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -74,12 +74,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SystemRole,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at FROM users WHERE id = $1 LIMIT 1
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
@@ -95,12 +96,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SystemRole,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at FROM users ORDER BY created_at DESC
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users ORDER BY created_at DESC
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -122,6 +124,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.SystemRole,
 		); err != nil {
 			return nil, err
 		}
@@ -131,6 +134,20 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const setUserSystemRole = `-- name: SetUserSystemRole :exec
+UPDATE users SET system_role = $2, updated_at = NOW() WHERE id = $1
+`
+
+type SetUserSystemRoleParams struct {
+	ID         string `json:"id"`
+	SystemRole string `json:"system_role"`
+}
+
+func (q *Queries) SetUserSystemRole(ctx context.Context, arg SetUserSystemRoleParams) error {
+	_, err := q.db.Exec(ctx, setUserSystemRole, arg.ID, arg.SystemRole)
+	return err
 }
 
 const updateUser = `-- name: UpdateUser :exec
