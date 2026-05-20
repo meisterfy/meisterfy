@@ -25,7 +25,7 @@ jobs:
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
       - name: Run golangci-lint
         working-directory: backend
         run: golangci-lint run --path-prefix=backend ./...
@@ -120,7 +120,7 @@ jobs:
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
       - name: Run govulncheck
         working-directory: backend
         run: govulncheck ./...
@@ -183,6 +183,9 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: bun install --frozen-lockfile
+      - name: Generate i18n messages
+        working-directory: frontend
+        run: bun run paraglide:build
       - name: Build
         working-directory: frontend
         run: bun run build
@@ -252,8 +255,8 @@ jobs:
       - name: Check all jobs
         run: |
           results='${{ toJSON(needs) }}'
-          if echo "$results" | grep -q '"result":"failure"'; then
-            echo "One or more jobs failed"
+          if echo "$results" | grep -qE '"result":"(failure|cancelled)"'; then
+            echo "One or more jobs failed or were cancelled"
             exit 1
           fi
           echo "All checks passed"
