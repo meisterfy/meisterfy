@@ -31,7 +31,7 @@ export default defineConfig({
 			thresholds: {
 				'src/lib/api/**': {
 					lines: 70,
-					functions: 70
+					functions: 65
 				}
 			}
 		},

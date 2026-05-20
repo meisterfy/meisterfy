@@ -9,6 +9,10 @@ vi.mock('@/lib/components/ui/platform-select/platform-select.svelte', async () =
 	default: (await import('./__test-mocks__/platform-select.svelte')).default
 }))
 
+vi.mock('$lib/api/social-accounts', () => ({
+	getConnectedMetaPages: vi.fn().mockResolvedValue([])
+}))
+
 import NewPostDrawer from './new-post-drawer.svelte'
 
 test('submit button is disabled when title is empty', async () => {
