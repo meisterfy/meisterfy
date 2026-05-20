@@ -23,6 +23,7 @@ interface CachedSession {
 	user: AuthUser
 	token: string
 	expiresAt: number // ms timestamp
+	pendingTerms?: PendingTerms | null
 }
 
 const SESSION_KEY = 'mkt_session'
@@ -47,7 +48,9 @@ function saveSession(user: AuthUser, token: string, expiresAt: number) {
 function clearSession() {
 	try {
 		sessionStorage.removeItem(SESSION_KEY)
-	} catch {}
+	} catch {
+		/* ignore sessionStorage errors */
+	}
 }
 
 let _token = $state<string | null>(null)
@@ -118,7 +121,7 @@ export const auth = {
 			setToken(cached.token)
 			_token = cached.token
 			_user = cached.user
-			_pendingTerms = (cached as any).pendingTerms ?? null
+			_pendingTerms = cached.pendingTerms ?? null
 			if (_user?.locale) localeStore.init(_user.locale)
 
 			doRefresh()

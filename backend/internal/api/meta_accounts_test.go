@@ -84,6 +84,7 @@ func TestMetaAccounts_ListAvailablePages_IntegrationRepoError(t *testing.T) {
 }
 
 func TestMetaAccounts_ListAvailablePages_LiveMeta(t *testing.T) {
+	t.Parallel()
 	t.Skip("requires live Meta API — set META_ACCESS_TOKEN to run locally")
 }
 
@@ -158,6 +159,7 @@ func TestMetaAccounts_ActivatePage_IntegrationRepoError(t *testing.T) {
 }
 
 func TestMetaAccounts_ActivatePage_LiveMeta(t *testing.T) {
+	t.Parallel()
 	t.Skip("requires live Meta API — set META_ACCESS_TOKEN to run locally")
 }
 

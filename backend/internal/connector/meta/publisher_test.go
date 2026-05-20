@@ -85,7 +85,7 @@ func TestBuildCaption(t *testing.T) {
 
 func TestMetaPublisher_Publish_MissingPageToken(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{})
 	_, err := p.Publish(context.Background(), social.PlatformFacebook, res, postWithMedia("content", nil))
 	if err == nil {
@@ -95,7 +95,7 @@ func TestMetaPublisher_Publish_MissingPageToken(t *testing.T) {
 
 func TestMetaPublisher_Publish_UnsupportedPlatform(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok"})
 	_, err := p.Publish(context.Background(), social.PlatformInstagramReel, res, postWithMedia("content", nil))
 	if err == nil || !strings.Contains(err.Error(), "unsupported") {
@@ -105,7 +105,7 @@ func TestMetaPublisher_Publish_UnsupportedPlatform(t *testing.T) {
 
 func TestMetaPublisher_Publish_IGFeed_MissingIgUserID(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok"})
 	path := "/media/img.jpg"
 	_, err := p.Publish(context.Background(), social.PlatformInstagramFeed, res, postWithMedia("content", &path))
@@ -116,7 +116,7 @@ func TestMetaPublisher_Publish_IGFeed_MissingIgUserID(t *testing.T) {
 
 func TestMetaPublisher_Publish_IGFeed_MissingImage(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok", "ig_user_id": "ig-1"})
 	_, err := p.Publish(context.Background(), social.PlatformInstagramFeed, res, postWithMedia("content", nil))
 	if err == nil || !strings.Contains(err.Error(), "image") {
@@ -126,7 +126,7 @@ func TestMetaPublisher_Publish_IGFeed_MissingImage(t *testing.T) {
 
 func TestMetaPublisher_Publish_IGStory_MissingIgUserID(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok"})
 	path := "/media/img.jpg"
 	_, err := p.Publish(context.Background(), social.PlatformInstagramStory, res, postWithMedia("content", &path))
@@ -137,7 +137,7 @@ func TestMetaPublisher_Publish_IGStory_MissingIgUserID(t *testing.T) {
 
 func TestMetaPublisher_Publish_IGStory_MissingImage(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok", "ig_user_id": "ig-1"})
 	_, err := p.Publish(context.Background(), social.PlatformInstagramStory, res, postWithMedia("content", nil))
 	if err == nil || !strings.Contains(err.Error(), "image") {
@@ -149,7 +149,7 @@ func TestMetaPublisher_Publish_IGStory_MissingImage(t *testing.T) {
 
 func TestMetaPublisher_FetchInsights_MissingPageToken(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{})
 	_, err := p.FetchInsights(context.Background(), social.PlatformInstagramFeed, res, "ext-123")
 	if err == nil {
@@ -159,7 +159,7 @@ func TestMetaPublisher_FetchInsights_MissingPageToken(t *testing.T) {
 
 func TestMetaPublisher_FetchInsights_UnsupportedPlatform(t *testing.T) {
 	t.Parallel()
-	p := NewMetaPublisher("http://localhost")
+	p := NewPublisher("http://localhost")
 	res := resourceWith(map[string]any{"page_access_token": "tok"})
 	_, err := p.FetchInsights(context.Background(), social.PlatformInstagramReel, res, "ext-123")
 	if err == nil || !strings.Contains(err.Error(), "unsupported") {
@@ -170,13 +170,16 @@ func TestMetaPublisher_FetchInsights_UnsupportedPlatform(t *testing.T) {
 // --- Happy paths skipped (require live Meta API) ---
 
 func TestMetaPublisher_Publish_IGFeed_Success(t *testing.T) {
+	t.Parallel()
 	t.Skip("requires live Meta API — set META_PAGE_ACCESS_TOKEN + META_IG_USER_ID to run locally")
 }
 
 func TestMetaPublisher_Publish_Facebook_Success(t *testing.T) {
+	t.Parallel()
 	t.Skip("requires live Meta API — set META_PAGE_ACCESS_TOKEN to run locally")
 }
 
 func TestMetaPublisher_FetchInsights_Success(t *testing.T) {
+	t.Parallel()
 	t.Skip("requires live Meta API — set META_PAGE_ACCESS_TOKEN to run locally")
 }

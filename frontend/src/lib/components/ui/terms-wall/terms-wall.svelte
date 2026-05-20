@@ -21,6 +21,7 @@
 
 	function handleLogout() {
 		auth.clear()
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto('/login')
 	}
 </script>

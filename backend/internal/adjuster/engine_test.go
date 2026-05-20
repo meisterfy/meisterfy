@@ -191,7 +191,7 @@ func TestEvaluate_BidDecrease_HighCPA(t *testing.T) {
 	require.NotNil(t, p)
 	assert.Equal(t, BidDecrease, p.Type)
 	assert.Equal(t, "res-1", p.CampaignResourceID)
-	assert.Equal(t, 10.0, p.CurrentValue)
+	assert.InDelta(t, 10.0, p.CurrentValue, 0.001)
 	// reduction = min(0.10, 20/100=0.20) = 0.10 → proposed = 10*(1-0.10) = 9.0
 	assert.InDelta(t, 9.0, p.ProposedValue, 0.001)
 	assert.NotEmpty(t, p.Reason)
@@ -264,7 +264,7 @@ func TestEvaluate_BudgetIncrease_LowImpressions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, p)
 	assert.Equal(t, BudgetIncrease, p.Type)
-	assert.Equal(t, 100.0, p.CurrentValue)
+	assert.InDelta(t, 100.0, p.CurrentValue, 0.001)
 	// increase = min(0.10, 0.20) = 0.10 → 100*(1.10) = 110
 	assert.InDelta(t, 110.0, p.ProposedValue, 0.001)
 }

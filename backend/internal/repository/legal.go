@@ -64,7 +64,7 @@ func (r *LegalRepository) CreateVersion(ctx context.Context, v *domain.LegalTerm
 	var maxVersion int32
 	switch mv := maxRaw.(type) {
 	case int64:
-		maxVersion = int32(mv)
+		maxVersion = int32(mv) //nolint:gosec // version numbers are small sequential integers
 	case int32:
 		maxVersion = mv
 	}
@@ -72,7 +72,7 @@ func (r *LegalRepository) CreateVersion(ctx context.Context, v *domain.LegalTerm
 
 	return mapError(r.queries.CreateLegalTermVersion(ctx, db.CreateLegalTermVersionParams{
 		ID:             v.ID,
-		Version:        int32(v.Version),
+		Version:        int32(v.Version), //nolint:gosec // version numbers are small sequential integers
 		FallbackLocale: v.FallbackLocale,
 		Translations:   raw,
 		EffectiveAt:    v.EffectiveAt,

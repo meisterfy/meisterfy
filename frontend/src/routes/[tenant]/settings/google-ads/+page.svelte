@@ -428,7 +428,7 @@
 							bind:value={minCampaignAgeDays}
 						/>
 						<div class="mt-2 flex gap-1.5">
-							{#each [7, 14, 21, 30] as preset}
+							{#each [7, 14, 21, 30] as preset (preset)}
 								<button
 									type="button"
 									onclick={() => (minCampaignAgeDays = preset)}
@@ -450,7 +450,7 @@
 							bind:value={adjustmentIntervalDays}
 						/>
 						<div class="mt-2 flex gap-1.5">
-							{#each [3, 7, 14] as preset}
+							{#each [3, 7, 14] as preset (preset)}
 								<button
 									type="button"
 									onclick={() => (adjustmentIntervalDays = preset)}

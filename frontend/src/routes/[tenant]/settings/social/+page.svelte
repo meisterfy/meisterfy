@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from 'svelte'
 	import { Switch } from 'bits-ui'
 	import { Share2, Plus, Trash2 } from 'lucide-svelte'
 	import { m } from '$lib/paraglide/messages'

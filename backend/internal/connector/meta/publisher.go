@@ -9,23 +9,23 @@ import (
 	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 )
 
-// MetaPublisher implements social.Publisher for Meta platforms (Instagram + Facebook).
-type MetaPublisher struct {
+// Publisher implements social.Publisher for Meta platforms (Instagram + Facebook).
+type Publisher struct {
 	baseURL string
 }
 
-func NewMetaPublisher(baseURL string) *MetaPublisher {
-	return &MetaPublisher{baseURL: strings.TrimSuffix(baseURL, "/")}
+func NewPublisher(baseURL string) *Publisher {
+	return &Publisher{baseURL: strings.TrimSuffix(baseURL, "/")}
 }
 
-func (p *MetaPublisher) pageToken(resource *domain.ConnectorResource) (string, error) {
+func (p *Publisher) pageToken(resource *domain.ConnectorResource) (string, error) {
 	if t, ok := resource.Metadata["page_access_token"].(string); ok && t != "" {
 		return t, nil
 	}
 	return "", fmt.Errorf("resource %s has no page_access_token in metadata", resource.ID)
 }
 
-func (p *MetaPublisher) Publish(ctx context.Context, platform social.Platform, resource *domain.ConnectorResource, post *domain.Post) (social.PublishResult, error) {
+func (p *Publisher) Publish(ctx context.Context, platform social.Platform, resource *domain.ConnectorResource, post *domain.Post) (social.PublishResult, error) {
 	token, err := p.pageToken(resource)
 	if err != nil {
 		return social.PublishResult{}, err
@@ -45,7 +45,7 @@ func (p *MetaPublisher) Publish(ctx context.Context, platform social.Platform, r
 	}
 }
 
-func (p *MetaPublisher) publishIGFeed(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post, caption string) (social.PublishResult, error) {
+func (p *Publisher) publishIGFeed(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post, caption string) (social.PublishResult, error) {
 	igMeta := resource.MetaMetadata()
 	if igMeta.IgUserID == "" {
 		return social.PublishResult{}, fmt.Errorf("resource %s has no ig_user_id", resource.ID)
@@ -68,7 +68,7 @@ func (p *MetaPublisher) publishIGFeed(ctx context.Context, client *Client, resou
 	return social.PublishResult{ExternalID: mediaID, Platform: social.PlatformInstagramFeed}, nil
 }
 
-func (p *MetaPublisher) publishIGStory(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post) (social.PublishResult, error) {
+func (p *Publisher) publishIGStory(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post) (social.PublishResult, error) {
 	igMeta := resource.MetaMetadata()
 	if igMeta.IgUserID == "" {
 		return social.PublishResult{}, fmt.Errorf("resource %s has no ig_user_id", resource.ID)
@@ -91,7 +91,7 @@ func (p *MetaPublisher) publishIGStory(ctx context.Context, client *Client, reso
 	return social.PublishResult{ExternalID: mediaID, Platform: social.PlatformInstagramStory}, nil
 }
 
-func (p *MetaPublisher) publishFacebook(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post, caption string) (social.PublishResult, error) {
+func (p *Publisher) publishFacebook(ctx context.Context, client *Client, resource *domain.ConnectorResource, post *domain.Post, caption string) (social.PublishResult, error) {
 	var link string
 	if post.MediaPath != nil && *post.MediaPath != "" {
 		link = p.resolveMediaURL(post)
@@ -103,7 +103,7 @@ func (p *MetaPublisher) publishFacebook(ctx context.Context, client *Client, res
 	return social.PublishResult{ExternalID: postID, Platform: social.PlatformFacebook}, nil
 }
 
-func (p *MetaPublisher) FetchInsights(ctx context.Context, platform social.Platform, resource *domain.ConnectorResource, externalID string) (map[string]any, error) {
+func (p *Publisher) FetchInsights(ctx context.Context, platform social.Platform, resource *domain.ConnectorResource, externalID string) (map[string]any, error) {
 	token, err := p.pageToken(resource)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (p *MetaPublisher) FetchInsights(ctx context.Context, platform social.Platf
 	}
 }
 
-func (p *MetaPublisher) resolveMediaURL(post *domain.Post) string {
+func (p *Publisher) resolveMediaURL(post *domain.Post) string {
 	if post.MediaPath == nil || *post.MediaPath == "" {
 		return ""
 	}

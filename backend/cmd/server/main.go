@@ -143,7 +143,7 @@ func main() {
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
 
 	// Register social publishers (must happen after config is loaded for baseURL).
-	social.Register(domain.ProviderMeta, connmeta.NewMetaPublisher(cfg.BaseURL))
+	social.Register(domain.ProviderMeta, connmeta.NewPublisher(cfg.BaseURL))
 
 	mcpSrv := mcpserver.NewServer("mkt-maestro", "1.0.0")
 	adsFactory := makeAdsFactory(tenantRepo, integrationRepo, connectorResourceRepo)

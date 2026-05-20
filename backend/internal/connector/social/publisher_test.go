@@ -34,7 +34,7 @@ func TestPlatformProvider_AllMetaPlatforms(t *testing.T) {
 	}
 }
 
-func TestRegistry_RegisterAndGet(t *testing.T) {
+func TestRegistry_RegisterAndGet(t *testing.T) { //nolint:paralleltest // modifies global registry
 	orig := registry
 	t.Cleanup(func() { registry = orig })
 	registry = map[domain.IntegrationProvider]Publisher{}
@@ -63,7 +63,7 @@ func TestRegistry_Get_NotRegistered(t *testing.T) {
 	}
 }
 
-func TestRegistry_Register_Overwrites(t *testing.T) {
+func TestRegistry_Register_Overwrites(t *testing.T) { //nolint:paralleltest // modifies global registry
 	orig := registry
 	t.Cleanup(func() { registry = orig })
 	registry = map[domain.IntegrationProvider]Publisher{}
