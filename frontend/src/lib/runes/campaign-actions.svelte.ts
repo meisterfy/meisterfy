@@ -1,5 +1,6 @@
 import { syncHistory } from '$lib/api/campaigns'
 import { getToken } from '$lib/api/client'
+import { toast } from 'svelte-sonner'
 
 export function createCampaignActions() {
 	let syncing = $state(false)
@@ -10,9 +11,9 @@ export function createCampaignActions() {
 		syncing = true
 		try {
 			const res = await syncHistory(tenantId)
-			alert(`Synced ${res.rows} rows (${res.from} -> ${res.to})`)
+			toast.success(`Synced ${res.rows} rows`, { description: `${res.from} → ${res.to}` })
 		} catch {
-			alert('Sync failed! Check Google Ads integration')
+			toast.error('Sync failed', { description: 'Check Google Ads integration' })
 		} finally {
 			syncing = false
 		}
@@ -38,10 +39,10 @@ export function createCampaignActions() {
 				a.click()
 				document.body.removeChild(a)
 			} else {
-				alert('Failed to generate report')
+				toast.error('Failed to generate report')
 			}
 		} catch {
-			alert('Error exporting report')
+			toast.error('Error exporting report')
 		} finally {
 			exporting = false
 		}

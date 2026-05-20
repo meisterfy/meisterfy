@@ -52,9 +52,9 @@
 	}
 
 	const PERIODS = [
-		{ label: '7D', days: 7 },
-		{ label: '14D', days: 14 },
-		{ label: '30D', days: 30 }
+		{ label: m['ads:analytics.period_7d'](), days: 7 },
+		{ label: m['ads:analytics.period_14d'](), days: 14 },
+		{ label: m['ads:analytics.period_30d'](), days: 30 }
 	]
 </script>
 

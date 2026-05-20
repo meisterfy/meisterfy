@@ -9,9 +9,11 @@
 		ChevronDown,
 		Square
 	} from 'lucide-svelte'
+	import { marked } from 'marked'
 	import { streamGenerate, getAIProviders, type AIProvider } from '$lib/api/ai'
 	import { listAIReports, saveAIReport, type AIReport } from '$lib/api/ai-reports'
 	import { toast } from 'svelte-sonner'
+	import { m } from '$lib/paraglide/messages'
 	import type {
 		LiveCampaignDetail,
 		SearchTermRow,
@@ -50,13 +52,16 @@
 	} = $props()
 
 	let report = $state('')
-	let lastSaved = $state<AIReport | null>(null)
+	let history = $state<AIReport[]>([])
+	let selectedHistoryId = $state<string | null>(null)
 	let isGenerating = $state(false)
 	let copied = $state(false)
 	let selectedProvider = $state<string | null>(null)
 	let availableProviders = $state<AIProvider[]>([])
 	let isLoadingProviders = $state(true)
 	let controller: AbortController | null = null
+
+	let lastSaved = $derived(history[0] ?? null)
 
 	const PROVIDER_LABELS: Record<string, string> = {
 		claude: 'Claude',
@@ -69,7 +74,7 @@
 	onMount(async () => {
 		const [providers, reports] = await Promise.allSettled([
 			getAIProviders(tenant),
-			listAIReports(tenant, campaignId, 'instant', 1)
+			listAIReports(tenant, campaignId, 'instant', 10)
 		])
 
 		if (providers.status === 'fulfilled') {
@@ -77,7 +82,8 @@
 			selectedProvider = availableProviders[0]?.name ?? null
 		}
 		if (reports.status === 'fulfilled' && reports.value.length > 0) {
-			lastSaved = reports.value[0]
+			history = reports.value
+			selectedHistoryId = reports.value[0].id
 			report = reports.value[0].content
 		}
 		isLoadingProviders = false
@@ -87,7 +93,7 @@
 		if (!selectedProvider) return
 		const [d, terms, kw, qs] = await Promise.all([detail, searchTerms, keywords, qualityScores])
 		if (!d) {
-			toast.error('Campaign data not available.')
+			toast.error(m['ads:analytics.ai_no_campaign_data']())
 			return
 		}
 
@@ -114,11 +120,13 @@
 			)
 
 			if (report) {
-				lastSaved = await saveAIReport(tenant, campaignId, {
+				const saved = await saveAIReport(tenant, campaignId, {
 					content: report,
 					report_type: 'instant',
 					model: selectedProvider
 				})
+				history = [saved, ...history]
+				selectedHistoryId = saved.id
 			}
 		} catch (e: unknown) {
 			if ((e as Error)?.name !== 'AbortError') {
@@ -155,29 +163,7 @@
 	}
 
 	function renderMarkdown(md: string): string {
-		return md
-			.replace(
-				/^### (.+)$/gm,
-				'<h3 class="text-base font-bold text-slate-900 dark:text-white mt-5 mb-2">$1</h3>'
-			)
-			.replace(
-				/^## (.+)$/gm,
-				'<h2 class="text-lg font-bold text-slate-900 dark:text-white mt-6 mb-2">$1</h2>'
-			)
-			.replace(
-				/^# (.+)$/gm,
-				'<h2 class="text-xl font-bold text-slate-900 dark:text-white mt-6 mb-2">$1</h2>'
-			)
-			.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-			.replace(
-				/^- (.+)$/gm,
-				'<li class="ml-4 list-disc text-slate-700 dark:text-slate-300">$1</li>'
-			)
-			.replace(
-				/^\d+\. (.+)$/gm,
-				'<li class="ml-4 list-decimal text-slate-700 dark:text-slate-300">$1</li>'
-			)
-			.replace(/\n\n/g, '<br class="mb-2">')
+		return marked.parse(md, { async: false }) as string
 	}
 </script>
 
@@ -192,7 +178,7 @@
 					class="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
 				>
 					<AlertCircle class="h-4 w-4 shrink-0" />
-					No AI provider connected for this client.
+					{m['ads:analytics.ai_no_provider']()}
 				</div>
 			{:else if availableProviders.length > 1}
 				<div class="relative">
@@ -220,7 +206,7 @@
 					class="flex items-center gap-2 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
 				>
 					<Square class="h-4 w-4" />
-					Stop
+					{m['ads:analytics.ai_stop']()}
 				</button>
 			{:else}
 				<button
@@ -230,10 +216,10 @@
 				>
 					{#if report}
 						<RotateCcw class="h-4 w-4" />
-						Regenerate
+						{m['ads:analytics.ai_regenerate']()}
 					{:else}
 						<Sparkles class="h-4 w-4" />
-						Generate Report
+						{m['ads:analytics.ai_generate']()}
 					{/if}
 				</button>
 			{/if}
@@ -249,7 +235,7 @@
 					class="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
 				>
 					<Copy class="h-3.5 w-3.5" />
-					{copied ? 'Copied!' : 'Copy'}
+					{copied ? m['ads:analytics.ai_copied']() : m['ads:analytics.ai_copy']()}
 				</button>
 			{/if}
 		</div>
@@ -261,14 +247,32 @@
 			class="flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-600 dark:border-indigo-900/30 dark:bg-indigo-900/10 dark:text-indigo-400"
 		>
 			<Loader2 class="h-4 w-4 shrink-0 animate-spin" />
-			Analyzing campaign data… This may take up to a minute for deep analysis models.
+			{m['ads:analytics.ai_analyzing']()}
+		</div>
+	{/if}
+
+	<!-- History tabs (when more than one report exists) -->
+	{#if history.length > 1}
+		<div class="flex gap-1 overflow-x-auto pb-1">
+			{#each history as r (r.id)}
+				<button
+					onclick={() => { selectedHistoryId = r.id; report = r.content }}
+					class="shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
+						{selectedHistoryId === r.id
+							? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+							: 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'}"
+				>
+					{new Date(r.generated_at).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+					{#if r.model}· {r.model}{/if}
+				</button>
+			{/each}
 		</div>
 	{/if}
 
 	<!-- Report output -->
 	{#if report}
 		<div
-			class="rounded-xl border border-slate-200 bg-white p-6 text-sm leading-relaxed dark:border-slate-800 dark:bg-slate-900"
+			class="prose prose-slate dark:prose-invert max-w-none rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
 		>
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html renderMarkdown(report)}
@@ -282,11 +286,10 @@
 		>
 			<Sparkles class="mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
 			<p class="mb-1 text-sm font-medium text-slate-600 dark:text-slate-400">
-				AI Campaign Analysis
+				{m['ads:analytics.ai_title']()}
 			</p>
 			<p class="text-xs text-slate-400">
-				Generate an AI-powered report based on this campaign's live data, keywords, and search
-				terms.
+				{m['ads:analytics.ai_description']()}
 			</p>
 		</div>
 	{/if}

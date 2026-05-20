@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Gauge } from 'lucide-svelte'
 	import { brl } from '$lib/utils/format'
+	import { m } from '$lib/paraglide/messages'
 
 	let { pacing } = $props<{ pacing: { date: string; cost: number; budget: number; pct: number } }>()
 
@@ -20,11 +21,11 @@
 		>
 			<Gauge class="h-4 w-4" />
 		</div>
-		Budget Pacing —<span class="font-mono text-xs">{pacing.date}</span>
+		{m['ads:analytics.budget_pacing_title']()} —<span class="font-mono text-xs">{pacing.date}</span>
 	</div>
 	<div class="mb-2 flex items-end justify-between">
 		<span class="text-2xl font-bold text-slate-900 dark:text-white">{brl(pacing.cost)}</span>
-		<span class="text-sm text-slate-500">of {brl(pacing.budget)}/day</span>
+		<span class="text-sm text-slate-500">{m['ads:analytics.budget_pacing_of']()} {brl(pacing.budget)}/day</span>
 	</div>
 	<div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
 		<div
@@ -32,5 +33,5 @@
 			style="width: {Math.min(pacing.pct * 100, 100).toFixed(0)}%"
 		></div>
 	</div>
-	<p class="mt-1.5 text-right text-xs text-slate-400">{(pacing.pct * 100).toFixed(0)}% used</p>
+	<p class="mt-1.5 text-right text-xs text-slate-400">{(pacing.pct * 100).toFixed(0)}% {m['ads:analytics.budget_pacing_used']()}</p>
 </div>

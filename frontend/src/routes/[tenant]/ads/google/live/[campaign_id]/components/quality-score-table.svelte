@@ -39,9 +39,9 @@
 	}
 
 	function matchTypeLabel(mt: string) {
-		if (mt === 'BROAD') return 'Broad'
-		if (mt === 'PHRASE') return 'Phrase'
-		if (mt === 'EXACT') return 'Exact'
+		if (mt === 'BROAD') return m['ads:analytics.match_broad']()
+		if (mt === 'PHRASE') return m['ads:analytics.match_phrase']()
+		if (mt === 'EXACT') return m['ads:analytics.match_exact']()
 		return mt
 	}
 </script>
@@ -64,9 +64,9 @@
 			<table class="w-full text-xs">
 				<thead>
 					<tr class="border-b border-white/10 text-left text-slate-500">
-						<th class="pr-3 pb-1 font-medium">Keyword</th>
-						<th class="pr-3 pb-1 font-medium">Match</th>
-						<th class="pr-3 pb-1 font-medium">Ad Group</th>
+						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_keyword']()}</th>
+						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_match']()}</th>
+						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_adgroup']()}</th>
 						<th class="pr-3 pb-1 text-center font-medium">QS</th>
 						<th class="pr-3 pb-1 text-center font-medium">Creative</th>
 						<th class="pr-3 pb-1 text-center font-medium">Landing Page</th>
@@ -74,7 +74,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each sorted as kw (kw.keywordText)}
+					{#each sorted as kw (`${kw.keywordText}|${kw.matchType}|${kw.adGroupName}`)}
 						{@const badge = qsBadge(kw.qualityScore)}
 						<tr class="border-b border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/50">
 							<td class="max-w-[180px] truncate py-1.5 pr-3 text-slate-700 dark:text-slate-200"

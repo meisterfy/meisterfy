@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Chart, registerables } from 'chart.js'
 	import type { HourlyRow } from '$lib/api/campaigns'
+	import { m } from '$lib/paraglide/messages'
 
 	Chart.register(...registerables)
 
@@ -24,7 +25,7 @@
 				labels: hourly.map((h: HourlyRow) => `${h.hour}h`),
 				datasets: [
 					{
-						label: 'Conversions',
+						label: m['ads:analytics.hourly_conversions'](),
 						data: hourly.map((h: HourlyRow) => h.conversions),
 						backgroundColor: hourly.map((_: HourlyRow, i: number) =>
 							top3.includes(i) ? '#10b981' : '#6366f1'
@@ -33,7 +34,7 @@
 						order: 2
 					},
 					{
-						label: 'Cost (R$)',
+						label: m['ads:analytics.hourly_cost'](),
 						data: hourly.map((h: HourlyRow) => h.cost),
 						type: 'line' as const,
 						borderColor: '#f59e0b',
@@ -55,12 +56,12 @@
 					y: {
 						type: 'linear' as const,
 						position: 'left' as const,
-						title: { display: true, text: 'Conversions' }
+						title: { display: true, text: m['ads:analytics.hourly_conversions']() }
 					},
 					y1: {
 						type: 'linear' as const,
 						position: 'right' as const,
-						title: { display: true, text: 'Cost (R$)' },
+						title: { display: true, text: m['ads:analytics.hourly_cost']() },
 						grid: { drawOnChartArea: false }
 					}
 				}
@@ -87,13 +88,13 @@
 >
 	<div>
 		<h3 class="text-lg font-bold text-slate-900 dark:text-white">
-			Hourly Performance Distribution
+			{m['ads:analytics.hourly_title']()}
 		</h3>
-		<p class="mt-0.5 text-xs text-slate-400">Top hours highlighted in green</p>
+		<p class="mt-0.5 text-xs text-slate-400">{m['ads:analytics.hourly_subtitle']()}</p>
 	</div>
 
 	{#if !hasConversions}
-		<p class="py-8 text-center text-sm text-slate-400">No conversion data for this period</p>
+		<p class="py-8 text-center text-sm text-slate-400">{m['ads:analytics.hourly_empty']()}</p>
 	{:else}
 		<div class="h-[260px]">
 			<canvas bind:this={canvas}></canvas>

@@ -52,9 +52,9 @@
 	}
 
 	function matchLabel(mt: string) {
-		if (mt === 'BROAD') return 'Broad'
-		if (mt === 'PHRASE') return 'Phrase'
-		if (mt === 'EXACT') return 'Exact'
+		if (mt === 'BROAD') return m['ads:analytics.match_broad']()
+		if (mt === 'PHRASE') return m['ads:analytics.match_phrase']()
+		if (mt === 'EXACT') return m['ads:analytics.match_exact']()
 		return mt
 	}
 </script>
@@ -81,38 +81,38 @@
 					<tr class="border-b border-white/10 text-left text-slate-500">
 						<th
 							class="cursor-pointer pr-3 pb-1 font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('keywordText')}>Keyword{sortIcon('keywordText')}</th
+							onclick={() => setSort('keywordText')}>{m['ads:analytics.kw_keyword']()}{sortIcon('keywordText')}</th
 						>
-						<th class="pr-3 pb-1 font-medium">Match</th>
-						<th class="pr-3 pb-1 font-medium">Ad Group</th>
+						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_match']()}</th>
+						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_adgroup']()}</th>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('clicks')}>Clicks{sortIcon('clicks')}</th
-						>
-						<th
-							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('impressions')}>Impr.{sortIcon('impressions')}</th
+							onclick={() => setSort('clicks')}>{m['ads:clicks']()}{sortIcon('clicks')}</th
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('cost')}>Cost{sortIcon('cost')}</th
+							onclick={() => setSort('impressions')}>{m['ads:analytics.kw_impr']()}{sortIcon('impressions')}</th
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('conversions')}>Conv.{sortIcon('conversions')}</th
+							onclick={() => setSort('cost')}>{m['ads:analytics.kw_cost']()}{sortIcon('cost')}</th
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('cpa')}>CPA{sortIcon('cpa')}</th
+							onclick={() => setSort('conversions')}>{m['ads:analytics.kw_conv']()}{sortIcon('conversions')}</th
+						>
+						<th
+							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
+							onclick={() => setSort('cpa')}>{m['ads:cpa']()}{sortIcon('cpa')}</th
 						>
 						<th
 							class="cursor-pointer pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('ctr')}>CTR{sortIcon('ctr')}</th
+							onclick={() => setSort('ctr')}>{m['ads:ctr']()}{sortIcon('ctr')}</th
 						>
 					</tr>
 				</thead>
 				<tbody>
-					{#each sorted as kw (kw.keywordText)}
+					{#each sorted as kw (`${kw.keywordText}|${kw.matchType}|${kw.adGroupName}`)}
 						<tr class="border-b border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/50">
 							<td class="max-w-[180px] truncate py-1.5 pr-3 text-slate-700 dark:text-slate-200"
 								>{kw.keywordText}</td
