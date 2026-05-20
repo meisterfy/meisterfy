@@ -84,12 +84,13 @@ func (h *SetupHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u := &domain.User{
-		ID:       domain.NewID(),
-		Name:     req.Name,
-		Email:    req.Email,
-		Locale:   "en",
-		Timezone: "UTC",
-		IsActive: true,
+		ID:         domain.NewID(),
+		Name:       req.Name,
+		Email:      req.Email,
+		Locale:     "en",
+		Timezone:   "UTC",
+		IsActive:   true,
+		SystemRole: "platform_admin",
 	}
 	if err := u.SetPassword(req.Password); err != nil {
 		InternalError(w)

@@ -42,6 +42,9 @@ export async function apiFetch<T>(
 		throw e
 	}
 
+	if (res.status === 204 || res.headers.get('content-length') === '0') {
+		return undefined as T
+	}
 	return res.json()
 }
 
@@ -57,6 +60,18 @@ async function tryRefresh(): Promise<boolean> {
 		return true
 	}
 	return false
+}
+
+export async function doRefresh(): Promise<Record<string, unknown> | null> {
+	const res = await fetch(`${BASE_URL}/auth/refresh`, {
+		method: 'POST',
+		credentials: 'include'
+	})
+	if (!res.ok) return null
+	const data = await res.json()
+	if (!data.access_token) return null
+	setToken(data.access_token)
+	return data
 }
 
 export async function apiFetchData<T>(

@@ -51,6 +51,18 @@ func (m *mockRBACRepo) GetPermissionsForUser(_ context.Context, _, _ string) ([]
 	return m.perms, m.permsErr
 }
 
+type mockLegalRepo struct{}
+
+func (m *mockLegalRepo) GetLatestVersion(_ context.Context) (*domain.LegalTermVersion, error) {
+	return nil, nil
+}
+func (m *mockLegalRepo) HasUserAccepted(_ context.Context, _, _ string) (bool, error) {
+	return true, nil
+}
+func (m *mockLegalRepo) RecordAcceptance(_ context.Context, _, _, _, _ string) error {
+	return nil
+}
+
 // --- helpers ---
 
 // testPassword / testPasswordHash computed once at MinCost to keep tests fast.
@@ -72,7 +84,7 @@ func newTestUser() *domain.User {
 }
 
 func newAuthHandler(u *mockAuthUserRepo, r *mockRBACRepo) *AuthHandler {
-	return NewAuthHandler(u, r, newTestJWT(), "localhost", false)
+	return NewAuthHandler(u, r, &mockLegalRepo{}, newTestJWT(), "localhost", false)
 }
 
 // issueExpiredRefreshCookie sets a cookie with an expired refresh token on r.
@@ -255,6 +267,7 @@ func TestAuthHandler_Refresh_UserNotFound(t *testing.T) {
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: nil, getErr: domain.ErrNotFound},
 		&mockRBACRepo{},
+		&mockLegalRepo{},
 		jwtSvc, "localhost", false,
 	)
 
@@ -276,6 +289,7 @@ func TestAuthHandler_Refresh_Bootstrap_NoTenants(t *testing.T) {
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: user},
 		&mockRBACRepo{tenants: []string{}}, // still no tenants after refresh
+		&mockLegalRepo{},
 		jwtSvc, "localhost", false,
 	)
 
@@ -301,6 +315,7 @@ func TestAuthHandler_Refresh_Bootstrap_NowHasTenant(t *testing.T) {
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: user},
 		&mockRBACRepo{tenants: []string{"tenant-1"}, perms: []string{"read:posts"}},
+		&mockLegalRepo{},
 		jwtSvc, "localhost", false,
 	)
 
@@ -327,6 +342,7 @@ func TestAuthHandler_Refresh_ValidToken(t *testing.T) {
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: user},
 		&mockRBACRepo{tenants: []string{"tenant-1"}, perms: []string{"read:posts"}},
+		&mockLegalRepo{},
 		jwtSvc, "localhost", false,
 	)
 
@@ -363,6 +379,7 @@ func TestAuthHandler_Me_Success(t *testing.T) {
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: user},
 		&mockRBACRepo{tenants: []string{"tenant-1"}},
+		&mockLegalRepo{},
 		jwtSvc, "localhost", false,
 	)
 
@@ -397,7 +414,7 @@ func TestAuthHandler_UpdateMe_Success(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
 	user := newTestUser()
-	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, jwtSvc, "localhost", false)
+	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, &mockLegalRepo{}, jwtSvc, "localhost", false)
 	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID, TenantID: "t1"})
 	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.UpdateMe))
 
@@ -419,7 +436,7 @@ func TestAuthHandler_UpdateMe_ConflictEmail(t *testing.T) {
 	user := newTestUser()
 	h := NewAuthHandler(
 		&mockAuthUserRepo{user: user, updateErr: domain.ErrConflict},
-		&mockRBACRepo{}, jwtSvc, "localhost", false,
+		&mockRBACRepo{}, &mockLegalRepo{}, jwtSvc, "localhost", false,
 	)
 	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID})
 	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.UpdateMe))
@@ -450,7 +467,7 @@ func TestAuthHandler_ChangePassword_MissingFields(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
 	user := newTestUser()
-	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, jwtSvc, "localhost", false)
+	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, &mockLegalRepo{}, jwtSvc, "localhost", false)
 	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID})
 	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.ChangePassword))
 
@@ -467,7 +484,7 @@ func TestAuthHandler_ChangePassword_TooShort(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
 	user := newTestUser()
-	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, jwtSvc, "localhost", false)
+	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, &mockLegalRepo{}, jwtSvc, "localhost", false)
 	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID})
 	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.ChangePassword))
 
@@ -484,7 +501,7 @@ func TestAuthHandler_ChangePassword_WrongCurrent(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
 	user := newTestUser()
-	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, jwtSvc, "localhost", false)
+	h := NewAuthHandler(&mockAuthUserRepo{user: user}, &mockRBACRepo{}, &mockLegalRepo{}, jwtSvc, "localhost", false)
 	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID})
 	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.ChangePassword))
 

@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { page } from '$app/state'
-	import { ArrowLeft, Link2 } from 'lucide-svelte'
+	import { ArrowLeft, Link2, ScrollText } from 'lucide-svelte'
 	import type { Snippet } from 'svelte'
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import SubToolbar from '$lib/components/ui/toolbar/sub-toolbar.svelte'
 	import SubToolbarLink from '$lib/components/ui/toolbar/sub-toolbar-link.svelte'
+	import { auth } from '$lib/stores/auth.svelte'
 
 	import * as m from '$lib/paraglide/messages.js'
 
 	let { children } = $props<{ children: Snippet }>()
 	let currentPath = $derived(page.url.pathname)
+	let isPlatformAdmin = $derived(auth.user?.system_role === 'platform_admin')
 </script>
 
 <div class="flex h-screen w-full flex-col bg-slate-50 dark:bg-slate-950">
@@ -38,6 +40,14 @@
 				icon={Link2}
 				active={currentPath.includes('/integrations')}
 			/>
+			{#if isPlatformAdmin}
+				<SubToolbarLink
+					href="/settings/legal"
+					label={m['settings:nav_legal']()}
+					icon={ScrollText}
+					active={currentPath.includes('/legal')}
+				/>
+			{/if}
 		</div>
 	</SubToolbar>
 

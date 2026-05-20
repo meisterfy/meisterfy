@@ -50,7 +50,7 @@
 
 <Seo title={m['auth:title']()} description={m['auth:description']?.()} />
 
-<div class="flex h-full flex-col items-center justify-center">
+<div class="flex h-full min-h-screen flex-col items-center justify-center">
 	<div class="absolute top-4 right-4 flex gap-2"></div>
 	<div
 		class="border-primary/20 to-primary-700/10 relative z-10 flex w-full max-w-sm

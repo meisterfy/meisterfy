@@ -1,21 +1,18 @@
-import { redirect, isRedirect } from '@sveltejs/kit'
 import type { LayoutLoad } from './$types'
 
 export const ssr = false
 
-export const load: LayoutLoad = async ({ fetch, url }) => {
+export const load: LayoutLoad = ({ fetch, url }) => {
 	const exempt = ['/setup', '/login', '/auth']
 	if (exempt.some((p) => url.pathname.startsWith(p))) return {}
 
-	try {
-		const res = await fetch('/health')
-		if (res.ok) {
-			const data = await res.json()
-			if (data.setup_required) throw redirect(302, '/setup')
-		}
-	} catch (err) {
-		if (isRedirect(err)) throw err
-		// backend unreachable — let the page load function handle auth redirect
-	}
+	// Verifica setup em background — não bloqueia render
+	fetch('/health')
+		.then((res) => res.json())
+		.then((data) => {
+			if (data?.setup_required) window.location.replace('/setup')
+		})
+		.catch(() => {})
+
 	return {}
 }
