@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"testing"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -178,6 +179,9 @@ func (pc *PostgresContainer) ResetDB(t testing.TB) {
 	if len(tables) == 0 {
 		return
 	}
+
+	// Sort for deterministic lock-acquisition order across concurrent callers.
+	sort.Strings(tables)
 
 	// Build a single TRUNCATE statement for all tables.
 	query := "TRUNCATE TABLE "
