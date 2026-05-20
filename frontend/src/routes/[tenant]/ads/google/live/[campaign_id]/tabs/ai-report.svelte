@@ -256,13 +256,21 @@
 		<div class="flex gap-1 overflow-x-auto pb-1">
 			{#each history as r (r.id)}
 				<button
-					onclick={() => { selectedHistoryId = r.id; report = r.content }}
+					onclick={() => {
+						selectedHistoryId = r.id
+						report = r.content
+					}}
 					class="shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors
 						{selectedHistoryId === r.id
-							? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
-							: 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'}"
+						? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+						: 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800'}"
 				>
-					{new Date(r.generated_at).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+					{new Date(r.generated_at).toLocaleString([], {
+						day: '2-digit',
+						month: '2-digit',
+						hour: '2-digit',
+						minute: '2-digit'
+					})}
 					{#if r.model}· {r.model}{/if}
 				</button>
 			{/each}

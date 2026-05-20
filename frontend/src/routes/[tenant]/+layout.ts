@@ -34,6 +34,8 @@ export const load: LayoutLoad = async ({ params, fetch }) => {
 		tenant: params.tenant,
 		client: toClient(tenant),
 		// lazy — não bloqueia o render inicial; o dropdown de troca de cliente carrega depois
-		clients: getTenants(fetch).then((ts) => ts.map(toClientSummary)).catch(() => [])
+		clients: getTenants(fetch)
+			.then((ts) => ts.map(toClientSummary))
+			.catch(() => [])
 	}
 }

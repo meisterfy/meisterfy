@@ -32,7 +32,9 @@ const mockRole: AdminRole = {
 }
 
 function stubFetch(body: unknown, ok = true, status = 200) {
-	const mock = vi.fn().mockResolvedValue({ ok, status, json: async () => body })
+	const mock = vi
+		.fn()
+		.mockResolvedValue({ ok, status, headers: new Headers(), json: async () => body })
 	vi.stubGlobal('fetch', mock)
 	return mock
 }

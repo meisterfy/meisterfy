@@ -62,9 +62,7 @@
 				ig_user_id: page.ig_user_id,
 				ig_username: page.ig_username
 			})
-			pages = pages.map((p) =>
-				p.page_id === page.page_id ? { ...p, already_connected: true } : p
-			)
+			pages = pages.map((p) => (p.page_id === page.page_id ? { ...p, already_connected: true } : p))
 			onAdded(resource)
 			open = false
 		} catch (err) {
@@ -124,9 +122,15 @@
 							<li class="flex items-center gap-3 py-3">
 								<div class="flex shrink-0 items-center gap-1">
 									{#if page.ig_user_id}
-										<span class="rounded bg-pink-100 px-1.5 py-0.5 text-[10px] font-bold text-pink-600 dark:bg-pink-900/30 dark:text-pink-400">IG</span>
+										<span
+											class="rounded bg-pink-100 px-1.5 py-0.5 text-[10px] font-bold text-pink-600 dark:bg-pink-900/30 dark:text-pink-400"
+											>IG</span
+										>
 									{/if}
-									<span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">FB</span>
+									<span
+										class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+										>FB</span
+									>
 								</div>
 
 								<div class="min-w-0 flex-1">

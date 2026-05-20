@@ -25,11 +25,7 @@ export interface AdminPermission {
 	name: string
 }
 
-export const listTenantUsers = (
-	tenantId: string,
-	active: boolean,
-	fetchFn?: typeof fetch
-) =>
+export const listTenantUsers = (tenantId: string, active: boolean, fetchFn?: typeof fetch) =>
 	apiFetchData<AdminUser[]>(
 		`/admin/users?tenant_id=${encodeURIComponent(tenantId)}&active=${active}`,
 		{},
@@ -37,10 +33,13 @@ export const listTenantUsers = (
 	)
 
 export const reactivateTenantUser = (userId: string, tenantId: string, roleId: string) =>
-	apiFetchData<AdminUser>(`/admin/users/${userId}/reactivate?tenant_id=${encodeURIComponent(tenantId)}`, {
-		method: 'POST',
-		body: JSON.stringify({ role_id: roleId })
-	})
+	apiFetchData<AdminUser>(
+		`/admin/users/${userId}/reactivate?tenant_id=${encodeURIComponent(tenantId)}`,
+		{
+			method: 'POST',
+			body: JSON.stringify({ role_id: roleId })
+		}
+	)
 
 export const createTenantUser = (
 	tenantId: string,

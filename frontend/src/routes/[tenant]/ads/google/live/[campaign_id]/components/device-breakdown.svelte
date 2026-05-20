@@ -70,7 +70,9 @@
 	class="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
 >
 	<div>
-		<h3 class="text-lg font-bold text-slate-900 dark:text-white">{m['ads:analytics.device_title']()}</h3>
+		<h3 class="text-lg font-bold text-slate-900 dark:text-white">
+			{m['ads:analytics.device_title']()}
+		</h3>
 		<p class="mt-0.5 text-xs text-slate-400">{m['ads:analytics.device_subtitle']()}</p>
 	</div>
 
@@ -79,7 +81,9 @@
 	{:else}
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 			<div>
-				<p class="mb-3 text-sm font-medium text-slate-600 dark:text-slate-400">{m['ads:analytics.device_cost_share']()}</p>
+				<p class="mb-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+					{m['ads:analytics.device_cost_share']()}
+				</p>
 				<div class="h-[220px]">
 					<canvas bind:this={canvas}></canvas>
 				</div>
@@ -87,7 +91,9 @@
 
 			{#if cpaDevices.length > 0}
 				<div>
-					<p class="mb-3 text-sm font-medium text-slate-600 dark:text-slate-400">{m['ads:analytics.device_cpa_chart']()}</p>
+					<p class="mb-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+						{m['ads:analytics.device_cpa_chart']()}
+					</p>
 					<div class="space-y-3">
 						{#each cpaDevices as d (d.device)}
 							{@const maxCpa = cpaDevices[cpaDevices.length - 1].cpa}

@@ -136,15 +136,21 @@
 		navigator.clipboard.writeText(text)
 		if (which === 'key') {
 			copiedKey = true
-			setTimeout(() => { copiedKey = false }, 2000)
+			setTimeout(() => {
+				copiedKey = false
+			}, 2000)
 		}
 		if (which === 'url') {
 			copiedUrl = true
-			setTimeout(() => { copiedUrl = false }, 2000)
+			setTimeout(() => {
+				copiedUrl = false
+			}, 2000)
 		}
 		if (which === 'json') {
 			copiedJson = true
-			setTimeout(() => { copiedJson = false }, 2000)
+			setTimeout(() => {
+				copiedJson = false
+			}, 2000)
 		}
 	}
 
@@ -185,7 +191,9 @@
 		<p class="text-muted-foreground text-sm">{m['settings:mcp_desc']()}</p>
 
 		{#if keys.length === 0}
-			<div class="rounded-lg border border-dashed border-slate-200 py-12 text-center dark:border-slate-700">
+			<div
+				class="rounded-lg border border-dashed border-slate-200 py-12 text-center dark:border-slate-700"
+			>
 				<KeyRound class="text-muted-foreground mx-auto mb-3 h-8 w-8 opacity-40" />
 				<p class="text-muted-foreground text-sm">{m['settings:mcp_empty']()}</p>
 				{#if canManage}
@@ -199,12 +207,24 @@
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-border border-b text-left">
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_name']()}</th>
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_role']()}</th>
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_prefix']()}</th>
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_created']()}</th>
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_last_used']()}</th>
-							<th class="text-muted-foreground pb-3 pr-4 font-medium">{m['settings:mcp_col_expires']()}</th>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_name']()}</th
+							>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_role']()}</th
+							>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_prefix']()}</th
+							>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_created']()}</th
+							>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_last_used']()}</th
+							>
+							<th class="text-muted-foreground pr-4 pb-3 font-medium"
+								>{m['settings:mcp_col_expires']()}</th
+							>
 							<th class="pb-3"></th>
 						</tr>
 					</thead>
@@ -213,7 +233,9 @@
 							<tr class="border-border border-b last:border-0">
 								<td class="py-3 pr-4 font-medium">{key.name}</td>
 								<td class="py-3 pr-4">
-									<span class="rounded-full px-2 py-0.5 text-xs font-medium {roleBadgeClass(key.role)}">
+									<span
+										class="rounded-full px-2 py-0.5 text-xs font-medium {roleBadgeClass(key.role)}"
+									>
 										{roleLabel(key.role)}
 									</span>
 								</td>
@@ -262,11 +284,11 @@
 
 				<!-- full key -->
 				<div>
-					<p class="text-muted-foreground mb-1.5 text-xs font-semibold uppercase tracking-wide">
+					<p class="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wide uppercase">
 						API Key
 					</p>
 					<div class="flex items-center gap-2">
-						<code class="bg-muted flex-1 break-all rounded px-3 py-2 font-mono text-xs">
+						<code class="bg-muted flex-1 rounded px-3 py-2 font-mono text-xs break-all">
 							{createdKey.key}
 						</code>
 						<button
@@ -280,7 +302,7 @@
 
 				<!-- MCP URL -->
 				<div>
-					<p class="text-muted-foreground mb-1.5 text-xs font-semibold uppercase tracking-wide">
+					<p class="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wide uppercase">
 						{m['settings:mcp_created_mcp_url']()}
 					</p>
 					<div class="flex items-center gap-2">
@@ -296,7 +318,7 @@
 
 				<!-- JSON snippet -->
 				<div>
-					<p class="text-muted-foreground mb-1.5 text-xs font-semibold uppercase tracking-wide">
+					<p class="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wide uppercase">
 						{m['settings:mcp_created_json']()}
 					</p>
 					<div class="relative">
@@ -312,7 +334,10 @@
 			{:else}
 				<!-- form -->
 				<div>
-					<label for="create-name" class="text-muted-foreground mb-1.5 block text-xs font-semibold uppercase tracking-wide">
+					<label
+						for="create-name"
+						class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+					>
 						{m['settings:mcp_create_field_name']()}
 					</label>
 					<Input
@@ -324,7 +349,10 @@
 				</div>
 
 				<div>
-					<label for="create-role" class="text-muted-foreground mb-1.5 block text-xs font-semibold uppercase tracking-wide">
+					<label
+						for="create-role"
+						class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+					>
 						{m['settings:mcp_create_field_role']()}
 					</label>
 					<Select.Root type="single" bind:value={createRole}>
@@ -340,14 +368,19 @@
 				</div>
 
 				<div>
-					<label for="create-expires" class="text-muted-foreground mb-1.5 block text-xs font-semibold uppercase tracking-wide">
+					<label
+						for="create-expires"
+						class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+					>
 						{m['settings:mcp_create_field_expires']()}
 					</label>
 					<Input id="create-expires" type="date" bind:value={createExpires} />
 				</div>
 
 				{#if createError}
-					<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+					<p
+						class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+					>
 						{createError}
 					</p>
 				{/if}

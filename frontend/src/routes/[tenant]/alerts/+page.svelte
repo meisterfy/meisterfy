@@ -112,13 +112,15 @@
 						class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 					>
 						<div class="flex items-start justify-between gap-4">
-							<div class="flex flex-col gap-1.5 min-w-0">
+							<div class="flex min-w-0 flex-col gap-1.5">
 								<!-- campaign name is not in the response; showing fallback for future improvement -->
 								<span class="text-sm font-medium text-slate-900 dark:text-white">
 									{m['ads:alerts.campaign_adjustment']()}
 								</span>
 								<span
-									class="inline-block w-fit rounded-md px-2 py-0.5 text-xs font-semibold {isIncrease(adj)
+									class="inline-block w-fit rounded-md px-2 py-0.5 text-xs font-semibold {isIncrease(
+										adj
+									)
 										? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
 										: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}"
 								>

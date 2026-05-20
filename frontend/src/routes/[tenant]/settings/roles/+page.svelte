@@ -581,4 +581,3 @@ py-3 text-left text-sm transition-colors last:border-b-0
 	isLoading={isDeleting}
 	onconfirm={handleDelete}
 />
-

@@ -60,7 +60,7 @@ function applyRefreshData(data: Record<string, unknown>) {
 		...userBase,
 		tenant_id: (data['tenant_id'] ?? userBase['tenant_id'] ?? '') as string,
 		permissions: ((data['permissions'] ?? userBase['permissions']) as string[]) ?? [],
-		system_role: ((userBase['system_role'] ?? 'user') as 'user' | 'platform_admin')
+		system_role: (userBase['system_role'] ?? 'user') as 'user' | 'platform_admin'
 	} as AuthUser
 	_token = getToken()
 	_pendingTerms = (data['pending_terms'] as PendingTerms | null) ?? null

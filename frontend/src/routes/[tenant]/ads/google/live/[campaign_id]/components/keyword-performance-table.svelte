@@ -81,7 +81,8 @@
 					<tr class="border-b border-white/10 text-left text-slate-500">
 						<th
 							class="cursor-pointer pr-3 pb-1 font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('keywordText')}>{m['ads:analytics.kw_keyword']()}{sortIcon('keywordText')}</th
+							onclick={() => setSort('keywordText')}
+							>{m['ads:analytics.kw_keyword']()}{sortIcon('keywordText')}</th
 						>
 						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_match']()}</th>
 						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_adgroup']()}</th>
@@ -91,7 +92,8 @@
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('impressions')}>{m['ads:analytics.kw_impr']()}{sortIcon('impressions')}</th
+							onclick={() => setSort('impressions')}
+							>{m['ads:analytics.kw_impr']()}{sortIcon('impressions')}</th
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
@@ -99,7 +101,8 @@
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"
-							onclick={() => setSort('conversions')}>{m['ads:analytics.kw_conv']()}{sortIcon('conversions')}</th
+							onclick={() => setSort('conversions')}
+							>{m['ads:analytics.kw_conv']()}{sortIcon('conversions')}</th
 						>
 						<th
 							class="cursor-pointer pr-3 pb-1 text-right font-medium select-none hover:text-slate-700 dark:hover:text-slate-300"

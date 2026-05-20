@@ -24,11 +24,19 @@ export const createLegalVersion = (body: {
 	fallback_locale: string
 	translations: Record<string, LegalBlock[]>
 	effective_at: string
-}) => apiFetchData<LegalVersion>('/admin/legal/versions', { method: 'POST', body: JSON.stringify(body) })
+}) =>
+	apiFetchData<LegalVersion>('/admin/legal/versions', {
+		method: 'POST',
+		body: JSON.stringify(body)
+	})
 
 export const updateLegalVersion = (
 	id: string,
-	body: Partial<{ fallback_locale: string; translations: Record<string, LegalBlock[]>; effective_at: string }>
+	body: Partial<{
+		fallback_locale: string
+		translations: Record<string, LegalBlock[]>
+		effective_at: string
+	}>
 ) => apiFetch<void>(`/admin/legal/versions/${id}`, { method: 'PUT', body: JSON.stringify(body) })
 
 export const setUserSystemRole = (userId: string, systemRole: 'user' | 'platform_admin') =>

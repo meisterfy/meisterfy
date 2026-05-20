@@ -4,7 +4,7 @@ import { apiFetch, apiFetchData, setToken, clearToken, getToken } from './client
 function stubFetch(...responses: object[]) {
 	const mock = vi.fn()
 	for (const r of responses) {
-		mock.mockResolvedValueOnce({ ok: true, status: 200, ...r })
+		mock.mockResolvedValueOnce({ ok: true, status: 200, headers: new Headers(), ...r })
 	}
 	vi.stubGlobal('fetch', mock)
 	return mock
@@ -79,7 +79,12 @@ describe('apiFetch', () => {
 				status: 200,
 				json: async () => ({ access_token: 'refreshed' })
 			})
-			.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ result: 'ok' }) })
+			.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				headers: new Headers(),
+				json: async () => ({ result: 'ok' })
+			})
 		vi.stubGlobal('fetch', mock)
 		const result = await apiFetch<{ result: string }>('/test')
 		expect(result.result).toBe('ok')

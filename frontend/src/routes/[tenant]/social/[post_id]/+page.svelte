@@ -2,7 +2,17 @@
 	import { untrack } from 'svelte'
 	import { resolve } from '$app/paths'
 	import type { PageData } from './$types'
-	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send, CheckCircle2, XCircle } from 'lucide-svelte'
+	import {
+		ArrowLeft,
+		Save,
+		FileEdit,
+		Trash2,
+		Sparkles,
+		X,
+		Send,
+		CheckCircle2,
+		XCircle
+	} from 'lucide-svelte'
 	import { PLATFORM_CONFIG } from '$lib/social'
 	import { updatePost, updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
 	import { parseHashtags } from '$lib/utils/hashtags'
@@ -474,18 +484,31 @@
 							<div class="flex min-w-0 flex-1 items-center gap-2">
 								<span
 									class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase"
-									style="background:{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.color ?? '#64748b'}22; color:{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.color ?? '#64748b'}"
+									style="background:{PLATFORM_CONFIG[
+										result.platform as keyof typeof PLATFORM_CONFIG
+									]?.color ?? '#64748b'}22; color:{PLATFORM_CONFIG[
+										result.platform as keyof typeof PLATFORM_CONFIG
+									]?.color ?? '#64748b'}"
 								>
-									{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.label ?? result.platform}
+									{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.label ??
+										result.platform}
 								</span>
 								{#if result.status === 'published'}
 									<CheckCircle2 class="h-3.5 w-3.5 shrink-0 text-emerald-500" />
 									<span class="text-xs text-slate-500">
-										{result.published_at ? new Date(result.published_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Published'}
+										{result.published_at
+											? new Date(result.published_at).toLocaleString('pt-BR', {
+													dateStyle: 'short',
+													timeStyle: 'short'
+												})
+											: 'Published'}
 									</span>
 								{:else}
 									<XCircle class="h-3.5 w-3.5 shrink-0 text-red-500" />
-									<span class="min-w-0 truncate text-xs text-red-500" title={result.error_message ?? ''}>
+									<span
+										class="min-w-0 truncate text-xs text-red-500"
+										title={result.error_message ?? ''}
+									>
 										{result.error_message ?? 'Failed'}
 									</span>
 								{/if}

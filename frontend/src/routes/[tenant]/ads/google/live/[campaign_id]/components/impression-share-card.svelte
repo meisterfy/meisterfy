@@ -32,21 +32,27 @@
 		<div class="flex gap-6 text-sm">
 			<div class="flex items-center gap-1.5">
 				<span class="inline-block h-3 w-3 rounded-full bg-emerald-500"></span>
-				<span class="text-slate-600 dark:text-slate-300">{m['ads:analytics.impression_share_won']()}</span>
+				<span class="text-slate-600 dark:text-slate-300"
+					>{m['ads:analytics.impression_share_won']()}</span
+				>
 				<span class="font-semibold text-slate-800 dark:text-slate-100"
 					>{(stats.wonShare * 100).toFixed(0)}%</span
 				>
 			</div>
 			<div class="flex items-center gap-1.5">
 				<span class="inline-block h-3 w-3 rounded-full bg-amber-400"></span>
-				<span class="text-slate-600 dark:text-slate-300">{m['ads:analytics.impression_share_lost_budget']()}</span>
+				<span class="text-slate-600 dark:text-slate-300"
+					>{m['ads:analytics.impression_share_lost_budget']()}</span
+				>
 				<span class="font-semibold text-slate-800 dark:text-slate-100"
 					>{(stats.lostBudget * 100).toFixed(0)}%</span
 				>
 			</div>
 			<div class="flex items-center gap-1.5">
 				<span class="inline-block h-3 w-3 rounded-full bg-red-400"></span>
-				<span class="text-slate-600 dark:text-slate-300">{m['ads:analytics.impression_share_lost_rank']()}</span>
+				<span class="text-slate-600 dark:text-slate-300"
+					>{m['ads:analytics.impression_share_lost_rank']()}</span
+				>
 				<span class="font-semibold text-slate-800 dark:text-slate-100"
 					>{(stats.lostRank * 100).toFixed(0)}%</span
 				>

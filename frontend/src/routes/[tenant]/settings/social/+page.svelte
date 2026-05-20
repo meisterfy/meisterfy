@@ -103,7 +103,8 @@
 				<!-- Meta -->
 				<div>
 					<div class="mb-3 flex items-center gap-2">
-						<span class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
+						<span
+							class="text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
 							>Meta</span
 						>
 						{#if connectedPages.length > 0}
@@ -118,21 +119,31 @@
 					{#if pagesLoading}
 						<div class="space-y-2">
 							{#each [1, 2] as i (i)}
-								<div class="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+								<div
+									class="animate-pulse rounded-lg border border-slate-100 p-3 dark:border-slate-800"
+								>
 									<div class="h-4 w-40 rounded bg-slate-200 dark:bg-slate-700"></div>
 								</div>
 							{/each}
 						</div>
 					{:else if connectedPages.length > 0}
-						<ul class="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+						<ul
+							class="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700"
+						>
 							{#each connectedPages as resource (resource.id)}
 								{@const igUsername = resource.metadata?.ig_username as string | null}
 								<li class="flex items-center gap-3 p-3">
 									<div class="flex shrink-0 items-center gap-1">
 										{#if igUsername}
-											<span class="rounded bg-pink-100 px-1.5 py-0.5 text-[10px] font-bold text-pink-600 dark:bg-pink-900/30 dark:text-pink-400">IG</span>
+											<span
+												class="rounded bg-pink-100 px-1.5 py-0.5 text-[10px] font-bold text-pink-600 dark:bg-pink-900/30 dark:text-pink-400"
+												>IG</span
+											>
 										{/if}
-										<span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">FB</span>
+										<span
+											class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+											>FB</span
+										>
 									</div>
 
 									<div class="min-w-0 flex-1">
@@ -177,9 +188,13 @@
 				</div>
 
 				<!-- LinkedIn -->
-				<div class="flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+				<div
+					class="flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50"
+				>
 					<div class="flex items-center gap-3">
-						<span class="rounded bg-blue-700 px-1.5 py-0.5 text-[10px] font-bold text-white">in</span>
+						<span class="rounded bg-blue-700 px-1.5 py-0.5 text-[10px] font-bold text-white"
+							>in</span
+						>
 						<span class="text-sm font-medium text-slate-700 dark:text-slate-300">LinkedIn</span>
 					</div>
 					<span
@@ -190,7 +205,9 @@
 				</div>
 
 				<!-- X / Twitter -->
-				<div class="flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+				<div
+					class="flex items-center justify-between rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50"
+				>
 					<div class="flex items-center gap-3">
 						<Share2 class="h-5 w-5 text-slate-800 dark:text-slate-200" />
 						<span class="text-sm font-medium text-slate-700 dark:text-slate-300">X</span>
@@ -247,7 +264,9 @@
 					<CheckboxCard
 						bind:checked={aiReportWeekly}
 						title={m['settings:social_report_weekly_title']()}
-						description={m['settings:social_report_weekly_desc']({ schedule: weeklyLocalSchedule(6) })}
+						description={m['settings:social_report_weekly_desc']({
+							schedule: weeklyLocalSchedule(6)
+						})}
 					/>
 					<CheckboxCard
 						bind:checked={aiReportMonthly}

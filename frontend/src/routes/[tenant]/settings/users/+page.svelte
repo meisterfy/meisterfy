@@ -130,7 +130,7 @@
 		editName = user.name
 		editEmail = user.email
 		editLocale = user.locale ?? 'pt-BR'
-		editRoleId = user.role?.id ?? (roles[0]?.id ?? '')
+		editRoleId = user.role?.id ?? roles[0]?.id ?? ''
 		editError = null
 		showEditDrawer = true
 	}
@@ -353,7 +353,7 @@
 {#snippet inactiveActionsCell({ user }: { user: AdminUser })}
 	<div class="flex items-center justify-end gap-2">
 		<button
-			class="text-muted-foreground hover:text-emerald-600 transition-colors"
+			class="text-muted-foreground transition-colors hover:text-emerald-600"
 			title={m['settings:users_reactivate_title']()}
 			onclick={() => openReactivateDrawer(user)}
 		>
@@ -425,32 +425,37 @@
 			<h2 class="text-lg font-bold text-slate-900 dark:text-white">
 				{m['settings:users_invite_title']()}
 			</h2>
-			<Button
-				onclick={() => (showInviteDrawer = false)}
-				variant="outline"
-				class="h-8 px-3 text-xs"
-			>
+			<Button onclick={() => (showInviteDrawer = false)} variant="outline" class="h-8 px-3 text-xs">
 				Cancel
 			</Button>
 		</div>
 
 		<div class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
 			<div>
-				<label for="invite-name" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="invite-name"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_name']()}
 				</label>
 				<Input id="invite-name" bind:value={inviteName} required />
 			</div>
 
 			<div>
-				<label for="invite-email" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="invite-email"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_email']()}
 				</label>
 				<Input id="invite-email" type="email" bind:value={inviteEmail} required />
 			</div>
 
 			<div>
-				<label for="invite-password" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="invite-password"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_password']()}
 				</label>
 				<Input
@@ -466,7 +471,10 @@
 			</div>
 
 			<div>
-				<label for="invite-role" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="invite-role"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_role']()}
 				</label>
 				<Select.Root type="single" bind:value={inviteRoleId}>
@@ -482,7 +490,10 @@
 			</div>
 
 			<div>
-				<label for="invite-locale" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="invite-locale"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_locale']()}
 				</label>
 				<Select.Root type="single" bind:value={inviteLocale}>
@@ -497,7 +508,9 @@
 			</div>
 
 			{#if inviteError}
-				<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+				<p
+					class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+				>
 					{inviteError}
 				</p>
 			{/if}
@@ -506,7 +519,10 @@
 		<div class="border-border flex justify-end border-t px-6 py-4">
 			<Button
 				onclick={handleInvite}
-				disabled={inviteLoading || !inviteName.trim() || !inviteEmail.trim() || invitePassword.length < 8}
+				disabled={inviteLoading ||
+					!inviteName.trim() ||
+					!inviteEmail.trim() ||
+					invitePassword.length < 8}
 				class="h-10 px-6 text-sm"
 			>
 				{inviteLoading ? '…' : m['settings:users_invite_submit']()}
@@ -522,32 +538,37 @@
 			<h2 class="text-lg font-bold text-slate-900 dark:text-white">
 				{m['settings:users_edit_title']()}
 			</h2>
-			<Button
-				onclick={() => (showEditDrawer = false)}
-				variant="outline"
-				class="h-8 px-3 text-xs"
-			>
+			<Button onclick={() => (showEditDrawer = false)} variant="outline" class="h-8 px-3 text-xs">
 				Cancel
 			</Button>
 		</div>
 
 		<div class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
 			<div>
-				<label for="edit-name" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="edit-name"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_name']()}
 				</label>
 				<Input id="edit-name" bind:value={editName} required />
 			</div>
 
 			<div>
-				<label for="edit-email" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="edit-email"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_email']()}
 				</label>
 				<Input id="edit-email" type="email" bind:value={editEmail} required />
 			</div>
 
 			<div>
-				<label for="edit-role" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="edit-role"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_role']()}
 				</label>
 				<Select.Root type="single" bind:value={editRoleId}>
@@ -563,7 +584,10 @@
 			</div>
 
 			<div>
-				<label for="edit-locale" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="edit-locale"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_locale']()}
 				</label>
 				<Select.Root type="single" bind:value={editLocale}>
@@ -578,7 +602,9 @@
 			</div>
 
 			{#if editError}
-				<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+				<p
+					class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400"
+				>
 					{editError}
 				</p>
 			{/if}
@@ -605,10 +631,16 @@
 					{m['settings:users_reactivate_title']()}
 				</h2>
 				{#if reactivateTarget}
-					<p class="text-muted-foreground text-sm">{reactivateTarget.name} · {reactivateTarget.email}</p>
+					<p class="text-muted-foreground text-sm">
+						{reactivateTarget.name} · {reactivateTarget.email}
+					</p>
 				{/if}
 			</div>
-			<Button onclick={() => (showReactivateDrawer = false)} variant="outline" class="h-8 px-3 text-xs">
+			<Button
+				onclick={() => (showReactivateDrawer = false)}
+				variant="outline"
+				class="h-8 px-3 text-xs"
+			>
 				Cancel
 			</Button>
 		</div>
@@ -616,7 +648,10 @@
 		<div class="flex-1 space-y-5 overflow-y-auto px-6 py-6">
 			<p class="text-muted-foreground text-sm">{m['settings:users_reactivate_description']()}</p>
 			<div>
-				<label for="reactivate-role" class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase">
+				<label
+					for="reactivate-role"
+					class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+				>
 					{m['settings:users_invite_field_role']()}
 				</label>
 				<Select.Root type="single" bind:value={reactivateRoleId}>
@@ -655,4 +690,3 @@
 	isLoading={isDeactivating}
 	onconfirm={handleDeactivate}
 />
-

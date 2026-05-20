@@ -1,6 +1,6 @@
 module github.com/mkt-maestro/mkt-maestro
 
-go 1.25.5
+go 1.25.7
 
 require (
 	github.com/fergusstrange/embedded-postgres v1.34.0

@@ -9,6 +9,7 @@
 	import { normalizePost } from '$lib/utils/transforms'
 	import { getConnectedMetaPages, type ConnectedMetaPage } from '$lib/api/social-accounts'
 	import { inputCls, labelCls } from './styles'
+	import { untrack } from 'svelte'
 
 	let {
 		open = $bindable(false),
@@ -41,13 +42,15 @@
 			newTime = '10:00'
 			newPlatforms = ['instagram_feed']
 			selectedResourceId = ''
-			if (!metaPagesLoaded) {
-				getConnectedMetaPages(tenant).then((pages) => {
-					metaPages = pages
-					metaPagesLoaded = true
-				}).catch(() => {
-					metaPagesLoaded = true
-				})
+			if (!untrack(() => metaPagesLoaded)) {
+				getConnectedMetaPages(tenant)
+					.then((pages) => {
+						metaPages = pages
+						metaPagesLoaded = true
+					})
+					.catch(() => {
+						metaPagesLoaded = true
+					})
 			}
 		}
 	})
@@ -113,16 +116,20 @@
 					<div>
 						<label for="new-meta-account" class={labelCls}>Meta Account</label>
 						<select id="new-meta-account" bind:value={selectedResourceId} class={inputCls}>
-							<option value=''>— No specific account —</option>
+							<option value="">— No specific account —</option>
 							{#each metaPages as page (page.id)}
 								<option value={page.id}>
-									{page.resource_name ?? 'Page'}{page.metadata.ig_username ? ` (@${page.metadata.ig_username})` : ' (Facebook only)'}
+									{page.resource_name ?? 'Page'}{page.metadata.ig_username
+										? ` (@${page.metadata.ig_username})`
+										: ' (Facebook only)'}
 								</option>
 							{/each}
 						</select>
 					</div>
 				{:else if metaPagesLoaded}
-					<p class="text-xs text-slate-400">Connect a Meta account in Settings → Social to publish automatically.</p>
+					<p class="text-xs text-slate-400">
+						Connect a Meta account in Settings → Social to publish automatically.
+					</p>
 				{/if}
 				<div class="grid grid-cols-2 gap-3">
 					<div>

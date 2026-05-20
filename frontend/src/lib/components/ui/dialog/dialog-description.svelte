@@ -5,7 +5,4 @@
 	let { class: className = '', ...restProps }: DialogDescriptionProps = $props()
 </script>
 
-<Dialog.Description
-	class="text-sm text-slate-500 dark:text-slate-400 {className}"
-	{...restProps}
-/>
+<Dialog.Description class="text-sm text-slate-500 dark:text-slate-400 {className}" {...restProps} />

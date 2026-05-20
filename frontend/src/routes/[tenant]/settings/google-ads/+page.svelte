@@ -401,10 +401,7 @@
 			</CardAside>
 
 			<!-- Automatic Adjustments -->
-			<CardAside
-				title={m['settings:auto_adj_title']()}
-				description={m['settings:auto_adj_desc']()}
-			>
+			<CardAside title={m['settings:auto_adj_title']()} description={m['settings:auto_adj_desc']()}>
 				{#snippet header()}
 					<div class="flex items-end justify-between gap-4">
 						<CardHeader
@@ -435,10 +432,12 @@
 								<button
 									type="button"
 									onclick={() => (minCampaignAgeDays = preset)}
-									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {minCampaignAgeDays === preset
+									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {minCampaignAgeDays ===
+									preset
 										? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
 										: 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}"
-								>{preset}d</button>
+									>{preset}d</button
+								>
 							{/each}
 						</div>
 					</div>
@@ -455,10 +454,12 @@
 								<button
 									type="button"
 									onclick={() => (adjustmentIntervalDays = preset)}
-									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {adjustmentIntervalDays === preset
+									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {adjustmentIntervalDays ===
+									preset
 										? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
 										: 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}"
-								>{preset}d</button>
+									>{preset}d</button
+								>
 							{/each}
 						</div>
 					</div>

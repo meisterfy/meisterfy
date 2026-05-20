@@ -1,5 +1,14 @@
 <script lang="ts">
-	import { FileEdit, CheckCircle, Image as ImageIcon, Send, Trash2, Clock, AlertTriangle, AlertCircle } from 'lucide-svelte'
+	import {
+		FileEdit,
+		CheckCircle,
+		Image as ImageIcon,
+		Send,
+		Trash2,
+		Clock,
+		AlertTriangle,
+		AlertCircle
+	} from 'lucide-svelte'
 	import { resolve } from '$app/paths'
 
 	import type { Post, PostStatus } from '$lib/api/posts'
@@ -81,16 +90,22 @@
 	{#if isScheduled || isFailed || isPartial}
 		<div class="mb-2">
 			{#if isScheduled}
-				<span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+				>
 					<Clock class="h-3 w-3" />
 					{post.scheduled_date ?? 'Scheduled'}
 				</span>
 			{:else if isFailed}
-				<span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400"
+				>
 					<AlertTriangle class="h-3 w-3" /> Publish failed
 				</span>
 			{:else if isPartial}
-				<span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+				<span
+					class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+				>
 					<AlertCircle class="h-3 w-3" /> Partially published
 				</span>
 			{/if}

@@ -39,7 +39,7 @@
 					<h2 class="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
 						{block.title}
 					</h2>
-					<p class="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+					<p class="text-sm leading-relaxed whitespace-pre-wrap text-slate-600 dark:text-slate-400">
 						{block.content}
 					</p>
 				</section>
@@ -48,7 +48,9 @@
 	</div>
 
 	<footer class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-		<div class="mx-auto flex max-w-3xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<div
+			class="mx-auto flex max-w-3xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+		>
 			<label class="flex cursor-pointer items-center gap-3">
 				<input
 					type="checkbox"

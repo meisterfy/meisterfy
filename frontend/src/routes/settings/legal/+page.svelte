@@ -88,7 +88,9 @@
 			const body = {
 				fallback_locale: editFallbackLocale,
 				translations: editTranslations,
-				effective_at: editEffectiveAt ? new Date(editEffectiveAt).toISOString() : new Date().toISOString()
+				effective_at: editEffectiveAt
+					? new Date(editEffectiveAt).toISOString()
+					: new Date().toISOString()
 			}
 			if (isNew) {
 				const created = await createLegalVersion(body)
@@ -100,7 +102,12 @@
 				await updateLegalVersion(selectedId!, body)
 				versions = versions.map((v) =>
 					v.id === selectedId
-						? { ...v, fallback_locale: body.fallback_locale, translations: body.translations, effective_at: body.effective_at }
+						? {
+								...v,
+								fallback_locale: body.fallback_locale,
+								translations: body.translations,
+								effective_at: body.effective_at
+							}
 						: v
 				)
 				toast.success(m['settings:legal_toast_saved']())
@@ -119,9 +126,15 @@
 
 <div class="flex flex-1 gap-0 overflow-hidden">
 	<!-- left panel: version list -->
-	<aside class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-		<div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-			<span class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+	<aside
+		class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+	>
+		<div
+			class="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800"
+		>
+			<span
+				class="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+			>
 				{m['settings:legal_title']()}
 			</span>
 			<button
@@ -159,7 +172,8 @@
 			{#each versions as v (v.id)}
 				<button
 					onclick={() => selectVersion(v)}
-					class="w-full border-b border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 {selectedId === v.id && !isNew
+					class="w-full border-b border-slate-200 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 {selectedId ===
+						v.id && !isNew
 						? 'bg-slate-100 dark:bg-slate-800'
 						: ''}"
 				>
@@ -186,7 +200,9 @@
 			</div>
 		{:else}
 			<div class="flex flex-col gap-6 p-6">
-				<SectionTitle title={isNew ? m['settings:legal_new_version']() : m['settings:legal_title']()}>
+				<SectionTitle
+					title={isNew ? m['settings:legal_new_version']() : m['settings:legal_title']()}
+				>
 					{#snippet icon()}
 						<ScrollText class="text-muted-foreground h-5 w-5" />
 					{/snippet}
@@ -198,13 +214,19 @@
 				<!-- meta fields -->
 				<div class="grid grid-cols-2 gap-4">
 					<div>
-						<label for="effective-at" class="text-muted-foreground mb-1.5 block text-xs font-semibold uppercase tracking-wide">
+						<label
+							for="effective-at"
+							class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+						>
 							{m['settings:legal_field_effective_at']()}
 						</label>
 						<Input id="effective-at" type="date" bind:value={editEffectiveAt} />
 					</div>
 					<div>
-						<label for="fallback-locale" class="text-muted-foreground mb-1.5 block text-xs font-semibold uppercase tracking-wide">
+						<label
+							for="fallback-locale"
+							class="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wide uppercase"
+						>
 							{m['settings:legal_field_fallback_locale']()}
 						</label>
 						<Select.Root type="single" bind:value={editFallbackLocale}>
@@ -238,9 +260,11 @@
 					<!-- blocks -->
 					<div class="flex flex-col gap-4">
 						{#each currentBlocks() as block, idx (idx)}
-							<div class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+							<div
+								class="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+							>
 								<div class="mb-3 flex items-center justify-between">
-									<span class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+									<span class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
 										{m['settings:legal_block_title']()}
 									</span>
 									<button
@@ -262,7 +286,8 @@
 									rows={6}
 									placeholder={m['settings:legal_block_content']()}
 									value={block.content}
-									oninput={(e) => updateBlock(idx, 'content', (e.target as HTMLTextAreaElement).value)}
+									oninput={(e) =>
+										updateBlock(idx, 'content', (e.target as HTMLTextAreaElement).value)}
 								></textarea>
 							</div>
 						{/each}

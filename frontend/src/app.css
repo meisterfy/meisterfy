@@ -37,7 +37,9 @@
 }
 
 [data-dialog-content] {
-	transition: opacity 0.18s ease, transform 0.18s ease;
+	transition:
+		opacity 0.18s ease,
+		transform 0.18s ease;
 	opacity: 1;
 	transform: translate(-50%, -50%) scale(1);
 }
