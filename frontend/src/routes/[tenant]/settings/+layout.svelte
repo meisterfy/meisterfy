@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page, navigating } from '$app/state'
-	import { Settings, BarChart2, Shield, Users, ShieldCheck } from 'lucide-svelte'
+	import { Settings, BarChart2, Shield, Users, ShieldCheck, KeyRound, Share2 } from 'lucide-svelte'
 	import type { Snippet } from 'svelte'
 	import SubToolbar from '$lib/components/ui/toolbar/sub-toolbar.svelte'
 	import SubToolbarLink from '$lib/components/ui/toolbar/sub-toolbar-link.svelte'
@@ -28,6 +28,13 @@
 			show: true
 		},
 		{
+			href: `/${page.params.tenant}/settings/social`,
+			label: m['settings:nav_social'](),
+			icon: Share2,
+			active: currentPath.includes('/settings/social'),
+			show: true
+		},
+		{
 			href: `/${page.params.tenant}/settings/audit`,
 			label: m['settings:nav_audit'](),
 			icon: Shield,
@@ -46,6 +53,13 @@
 			label: m['settings:nav_roles'](),
 			icon: ShieldCheck,
 			active: currentPath.includes('/settings/roles'),
+			show: canManageUsers
+		},
+		{
+			href: `/${page.params.tenant}/settings/mcp`,
+			label: m['settings:nav_mcp'](),
+			icon: KeyRound,
+			active: currentPath.includes('/settings/mcp'),
 			show: canManageUsers
 		}
 	])
