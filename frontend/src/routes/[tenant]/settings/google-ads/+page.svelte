@@ -62,6 +62,11 @@
 	let maxIncreaseBRL = $state(existingCfg?.max_increase_brl ?? 50)
 	let maxDecreasePct = $state(existingCfg?.max_decrease_pct ?? 10)
 	let maxDecreaseBRL = $state(existingCfg?.max_decrease_brl ?? 20)
+	let suggestionsEnabled = $state(existingCfg?.suggestions_enabled ?? false)
+	let minCampaignAgeDays = $state(existingCfg?.min_campaign_age_days ?? 14)
+	let adjustmentIntervalDays = $state(existingCfg?.adjustment_interval_days ?? 7)
+
+	let aggressiveWarning = $derived(minCampaignAgeDays < 10 || adjustmentIntervalDays < 5)
 
 	let isSavingAds = $state(false)
 	let savedAds = $state(false)
@@ -87,7 +92,10 @@
 				max_increase_pct: maxIncreasePct,
 				max_increase_brl: maxIncreaseBRL,
 				max_decrease_pct: maxDecreasePct,
-				max_decrease_brl: maxDecreaseBRL
+				max_decrease_brl: maxDecreaseBRL,
+				suggestions_enabled: suggestionsEnabled,
+				min_campaign_age_days: minCampaignAgeDays,
+				adjustment_interval_days: adjustmentIntervalDays
 			}
 			await updateTenant(data.tenant, { ads_monitoring: merged })
 			savedAds = true
@@ -390,6 +398,83 @@
 				{:else}
 					<span class="text-sm text-slate-500 dark:text-slate-400"> Enable to edit. </span>
 				{/if}
+			</CardAside>
+
+			<!-- Automatic Adjustments -->
+			<CardAside
+				title={m['settings:auto_adj_title']()}
+				description={m['settings:auto_adj_desc']()}
+			>
+				{#snippet header()}
+					<div class="flex items-end justify-between gap-4">
+						<CardHeader
+							title={m['settings:auto_adj_suggestions_label']()}
+							subtitle={m['settings:auto_adj_suggestions_desc']()}
+						/>
+						<Switch.Root
+							bind:checked={suggestionsEnabled}
+							class="group inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none data-[state=checked]:bg-indigo-600 data-[state=unchecked]:bg-slate-200 dark:data-[state=unchecked]:bg-slate-700"
+						>
+							<Switch.Thumb
+								class="pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+							/>
+						</Switch.Root>
+					</div>
+				{/snippet}
+
+				<div class="space-y-5">
+					<div>
+						<NumberField
+							id="min-campaign-age"
+							label={m['settings:auto_adj_min_age_label']()}
+							suffix={m['settings:auto_adj_days_suffix']()}
+							bind:value={minCampaignAgeDays}
+						/>
+						<div class="mt-2 flex gap-1.5">
+							{#each [7, 14, 21, 30] as preset}
+								<button
+									type="button"
+									onclick={() => (minCampaignAgeDays = preset)}
+									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {minCampaignAgeDays === preset
+										? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+										: 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}"
+								>{preset}d</button>
+							{/each}
+						</div>
+					</div>
+
+					<div>
+						<NumberField
+							id="adjustment-interval"
+							label={m['settings:auto_adj_interval_label']()}
+							suffix={m['settings:auto_adj_days_suffix']()}
+							bind:value={adjustmentIntervalDays}
+						/>
+						<div class="mt-2 flex gap-1.5">
+							{#each [3, 7, 14] as preset}
+								<button
+									type="button"
+									onclick={() => (adjustmentIntervalDays = preset)}
+									class="rounded border px-2 py-0.5 text-xs font-medium transition-colors {adjustmentIntervalDays === preset
+										? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+										: 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'}"
+								>{preset}d</button>
+							{/each}
+						</div>
+					</div>
+
+					{#if aggressiveWarning}
+						<p
+							class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+						>
+							{m['settings:auto_adj_aggressive_warning']()}
+						</p>
+					{/if}
+				</div>
+
+				{#snippet footer()}
+					<SaveButton isSaving={isSavingAds} saved={savedAds} onclick={saveAdsConfig} />
+				{/snippet}
 			</CardAside>
 		{/if}
 	</Container>
