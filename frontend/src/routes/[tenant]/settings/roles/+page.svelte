@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button/index.js'
 	import { Input } from '$lib/components/ui/input/index.js'
 	import ConfirmDialog from '$lib/components/ui/dialog/confirm-dialog.svelte'
+	import { toast } from 'svelte-sonner'
 	import type { PageData } from './$types'
 	import type { AdminRole, AdminPermission } from '$lib/api/admin-users'
 	import { createRole, deleteRole, updateRole } from '$lib/api/admin-users'
@@ -66,7 +67,6 @@
 	let isSaving = $state(false)
 	let isDeleting = $state(false)
 	let isCreating = $state(false)
-	let toast = $state<{ msg: string; error: boolean } | null>(null)
 
 	// Create form
 	let newRoleName = $state('')
@@ -208,8 +208,8 @@
 	}
 
 	function showToast(msg: string, error = false) {
-		toast = { msg, error }
-		setTimeout(() => (toast = null), 3000)
+		if (error) toast.error(msg)
+		else toast.success(msg)
 	}
 
 	async function handleSavePerms() {
@@ -582,13 +582,3 @@ py-3 text-left text-sm transition-colors last:border-b-0
 	onconfirm={handleDelete}
 />
 
-<!-- toast -->
-{#if toast}
-	<div
-		class="fixed right-6 bottom-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg {toast.error
-			? 'bg-destructive text-destructive-foreground'
-			: 'bg-foreground text-background'}"
-	>
-		{toast.msg}
-	</div>
-{/if}
