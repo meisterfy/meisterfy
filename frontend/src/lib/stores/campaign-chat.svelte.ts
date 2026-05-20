@@ -1,6 +1,8 @@
 import { streamGenerate } from '$lib/api/ai'
 import type { AIGenerateRequest } from '$lib/api/ai'
 
+const MAX_PERSISTED = 30
+
 export interface ChatMessage {
 	role: 'user' | 'assistant'
 	content: string
@@ -19,11 +21,40 @@ export interface CampaignChatStore {
 	clear(): void
 }
 
-export function createCampaignChat(): CampaignChatStore {
-	let messages = $state<ChatMessage[]>([])
+function storageKey(tenantId: string, campaignId: string) {
+	return `chat:${tenantId}:${campaignId}`
+}
+
+function loadMessages(tenantId: string, campaignId: string): ChatMessage[] {
+	try {
+		const raw = localStorage.getItem(storageKey(tenantId, campaignId))
+		return raw ? (JSON.parse(raw) as ChatMessage[]) : []
+	} catch {
+		return []
+	}
+}
+
+function saveMessages(tenantId: string, campaignId: string, msgs: ChatMessage[]) {
+	try {
+		const persisted = msgs
+			.filter((m) => !m.streaming)
+			.slice(-MAX_PERSISTED)
+			.map(({ role, content }) => ({ role, content }))
+		localStorage.setItem(storageKey(tenantId, campaignId), JSON.stringify(persisted))
+	} catch {
+		// localStorage unavailable (private mode quota)
+	}
+}
+
+export function createCampaignChat(tenantId: string, campaignId: string): CampaignChatStore {
+	let messages = $state<ChatMessage[]>(loadMessages(tenantId, campaignId))
 	let isOpen = $state(false)
 	let busy = $state(false)
 	let controller: AbortController | null = null
+
+	function persist() {
+		saveMessages(tenantId, campaignId, messages)
+	}
 
 	return {
 		get messages() {
@@ -47,6 +78,7 @@ export function createCampaignChat(): CampaignChatStore {
 		},
 		clear() {
 			messages = []
+			persist()
 		},
 
 		abort() {
@@ -56,6 +88,7 @@ export function createCampaignChat(): CampaignChatStore {
 				messages[messages.length - 1].streaming = false
 			}
 			busy = false
+			persist()
 		},
 
 		async send(req, userText) {
@@ -95,6 +128,7 @@ export function createCampaignChat(): CampaignChatStore {
 				if (messages.length > 0) messages[messages.length - 1].streaming = false
 				busy = false
 				controller = null
+				persist()
 			}
 		}
 	}
