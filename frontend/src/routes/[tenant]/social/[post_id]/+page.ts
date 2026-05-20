@@ -1,12 +1,13 @@
-import { getPost } from '$lib/api/posts'
+import { getPost, getPublishResults } from '$lib/api/posts'
 import { normalizePost } from '$lib/utils/transforms'
 import { error } from '@sveltejs/kit'
 import { withFallback } from '$lib/utils/loader'
 import type { PageLoad } from './$types'
 
-export const load: PageLoad = async ({ params, parent }) => {
-	const [post, { client }] = await Promise.all([
+export const load: PageLoad = async ({ params, fetch, parent }) => {
+	const [post, results, { client }] = await Promise.all([
 		withFallback(getPost(params.tenant, params.post_id), null),
+		withFallback(getPublishResults(params.tenant, params.post_id, fetch), []),
 		parent()
 	])
 
@@ -17,6 +18,7 @@ export const load: PageLoad = async ({ params, parent }) => {
 	return {
 		client_id: params.tenant,
 		brand: client.brand,
-		post: normalizePost(post)
+		post: normalizePost(post),
+		publishResults: results ?? []
 	}
 }

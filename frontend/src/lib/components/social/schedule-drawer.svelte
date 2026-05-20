@@ -5,6 +5,7 @@
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
 	import PlatformSelect from '$lib/components/ui/platform-select/platform-select.svelte'
 	import { updatePost, updatePostStatus } from '$lib/api/posts'
+	import { getConnectedMetaPages, type ConnectedMetaPage } from '$lib/api/social-accounts'
 	import { inputCls, labelCls } from './styles'
 
 	let {
@@ -23,6 +24,9 @@
 	let schedTime = $state('10:00')
 	let schedPlatforms = $state<PostPlatform[]>(['instagram_feed'])
 	let isSaving = $state(false)
+	let metaPages = $state<ConnectedMetaPage[]>([])
+	let metaPagesLoaded = $state(false)
+	let selectedResourceId = $state<string>('')
 
 	$effect(() => {
 		if (open && draft) {
@@ -30,6 +34,15 @@
 			schedTime = '10:00'
 			const draftPlatforms = normPlatforms(draft.platform)
 			schedPlatforms = draftPlatforms.length > 0 ? draftPlatforms : ['instagram_feed']
+			selectedResourceId = draft.connector_resource_id ?? ''
+			if (!metaPagesLoaded) {
+				getConnectedMetaPages(tenant).then((pages) => {
+					metaPages = pages
+					metaPagesLoaded = true
+				}).catch(() => {
+					metaPagesLoaded = true
+				})
+			}
 		}
 	})
 
@@ -37,7 +50,10 @@
 		if (!draft || !schedDate) return
 		isSaving = true
 		try {
-			await updatePost(tenant, draft.id, { platforms: schedPlatforms })
+			await updatePost(tenant, draft.id, {
+				platforms: schedPlatforms,
+				connector_resource_id: selectedResourceId || null
+			})
 			await updatePostStatus(tenant, draft.id, 'scheduled', {
 				scheduled_date: schedDate,
 				scheduled_time: schedTime || undefined
@@ -73,6 +89,21 @@
 						<p class={labelCls}>Platform</p>
 						<PlatformSelect bind:value={schedPlatforms} />
 					</div>
+					{#if metaPages.length > 0}
+						<div>
+							<label for="sched-meta-account" class={labelCls}>Meta Account</label>
+							<select id="sched-meta-account" bind:value={selectedResourceId} class={inputCls}>
+								<option value=''>— No specific account —</option>
+								{#each metaPages as page (page.id)}
+									<option value={page.id}>
+										{page.resource_name ?? 'Page'}{page.metadata.ig_username ? ` (@${page.metadata.ig_username})` : ' (Facebook only)'}
+									</option>
+								{/each}
+							</select>
+						</div>
+					{:else if metaPagesLoaded}
+						<p class="text-xs text-slate-400">Connect a Meta account in Settings → Social to publish automatically.</p>
+					{/if}
 					<div class="grid grid-cols-2 gap-3">
 						<div>
 							<label for="sched-date" class={labelCls}>Date</label>

@@ -13,6 +13,7 @@ const base: Post & { filename: string; media_files: string[] } = {
 	media_type: 'image',
 	media_path: null,
 	platforms: ['instagram_feed'],
+	connector_resource_id: null,
 	workflow: null,
 	scheduled_date: null,
 	scheduled_time: null,

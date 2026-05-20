@@ -17,7 +17,8 @@ export function normalizePost(p: Post): PostShape {
 		platform: (p.platforms ?? []) as PostPlatform[],
 		client_id: p.tenant_id,
 		media_files: p.media_path ? [p.media_path] : [],
-		workflow: p.workflow ?? null
+		workflow: p.workflow ?? null,
+		connector_resource_id: p.connector_resource_id ?? null
 	}
 }
 

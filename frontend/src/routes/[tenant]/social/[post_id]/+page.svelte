@@ -2,7 +2,8 @@
 	import { untrack } from 'svelte'
 	import { resolve } from '$app/paths'
 	import type { PageData } from './$types'
-	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send } from 'lucide-svelte'
+	import { ArrowLeft, Save, FileEdit, Trash2, Sparkles, X, Send, CheckCircle2, XCircle } from 'lucide-svelte'
+	import { PLATFORM_CONFIG } from '$lib/social'
 	import { updatePost, updatePostStatus, deletePost as apiDeletePost } from '$lib/api/posts'
 	import { parseHashtags } from '$lib/utils/hashtags'
 	import { streamGenerate } from '$lib/api/ai'
@@ -461,5 +462,38 @@
 				</div>
 			</div>
 		</div>
+
+		{#if data.publishResults.length > 0}
+			<div
+				class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
+			>
+				<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">Publicações</h3>
+				<div class="space-y-2">
+					{#each data.publishResults as result (result.id)}
+						<div class="flex items-start justify-between gap-2 text-sm">
+							<div class="flex min-w-0 flex-1 items-center gap-2">
+								<span
+									class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase"
+									style="background:{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.color ?? '#64748b'}22; color:{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.color ?? '#64748b'}"
+								>
+									{PLATFORM_CONFIG[result.platform as keyof typeof PLATFORM_CONFIG]?.label ?? result.platform}
+								</span>
+								{#if result.status === 'published'}
+									<CheckCircle2 class="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+									<span class="text-xs text-slate-500">
+										{result.published_at ? new Date(result.published_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'Published'}
+									</span>
+								{:else}
+									<XCircle class="h-3.5 w-3.5 shrink-0 text-red-500" />
+									<span class="min-w-0 truncate text-xs text-red-500" title={result.error_message ?? ''}>
+										{result.error_message ?? 'Failed'}
+									</span>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
 	</div>
 </div>

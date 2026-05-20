@@ -1,4 +1,6 @@
-import type { PostStatus, PostWorkflow } from '$lib/api/posts'
+import type { PostStatus, PostWorkflow, PostPublishResult } from '$lib/api/posts'
+
+export type { PostPublishResult }
 
 export type PostPlatform =
 	| 'instagram_feed'
@@ -45,4 +47,6 @@ export type PostShape = {
 	media_files: string[]
 	workflow: PostWorkflow | null
 	filename?: string
+	connector_resource_id?: string | null
+	publish_results?: PostPublishResult[]
 }

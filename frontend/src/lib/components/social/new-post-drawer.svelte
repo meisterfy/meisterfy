@@ -7,6 +7,7 @@
 	import { uploadMedia } from '$lib/api/media'
 	import { parseHashtags } from '$lib/utils/hashtags'
 	import { normalizePost } from '$lib/utils/transforms'
+	import { getConnectedMetaPages, type ConnectedMetaPage } from '$lib/api/social-accounts'
 	import { inputCls, labelCls } from './styles'
 
 	let {
@@ -28,6 +29,9 @@
 	let newPlatforms = $state<PostPlatform[]>(['instagram_feed'])
 	let newMediaInput = $state<HTMLInputElement | null>(null)
 	let isCreating = $state(false)
+	let metaPages = $state<ConnectedMetaPage[]>([])
+	let metaPagesLoaded = $state(false)
+	let selectedResourceId = $state<string>('')
 
 	$effect(() => {
 		if (open) {
@@ -36,6 +40,15 @@
 			newHashtags = ''
 			newTime = '10:00'
 			newPlatforms = ['instagram_feed']
+			selectedResourceId = ''
+			if (!metaPagesLoaded) {
+				getConnectedMetaPages(tenant).then((pages) => {
+					metaPages = pages
+					metaPagesLoaded = true
+				}).catch(() => {
+					metaPagesLoaded = true
+				})
+			}
 		}
 	})
 
@@ -51,7 +64,8 @@
 				platforms: newPlatforms,
 				status: 'scheduled',
 				scheduled_date: defaultDate,
-				scheduled_time: newTime || undefined
+				scheduled_time: newTime || undefined,
+				connector_resource_id: selectedResourceId || null
 			})
 			const files = newMediaInput?.files
 			let mediaFiles: string[] = []
@@ -95,6 +109,21 @@
 					<p class={labelCls}>Platform</p>
 					<PlatformSelect bind:value={newPlatforms} />
 				</div>
+				{#if metaPages.length > 0}
+					<div>
+						<label for="new-meta-account" class={labelCls}>Meta Account</label>
+						<select id="new-meta-account" bind:value={selectedResourceId} class={inputCls}>
+							<option value=''>— No specific account —</option>
+							{#each metaPages as page (page.id)}
+								<option value={page.id}>
+									{page.resource_name ?? 'Page'}{page.metadata.ig_username ? ` (@${page.metadata.ig_username})` : ' (Facebook only)'}
+								</option>
+							{/each}
+						</select>
+					</div>
+				{:else if metaPagesLoaded}
+					<p class="text-xs text-slate-400">Connect a Meta account in Settings → Social to publish automatically.</p>
+				{/if}
 				<div class="grid grid-cols-2 gap-3">
 					<div>
 						<label for="new-date" class={labelCls}

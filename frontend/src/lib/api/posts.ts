@@ -1,11 +1,21 @@
 import { apiFetch, apiFetchData } from './client'
 
-export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published'
+export type PostStatus = 'draft' | 'approved' | 'scheduled' | 'published' | 'failed' | 'partially_published'
 
 export interface PostWorkflow {
 	strategy?: { framework: string; reasoning: string }
 	clarity?: { changes: string }
 	impact?: { changes: string }
+}
+
+export interface PostPublishResult {
+	id: string
+	platform: string
+	provider: string
+	external_id: string | null
+	status: 'published' | 'failed'
+	error_message: string | null
+	published_at: string | null
 }
 
 export interface Post {
@@ -18,6 +28,7 @@ export interface Post {
 	media_type: string | null
 	media_path: string | null
 	platforms: string[]
+	connector_resource_id: string | null
 	workflow: PostWorkflow | null
 	scheduled_date: string | null
 	scheduled_time: string | null
@@ -59,3 +70,6 @@ export const updatePostStatus = (
 
 export const deletePost = (tenantId: string, id: string) =>
 	apiFetch<void>(`/admin/tenants/${tenantId}/posts/${id}`, { method: 'DELETE' })
+
+export const getPublishResults = (tenantId: string, postId: string, fetchFn?: typeof fetch) =>
+	apiFetchData<PostPublishResult[]>(`/admin/tenants/${tenantId}/posts/${postId}/results`, {}, fetchFn)

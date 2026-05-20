@@ -12,6 +12,7 @@ const mockPost: Post = {
 	media_type: null,
 	media_path: null,
 	platforms: [],
+	connector_resource_id: null,
 	workflow: null,
 	scheduled_date: null,
 	scheduled_time: null,
