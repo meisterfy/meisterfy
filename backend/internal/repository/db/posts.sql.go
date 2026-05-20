@@ -14,23 +14,24 @@ import (
 
 const createPost = `-- name: CreatePost :exec
 INSERT INTO posts (id, tenant_id, status, title, content, hashtags, media_type,
-    workflow, media_path, platforms, scheduled_date, scheduled_time)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    workflow, media_path, platforms, scheduled_date, scheduled_time, connector_resource_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 `
 
 type CreatePostParams struct {
-	ID            string          `json:"id"`
-	TenantID      string          `json:"tenant_id"`
-	Status        string          `json:"status"`
-	Title         *string         `json:"title"`
-	Content       string          `json:"content"`
-	Hashtags      json.RawMessage `json:"hashtags"`
-	MediaType     *string         `json:"media_type"`
-	Workflow      []byte          `json:"workflow"`
-	MediaPath     *string         `json:"media_path"`
-	Platforms     json.RawMessage `json:"platforms"`
-	ScheduledDate *string         `json:"scheduled_date"`
-	ScheduledTime *string         `json:"scheduled_time"`
+	ID                  string          `json:"id"`
+	TenantID            string          `json:"tenant_id"`
+	Status              string          `json:"status"`
+	Title               *string         `json:"title"`
+	Content             string          `json:"content"`
+	Hashtags            json.RawMessage `json:"hashtags"`
+	MediaType           *string         `json:"media_type"`
+	Workflow            []byte          `json:"workflow"`
+	MediaPath           *string         `json:"media_path"`
+	Platforms           json.RawMessage `json:"platforms"`
+	ScheduledDate       *string         `json:"scheduled_date"`
+	ScheduledTime       *string         `json:"scheduled_time"`
+	ConnectorResourceID *string         `json:"connector_resource_id"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
@@ -47,6 +48,7 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 		arg.Platforms,
 		arg.ScheduledDate,
 		arg.ScheduledTime,
+		arg.ConnectorResourceID,
 	)
 	return err
 }
@@ -66,7 +68,7 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) error {
 }
 
 const getPostByID = `-- name: GetPostByID :one
-SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts WHERE id = $1 LIMIT 1
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetPostByID(ctx context.Context, id string) (Post, error) {
@@ -88,12 +90,13 @@ func (q *Queries) GetPostByID(ctx context.Context, id string) (Post, error) {
 		&i.PublishedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ConnectorResourceID,
 	)
 	return i, err
 }
 
 const getPostByIDAndTenant = `-- name: GetPostByIDAndTenant :one
-SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts WHERE id = $1 AND tenant_id = $2 LIMIT 1
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts WHERE id = $1 AND tenant_id = $2 LIMIT 1
 `
 
 type GetPostByIDAndTenantParams struct {
@@ -120,12 +123,58 @@ func (q *Queries) GetPostByIDAndTenant(ctx context.Context, arg GetPostByIDAndTe
 		&i.PublishedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ConnectorResourceID,
 	)
 	return i, err
 }
 
+const listDueScheduledPosts = `-- name: ListDueScheduledPosts :many
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts
+WHERE status = 'scheduled'
+  AND scheduled_date IS NOT NULL
+  AND (scheduled_date || ' ' || COALESCE(scheduled_time, '00:00'))::TIMESTAMPTZ <= NOW()
+ORDER BY scheduled_date, scheduled_time
+`
+
+func (q *Queries) ListDueScheduledPosts(ctx context.Context) ([]Post, error) {
+	rows, err := q.db.Query(ctx, listDueScheduledPosts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Status,
+			&i.Title,
+			&i.Content,
+			&i.Hashtags,
+			&i.MediaType,
+			&i.Workflow,
+			&i.MediaPath,
+			&i.Platforms,
+			&i.ScheduledDate,
+			&i.ScheduledTime,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ConnectorResourceID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPosts = `-- name: ListPosts :many
-SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts WHERE tenant_id = $1
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts WHERE tenant_id = $1
 ORDER BY created_at DESC
 `
 
@@ -154,6 +203,7 @@ func (q *Queries) ListPosts(ctx context.Context, tenantID string) ([]Post, error
 			&i.PublishedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ConnectorResourceID,
 		); err != nil {
 			return nil, err
 		}
@@ -166,7 +216,7 @@ func (q *Queries) ListPosts(ctx context.Context, tenantID string) ([]Post, error
 }
 
 const listPostsByStatus = `-- name: ListPostsByStatus :many
-SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts WHERE tenant_id = $1 AND status = $2
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts WHERE tenant_id = $1 AND status = $2
 ORDER BY created_at DESC
 `
 
@@ -200,6 +250,7 @@ func (q *Queries) ListPostsByStatus(ctx context.Context, arg ListPostsByStatusPa
 			&i.PublishedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ConnectorResourceID,
 		); err != nil {
 			return nil, err
 		}
@@ -212,7 +263,7 @@ func (q *Queries) ListPostsByStatus(ctx context.Context, arg ListPostsByStatusPa
 }
 
 const listScheduledPosts = `-- name: ListScheduledPosts :many
-SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at FROM posts
+SELECT id, tenant_id, status, title, content, hashtags, media_type, workflow, media_path, platforms, scheduled_date, scheduled_time, published_at, created_at, updated_at, connector_resource_id FROM posts
 WHERE tenant_id = $1 AND status = 'scheduled'
   AND scheduled_date IS NOT NULL
 ORDER BY scheduled_date, scheduled_time
@@ -243,6 +294,7 @@ func (q *Queries) ListScheduledPosts(ctx context.Context, tenantID string) ([]Po
 			&i.PublishedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ConnectorResourceID,
 		); err != nil {
 			return nil, err
 		}
@@ -258,21 +310,22 @@ const updatePost = `-- name: UpdatePost :exec
 UPDATE posts
 SET title = $2, content = $3, hashtags = $4, media_type = $5,
     platforms = $6, scheduled_date = $7, scheduled_time = $8,
-    workflow = $9, updated_at = NOW()
-WHERE id = $1 AND tenant_id = $10
+    workflow = $9, connector_resource_id = $10, updated_at = NOW()
+WHERE id = $1 AND tenant_id = $11
 `
 
 type UpdatePostParams struct {
-	ID            string          `json:"id"`
-	Title         *string         `json:"title"`
-	Content       string          `json:"content"`
-	Hashtags      json.RawMessage `json:"hashtags"`
-	MediaType     *string         `json:"media_type"`
-	Platforms     json.RawMessage `json:"platforms"`
-	ScheduledDate *string         `json:"scheduled_date"`
-	ScheduledTime *string         `json:"scheduled_time"`
-	Workflow      []byte          `json:"workflow"`
-	TenantID      string          `json:"tenant_id"`
+	ID                  string          `json:"id"`
+	Title               *string         `json:"title"`
+	Content             string          `json:"content"`
+	Hashtags            json.RawMessage `json:"hashtags"`
+	MediaType           *string         `json:"media_type"`
+	Platforms           json.RawMessage `json:"platforms"`
+	ScheduledDate       *string         `json:"scheduled_date"`
+	ScheduledTime       *string         `json:"scheduled_time"`
+	Workflow            []byte          `json:"workflow"`
+	ConnectorResourceID *string         `json:"connector_resource_id"`
+	TenantID            string          `json:"tenant_id"`
 }
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
@@ -286,6 +339,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
 		arg.ScheduledDate,
 		arg.ScheduledTime,
 		arg.Workflow,
+		arg.ConnectorResourceID,
 		arg.TenantID,
 	)
 	return err

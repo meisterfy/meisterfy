@@ -19,16 +19,16 @@ func uuidToString(u pgtype.UUID) string {
 
 
 type CampaignAIReport struct {
-	ID              string
-	TenantID        string
-	CampaignID      string
-	ReportType      string
-	Content         string
-	PeriodStart     *time.Time
-	PeriodEnd       *time.Time
-	GeneratedAt     time.Time
-	GeneratedByName *string
-	Model           *string
+	ID              string     `json:"id"`
+	TenantID        string     `json:"tenant_id"`
+	CampaignID      string     `json:"campaign_id"`
+	ReportType      string     `json:"report_type"`
+	Content         string     `json:"content"`
+	PeriodStart     *time.Time `json:"period_start"`
+	PeriodEnd       *time.Time `json:"period_end"`
+	GeneratedAt     time.Time  `json:"generated_at"`
+	GeneratedByName *string    `json:"generated_by_name"`
+	Model           *string    `json:"model"`
 }
 
 type CampaignReportRepository struct {

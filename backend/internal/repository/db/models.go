@@ -101,6 +101,7 @@ type DailyMetric struct {
 	Ctr                   pgtype.Numeric `json:"ctr"`
 	SearchImpressionShare pgtype.Numeric `json:"search_impression_share"`
 	CreatedAt             time.Time      `json:"created_at"`
+	Provider              string         `json:"provider"`
 }
 
 type Integration struct {
@@ -184,21 +185,45 @@ type Permission struct {
 }
 
 type Post struct {
-	ID            string             `json:"id"`
-	TenantID      string             `json:"tenant_id"`
-	Status        string             `json:"status"`
-	Title         *string            `json:"title"`
-	Content       string             `json:"content"`
-	Hashtags      json.RawMessage    `json:"hashtags"`
-	MediaType     *string            `json:"media_type"`
-	Workflow      []byte             `json:"workflow"`
-	MediaPath     *string            `json:"media_path"`
-	Platforms     json.RawMessage    `json:"platforms"`
-	ScheduledDate *string            `json:"scheduled_date"`
-	ScheduledTime *string            `json:"scheduled_time"`
-	PublishedAt   pgtype.Timestamptz `json:"published_at"`
-	CreatedAt     time.Time          `json:"created_at"`
-	UpdatedAt     time.Time          `json:"updated_at"`
+	ID                  string             `json:"id"`
+	TenantID            string             `json:"tenant_id"`
+	Status              string             `json:"status"`
+	Title               *string            `json:"title"`
+	Content             string             `json:"content"`
+	Hashtags            json.RawMessage    `json:"hashtags"`
+	MediaType           *string            `json:"media_type"`
+	Workflow            []byte             `json:"workflow"`
+	MediaPath           *string            `json:"media_path"`
+	Platforms           json.RawMessage    `json:"platforms"`
+	ScheduledDate       *string            `json:"scheduled_date"`
+	ScheduledTime       *string            `json:"scheduled_time"`
+	PublishedAt         pgtype.Timestamptz `json:"published_at"`
+	CreatedAt           time.Time          `json:"created_at"`
+	UpdatedAt           time.Time          `json:"updated_at"`
+	ConnectorResourceID *string            `json:"connector_resource_id"`
+}
+
+type PostInsight struct {
+	ID              string          `json:"id"`
+	PublishResultID string          `json:"publish_result_id"`
+	PostID          string          `json:"post_id"`
+	Platform        string          `json:"platform"`
+	InsightWindow   string          `json:"insight_window"`
+	Metrics         json.RawMessage `json:"metrics"`
+	RawResponse     json.RawMessage `json:"raw_response"`
+	SyncedAt        time.Time       `json:"synced_at"`
+}
+
+type PostPublishResult struct {
+	ID           string             `json:"id"`
+	PostID       string             `json:"post_id"`
+	Platform     string             `json:"platform"`
+	Provider     string             `json:"provider"`
+	ExternalID   *string            `json:"external_id"`
+	Status       string             `json:"status"`
+	ErrorMessage *string            `json:"error_message"`
+	PublishedAt  pgtype.Timestamptz `json:"published_at"`
+	CreatedAt    time.Time          `json:"created_at"`
 }
 
 type Report struct {

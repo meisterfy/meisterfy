@@ -12,7 +12,7 @@ import (
 )
 
 const getMetricsHistory = `-- name: GetMetricsHistory :many
-SELECT id, tenant_id, date, campaign_id, campaign_name, impressions, clicks, cost_brl, conversions, cpa_brl, ctr, search_impression_share, created_at FROM daily_metrics
+SELECT id, tenant_id, date, campaign_id, campaign_name, impressions, clicks, cost_brl, conversions, cpa_brl, ctr, search_impression_share, created_at, provider FROM daily_metrics
 WHERE tenant_id = $1 AND date >= $2::date
 ORDER BY date DESC
 `
@@ -45,6 +45,7 @@ func (q *Queries) GetMetricsHistory(ctx context.Context, arg GetMetricsHistoryPa
 			&i.Ctr,
 			&i.SearchImpressionShare,
 			&i.CreatedAt,
+			&i.Provider,
 		); err != nil {
 			return nil, err
 		}

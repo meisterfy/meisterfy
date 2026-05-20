@@ -59,18 +59,19 @@ func (r *PostRepository) Create(ctx context.Context, p *domain.Post) error {
 	platJSON, _ := json.Marshal(p.Platforms)
 	workJSON, _ := json.Marshal(p.Workflow)
 	return mapError(r.queries.CreatePost(ctx, db.CreatePostParams{
-		ID:            p.ID,
-		TenantID:      p.TenantID,
-		Status:        string(p.Status),
-		Title:         p.Title,
-		Content:       p.Content,
-		Hashtags:      hashJSON,
-		MediaType:     p.MediaType,
-		Workflow:      workJSON,
-		MediaPath:     p.MediaPath,
-		Platforms:     platJSON,
-		ScheduledDate: p.ScheduledDate,
-		ScheduledTime: p.ScheduledTime,
+		ID:                  p.ID,
+		TenantID:            p.TenantID,
+		Status:              string(p.Status),
+		Title:               p.Title,
+		Content:             p.Content,
+		Hashtags:            hashJSON,
+		MediaType:           p.MediaType,
+		Workflow:            workJSON,
+		MediaPath:           p.MediaPath,
+		Platforms:           platJSON,
+		ScheduledDate:       p.ScheduledDate,
+		ScheduledTime:       p.ScheduledTime,
+		ConnectorResourceID: p.ConnectorResourceID,
 	}))
 }
 
@@ -88,16 +89,17 @@ func (r *PostRepository) Update(ctx context.Context, p *domain.Post) error {
 	platJSON, _ := json.Marshal(p.Platforms)
 	workJSON, _ := json.Marshal(p.Workflow)
 	return mapError(r.queries.UpdatePost(ctx, db.UpdatePostParams{
-		ID:            p.ID,
-		TenantID:      p.TenantID,
-		Title:         p.Title,
-		Content:       p.Content,
-		Hashtags:      hashJSON,
-		MediaType:     p.MediaType,
-		Platforms:     platJSON,
-		ScheduledDate: p.ScheduledDate,
-		ScheduledTime: p.ScheduledTime,
-		Workflow:      workJSON,
+		ID:                  p.ID,
+		TenantID:            p.TenantID,
+		Title:               p.Title,
+		Content:             p.Content,
+		Hashtags:            hashJSON,
+		MediaType:           p.MediaType,
+		Platforms:           platJSON,
+		ScheduledDate:       p.ScheduledDate,
+		ScheduledTime:       p.ScheduledTime,
+		Workflow:            workJSON,
+		ConnectorResourceID: p.ConnectorResourceID,
 	}))
 }
 
@@ -130,20 +132,29 @@ func mapPost(row db.Post) *domain.Post {
 		}
 	}
 	return &domain.Post{
-		ID:            row.ID,
-		TenantID:      row.TenantID,
-		Status:        domain.PostStatus(row.Status),
-		Title:         row.Title,
-		Content:       row.Content,
-		Hashtags:      hashtags,
-		MediaType:     row.MediaType,
-		Workflow:      workflow,
-		MediaPath:     row.MediaPath,
-		Platforms:     platforms,
-		ScheduledDate: row.ScheduledDate,
-		ScheduledTime: row.ScheduledTime,
-		PublishedAt:   tsToTimePtr(row.PublishedAt),
-		CreatedAt:     row.CreatedAt,
-		UpdatedAt:     row.UpdatedAt,
+		ID:                  row.ID,
+		TenantID:            row.TenantID,
+		Status:              domain.PostStatus(row.Status),
+		Title:               row.Title,
+		Content:             row.Content,
+		Hashtags:            hashtags,
+		MediaType:           row.MediaType,
+		Workflow:            workflow,
+		MediaPath:           row.MediaPath,
+		Platforms:           platforms,
+		ScheduledDate:       row.ScheduledDate,
+		ScheduledTime:       row.ScheduledTime,
+		ConnectorResourceID: row.ConnectorResourceID,
+		PublishedAt:         tsToTimePtr(row.PublishedAt),
+		CreatedAt:           row.CreatedAt,
+		UpdatedAt:           row.UpdatedAt,
 	}
+}
+
+func (r *PostRepository) ListDueScheduledPosts(ctx context.Context) ([]*domain.Post, error) {
+	rows, err := r.queries.ListDueScheduledPosts(ctx)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return mapPosts(rows), nil
 }

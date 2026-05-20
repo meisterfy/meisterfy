@@ -11,6 +11,7 @@ import (
 
 	"github.com/mkt-maestro/mkt-maestro/internal/adjuster"
 	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
 	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
 	"github.com/mkt-maestro/mkt-maestro/internal/repository"
@@ -35,6 +36,12 @@ type Scheduler struct {
 	auditLogRepo     *repository.AuditLogRepository
 	alertRepo        *repository.AlertRepository
 	connResourceRepo *repository.ConnectorResourceRepository
+	postRepo         interface {
+		ListDueScheduledPosts(ctx context.Context) ([]*domain.Post, error)
+		UpdateStatus(ctx context.Context, id, tenantID, status string, publishedAt *time.Time) error
+	}
+	publishResultRepo *repository.PostPublishResultRepository
+	postInsightRepo   *repository.PostInsightRepository
 }
 
 func New(
@@ -48,18 +55,27 @@ func New(
 	auditLogRepo *repository.AuditLogRepository,
 	alertRepo *repository.AlertRepository,
 	connResourceRepo *repository.ConnectorResourceRepository,
+	postRepo interface {
+		ListDueScheduledPosts(ctx context.Context) ([]*domain.Post, error)
+		UpdateStatus(ctx context.Context, id, tenantID, status string, publishedAt *time.Time) error
+	},
+	publishResultRepo *repository.PostPublishResultRepository,
+	postInsightRepo *repository.PostInsightRepository,
 ) *Scheduler {
 	return &Scheduler{
-		tenantRepo:       tenantRepo,
-		agentRunRepo:     agentRunRepo,
-		metricsRepo:      metricsRepo,
-		adsFactory:       adsFactory,
-		llmSelector:      llmSelector,
-		adjuster:         adj,
-		pendingAdjRepo:   pendingAdjRepo,
-		auditLogRepo:     auditLogRepo,
-		alertRepo:        alertRepo,
-		connResourceRepo: connResourceRepo,
+		tenantRepo:        tenantRepo,
+		agentRunRepo:      agentRunRepo,
+		metricsRepo:       metricsRepo,
+		adsFactory:        adsFactory,
+		llmSelector:       llmSelector,
+		adjuster:          adj,
+		pendingAdjRepo:    pendingAdjRepo,
+		auditLogRepo:      auditLogRepo,
+		alertRepo:         alertRepo,
+		connResourceRepo:  connResourceRepo,
+		postRepo:          postRepo,
+		publishResultRepo: publishResultRepo,
+		postInsightRepo:   postInsightRepo,
 	}
 }
 
@@ -121,6 +137,14 @@ func (s *Scheduler) tick(ctx context.Context, now time.Time) {
 		if (cfg.AdjustmentsEnabled || cfg.SuggestionsEnabled) && now.Hour() == 3 && now.Minute() == 0 {
 			go s.runAdjustmentJob(ctx, t)
 		}
+	}
+
+	// Publish due scheduled posts — runs every minute, no per-tenant guard needed.
+	go s.runScheduledPosts(ctx)
+
+	// Insights sync — 05:00 UTC, global scan across all tenants.
+	if now.Hour() == 5 && now.Minute() == 0 {
+		go s.runInsightsSync(ctx)
 	}
 }
 
@@ -551,6 +575,240 @@ func (s *Scheduler) runAdjustmentJob(ctx context.Context, tenant *domain.Tenant)
 	summary := fmt.Sprintf("applied=%d suggested=%d failed=%d resources=%d", applied, suggested, failed, len(resources))
 	_ = s.agentRunRepo.Log(ctx, tenant.ID, agentName(jobType), status, summary)
 	slog.Info("scheduler: campaign_adjustment done", "tenant", tenant.ID, "applied", applied, "suggested", suggested, "failed", failed)
+}
+
+func (s *Scheduler) runScheduledPosts(ctx context.Context) {
+	posts, err := s.postRepo.ListDueScheduledPosts(ctx)
+	if err != nil {
+		slog.Error("scheduler: runScheduledPosts — list due posts", "err", err)
+		return
+	}
+	for _, post := range posts {
+		p := post
+		go s.publishPost(ctx, p)
+	}
+}
+
+func (s *Scheduler) publishPost(ctx context.Context, post *domain.Post) {
+	jobCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+
+	// Deduplication guard: skip if a publish was already attempted for this post.
+	exists, err := s.publishResultRepo.ExistsForPost(jobCtx, post.ID)
+	if err != nil {
+		slog.Error("scheduler: publishPost — check exists", "post_id", post.ID, "err", err)
+		return
+	}
+	if exists {
+		return
+	}
+
+	// Group platforms by provider so each provider's resource is resolved once.
+	providerGroups := map[domain.IntegrationProvider][]social.Platform{}
+	for _, p := range post.Platforms {
+		platform := social.Platform(p)
+		provider, ok := social.PlatformProvider[platform]
+		if !ok {
+			slog.Warn("scheduler: publishPost — unknown platform", "post_id", post.ID, "platform", p)
+			continue
+		}
+		providerGroups[provider] = append(providerGroups[provider], platform)
+	}
+
+	if len(providerGroups) == 0 {
+		slog.Warn("scheduler: publishPost — no known platforms", "post_id", post.ID, "tenant_id", post.TenantID)
+		_ = s.postRepo.UpdateStatus(jobCtx, post.ID, post.TenantID, string(domain.PostStatusFailed), nil)
+		return
+	}
+
+	var published, failed int
+
+	for provider, platforms := range providerGroups {
+		var resource *domain.ConnectorResource
+
+		if post.ConnectorResourceID != nil {
+			resource, err = s.connResourceRepo.GetByID(jobCtx, *post.ConnectorResourceID)
+			if err != nil {
+				slog.Error("scheduler: publishPost — get resource by id", "post_id", post.ID, "resource_id", *post.ConnectorResourceID, "err", err)
+				resource = nil
+			}
+		}
+
+		if resource == nil {
+			resources, listErr := s.connResourceRepo.List(jobCtx, post.TenantID, provider, "page")
+			if listErr != nil || len(resources) == 0 {
+				errMsg := "no connector resource available"
+				if listErr != nil {
+					errMsg = listErr.Error()
+				}
+				for _, platform := range platforms {
+					_ = s.publishResultRepo.Create(jobCtx, repository.CreatePublishResultParams{
+						ID:           domain.NewID(),
+						PostID:       post.ID,
+						Platform:     string(platform),
+						Provider:     string(provider),
+						Status:       "failed",
+						ErrorMessage: &errMsg,
+					})
+					failed++
+				}
+				slog.Error("scheduler: publishPost — no resource", "post_id", post.ID, "tenant_id", post.TenantID, "provider", provider)
+				continue
+			}
+			resource = resources[0]
+		}
+
+		publisher := social.Get(provider)
+		if publisher == nil {
+			errMsg := "provider not registered"
+			for _, platform := range platforms {
+				_ = s.publishResultRepo.Create(jobCtx, repository.CreatePublishResultParams{
+					ID:           domain.NewID(),
+					PostID:       post.ID,
+					Platform:     string(platform),
+					Provider:     string(provider),
+					Status:       "failed",
+					ErrorMessage: &errMsg,
+				})
+				failed++
+			}
+			slog.Error("scheduler: publishPost — provider not registered", "post_id", post.ID, "provider", provider)
+			continue
+		}
+
+		for _, platform := range platforms {
+			result, pubErr := publisher.Publish(jobCtx, platform, resource, post)
+			if pubErr != nil {
+				errMsg := pubErr.Error()
+				slog.Error("scheduler: publishPost — publish failed", "post_id", post.ID, "tenant_id", post.TenantID, "platform", platform, "err", pubErr)
+				_ = s.publishResultRepo.Create(jobCtx, repository.CreatePublishResultParams{
+					ID:           domain.NewID(),
+					PostID:       post.ID,
+					Platform:     string(platform),
+					Provider:     string(provider),
+					Status:       "failed",
+					ErrorMessage: &errMsg,
+				})
+				failed++
+				continue
+			}
+
+			now := time.Now().UTC()
+			externalID := result.ExternalID
+			_ = s.publishResultRepo.Create(jobCtx, repository.CreatePublishResultParams{
+				ID:          domain.NewID(),
+				PostID:      post.ID,
+				Platform:    string(platform),
+				Provider:    string(provider),
+				ExternalID:  &externalID,
+				Status:      "published",
+				PublishedAt: &now,
+			})
+			published++
+			slog.Info("scheduler: publishPost — published", "post_id", post.ID, "tenant_id", post.TenantID, "platform", platform, "external_id", externalID)
+		}
+	}
+
+	now := time.Now().UTC()
+	var finalStatus string
+	var publishedAt *time.Time
+	switch {
+	case failed == 0:
+		finalStatus = string(domain.PostStatusPublished)
+		publishedAt = &now
+	case published == 0:
+		finalStatus = string(domain.PostStatusFailed)
+	default:
+		finalStatus = string(domain.PostStatusPartiallyPublished)
+		publishedAt = &now
+	}
+	if err := s.postRepo.UpdateStatus(jobCtx, post.ID, post.TenantID, finalStatus, publishedAt); err != nil {
+		slog.Error("scheduler: publishPost — update status", "post_id", post.ID, "err", err)
+	}
+}
+
+func (s *Scheduler) runInsightsSync(ctx context.Context) {
+	now := time.Now().UTC()
+
+	windows := []struct {
+		name   string
+		minAge time.Duration
+		maxAge time.Duration
+	}{
+		{"24h", 23 * time.Hour, 48 * time.Hour},
+		{"7d", 6 * 24 * time.Hour, 14 * 24 * time.Hour},
+		{"30d", 29 * 24 * time.Hour, 60 * 24 * time.Hour},
+	}
+
+	for _, w := range windows {
+		publishedAfter := now.Add(-w.maxAge)
+		publishedBefore := now.Add(-w.minAge)
+
+		results, err := s.postInsightRepo.ListPendingSync(ctx, w.name, publishedAfter, publishedBefore)
+		if err != nil {
+			slog.Error("insights_sync: list pending", "window", w.name, "err", err)
+			continue
+		}
+
+		slog.Info("insights_sync: syncing window", "window", w.name, "count", len(results))
+		for _, result := range results {
+			s.syncInsight(ctx, result, w.name)
+			time.Sleep(100 * time.Millisecond) // respect Meta rate limits
+		}
+	}
+}
+
+func (s *Scheduler) syncInsight(ctx context.Context, result *domain.PostPublishResult, window string) {
+	if result.ExternalID == nil {
+		return
+	}
+
+	jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	provider, ok := social.PlatformProvider[social.Platform(result.Platform)]
+	if !ok {
+		slog.Warn("insights_sync: unknown platform", "platform", result.Platform, "publish_result_id", result.ID)
+		return
+	}
+
+	publisher := social.Get(provider)
+	if publisher == nil {
+		return
+	}
+
+	resource, err := s.connResourceRepo.GetDefaultForTenant(jobCtx, result.TenantID, provider)
+	if err != nil || resource == nil {
+		slog.Warn("insights_sync: no resource", "tenant_id", result.TenantID, "platform", result.Platform, "err", err)
+		return
+	}
+
+	raw, err := publisher.FetchInsights(jobCtx, social.Platform(result.Platform), resource, *result.ExternalID)
+	if err != nil {
+		slog.Warn("insights_sync: fetch failed", "platform", result.Platform, "window", window, "external_id", *result.ExternalID, "err", err)
+		return
+	}
+
+	metrics, _ := raw["metrics"].(map[string]any)
+	rawResp, _ := raw["raw"].(map[string]any)
+	if metrics == nil {
+		metrics = map[string]any{}
+	}
+	if rawResp == nil {
+		rawResp = map[string]any{}
+	}
+
+	if err := s.postInsightRepo.Upsert(jobCtx, repository.UpsertInsightParams{
+		ID:              domain.NewID(),
+		PublishResultID: result.ID,
+		PostID:          result.PostID,
+		Platform:        result.Platform,
+		Window:          window,
+		Metrics:         metrics,
+		RawResponse:     rawResp,
+	}); err != nil {
+		slog.Error("insights_sync: upsert failed", "publish_result_id", result.ID, "window", window, "err", err)
+	}
 }
 
 func (s *Scheduler) applyMutation(ctx context.Context, client *googleads.Client, res *domain.ConnectorResource, proposal *adjuster.Proposal) error {

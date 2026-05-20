@@ -75,6 +75,19 @@ func (r *ConnectorResourceRepository) Delete(ctx context.Context, id string) err
 	return mapError(r.queries.DeleteConnectorResource(ctx, id))
 }
 
+// GetDefaultForTenant returns the most-recently-created resource for a tenant+provider
+// with resource_type "page". Used as fallback when no explicit resource is set on a post.
+func (r *ConnectorResourceRepository) GetDefaultForTenant(ctx context.Context, tenantID string, provider domain.IntegrationProvider) (*domain.ConnectorResource, error) {
+	resources, err := r.List(ctx, tenantID, provider, "page")
+	if err != nil {
+		return nil, err
+	}
+	if len(resources) == 0 {
+		return nil, nil
+	}
+	return resources[0], nil
+}
+
 func (r *ConnectorResourceRepository) UpdateMetadata(ctx context.Context, id string, metadata map[string]any) error {
 	b, err := json.Marshal(metadata)
 	if err != nil {
