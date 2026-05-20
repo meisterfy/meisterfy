@@ -42,21 +42,21 @@ afterEach(() => vi.restoreAllMocks())
 describe('listTenantUsers', () => {
 	it('calls /admin/users', async () => {
 		const mock = stubFetch({ data: [mockUser] })
-		await listTenantUsers('t1')
+		await listTenantUsers('t1', true)
 		const [url] = mock.mock.calls[0] as [string]
 		expect(url).toContain('/admin/users')
 	})
 
 	it('returns user list', async () => {
 		stubFetch({ data: [mockUser] })
-		const result = await listTenantUsers('t1')
+		const result = await listTenantUsers('t1', true)
 		expect(result).toHaveLength(1)
 		expect(result[0].email).toBe('alice@example.com')
 	})
 
 	it('throws on error response', async () => {
 		stubFetch({ error: 'Unauthorized' }, false, 401)
-		await expect(listTenantUsers('t1')).rejects.toThrow('Unauthorized')
+		await expect(listTenantUsers('t1', true)).rejects.toThrow('Unauthorized')
 	})
 })
 
@@ -107,7 +107,7 @@ describe('createTenantUser', () => {
 describe('deactivateTenantUser', () => {
 	it('sends DELETE to correct endpoint', async () => {
 		const mock = stubFetch({})
-		await deactivateTenantUser('u1')
+		await deactivateTenantUser('u1', 't1')
 		const [url, init] = mock.mock.calls[0] as [string, RequestInit]
 		expect(url).toContain('/admin/users/u1')
 		expect(init.method).toBe('DELETE')
@@ -115,14 +115,14 @@ describe('deactivateTenantUser', () => {
 
 	it('throws on error response', async () => {
 		stubFetch({ error: 'Not found' }, false, 404)
-		await expect(deactivateTenantUser('missing')).rejects.toThrow('Not found')
+		await expect(deactivateTenantUser('missing', 't1')).rejects.toThrow('Not found')
 	})
 })
 
 describe('assignUserRole', () => {
 	it('sends PUT to role endpoint', async () => {
 		const mock = stubFetch({})
-		await assignUserRole('u1', 'r2')
+		await assignUserRole('u1', 't1', 'r2')
 		const [url, init] = mock.mock.calls[0] as [string, RequestInit]
 		expect(url).toContain('/admin/users/u1/role')
 		expect(init.method).toBe('PUT')
@@ -130,7 +130,7 @@ describe('assignUserRole', () => {
 
 	it('sends role_id in body', async () => {
 		const mock = stubFetch({})
-		await assignUserRole('u1', 'r2')
+		await assignUserRole('u1', 't1', 'r2')
 		const [, init] = mock.mock.calls[0] as [string, RequestInit]
 		const body = JSON.parse(init.body as string)
 		expect(body.role_id).toBe('r2')
@@ -138,7 +138,7 @@ describe('assignUserRole', () => {
 
 	it('throws on error response', async () => {
 		stubFetch({ error: 'role not found' }, false, 404)
-		await expect(assignUserRole('u1', 'missing')).rejects.toThrow('role not found')
+		await expect(assignUserRole('u1', 't1', 'missing')).rejects.toThrow('role not found')
 	})
 })
 

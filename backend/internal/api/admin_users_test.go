@@ -42,6 +42,9 @@ func (m *mockUserAdminRepo) Delete(_ context.Context, _ string) error {
 func (m *mockUserAdminRepo) GetByEmail(_ context.Context, _ string) (*domain.User, error) {
 	return m.user, m.getErr
 }
+func (m *mockUserAdminRepo) SetSystemRole(_ context.Context, _, _ string) error {
+	return nil
+}
 
 type mockUsersRBACRepo struct {
 	role              *domain.Role

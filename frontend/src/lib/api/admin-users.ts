@@ -8,6 +8,7 @@ export interface AdminUser {
 	timezone: string
 	is_active: boolean
 	role?: { id: string; name: string }
+	system_role?: 'user' | 'platform_admin'
 	created_at: string
 	updated_at: string
 }
@@ -24,8 +25,22 @@ export interface AdminPermission {
 	name: string
 }
 
-export const listTenantUsers = (tenantId: string, fetchFn?: typeof fetch) =>
-	apiFetchData<AdminUser[]>('/admin/users', {}, fetchFn)
+export const listTenantUsers = (
+	tenantId: string,
+	active: boolean,
+	fetchFn?: typeof fetch
+) =>
+	apiFetchData<AdminUser[]>(
+		`/admin/users?tenant_id=${encodeURIComponent(tenantId)}&active=${active}`,
+		{},
+		fetchFn
+	)
+
+export const reactivateTenantUser = (userId: string, tenantId: string, roleId: string) =>
+	apiFetchData<AdminUser>(`/admin/users/${userId}/reactivate?tenant_id=${encodeURIComponent(tenantId)}`, {
+		method: 'POST',
+		body: JSON.stringify({ role_id: roleId })
+	})
 
 export const createTenantUser = (
 	tenantId: string,
@@ -36,11 +51,23 @@ export const createTenantUser = (
 		body: JSON.stringify({ ...body, tenant_id: tenantId })
 	})
 
-export const deactivateTenantUser = (userId: string) =>
-	apiFetch<void>(`/admin/users/${userId}`, { method: 'DELETE' })
+export const updateTenantUser = (
+	userId: string,
+	tenantId: string,
+	body: { name?: string; email?: string; locale?: string; timezone?: string }
+) =>
+	apiFetchData<AdminUser>(`/admin/users/${userId}?tenant_id=${encodeURIComponent(tenantId)}`, {
+		method: 'PUT',
+		body: JSON.stringify(body)
+	})
 
-export const assignUserRole = (userId: string, roleId: string) =>
-	apiFetch<void>(`/admin/users/${userId}/role`, {
+export const deactivateTenantUser = (userId: string, tenantId: string) =>
+	apiFetch<void>(`/admin/users/${userId}?tenant_id=${encodeURIComponent(tenantId)}`, {
+		method: 'DELETE'
+	})
+
+export const assignUserRole = (userId: string, tenantId: string, roleId: string) =>
+	apiFetch<void>(`/admin/users/${userId}/role?tenant_id=${encodeURIComponent(tenantId)}`, {
 		method: 'PUT',
 		body: JSON.stringify({ role_id: roleId })
 	})

@@ -5,7 +5,8 @@ export const load: PageLoad = async ({ parent, fetch }) => {
 	const { tenant } = await parent()
 	return {
 		tenant,
-		users: listTenantUsers(tenant, fetch).catch(() => []),
+		users: listTenantUsers(tenant, true, fetch).catch(() => []),
+		inactiveUsers: listTenantUsers(tenant, false, fetch).catch(() => []),
 		roles: listRoles(fetch).catch(() => [])
 	}
 }
