@@ -25,6 +25,8 @@ import (
 	"github.com/mkt-maestro/mkt-maestro/internal/api"
 	"github.com/mkt-maestro/mkt-maestro/internal/config"
 	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
+	connmeta "github.com/mkt-maestro/mkt-maestro/internal/connector/meta"
+	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
 	"github.com/mkt-maestro/mkt-maestro/internal/domain"
 	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
 	"github.com/mkt-maestro/mkt-maestro/internal/scheduler"
@@ -42,7 +44,6 @@ import (
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/groq"
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/kimi"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/meta"
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/r2"
 	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/s3"
@@ -124,6 +125,8 @@ func main() {
 	rbacRepo           := repository.NewRBACRepository(pool)
 	tenantRepo         := repository.NewTenantRepository(pool)
 	postRepo           := repository.NewPostRepository(pool)
+	postPublishResultRepo := repository.NewPostPublishResultRepository(pool)
+	postInsightRepo       := repository.NewPostInsightRepository(pool)
 	campaignRepo       := repository.NewCampaignRepository(pool)
 	alertRepo          := repository.NewAlertRepository(pool)
 	agentRunRepo       := repository.NewAgentRunRepository(pool)
@@ -138,6 +141,9 @@ func main() {
 	jwtSvc := domain.NewJWTService(cfg.JWTSecret)
 
 	mediaResolver := media.NewLocalResolver(cfg.BaseURL)
+
+	// Register social publishers (must happen after config is loaded for baseURL).
+	social.Register(domain.ProviderMeta, connmeta.NewMetaPublisher(cfg.BaseURL))
 
 	mcpSrv := mcpserver.NewServer("mkt-maestro", "1.0.0")
 	adsFactory := makeAdsFactory(tenantRepo, integrationRepo, connectorResourceRepo)
@@ -178,7 +184,7 @@ func main() {
 	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo, auditLogRepo)
 	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
 	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo, auditLogRepo)
-	postsHandler        := api.NewAdminPostsHandler(postRepo, auditLogRepo)
+	postsHandler        := api.NewAdminPostsHandler(postRepo, postPublishResultRepo, auditLogRepo)
 	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
 	googleAdsHandler    := api.NewAdminGoogleAdsHandler(integrationRepo, connectorResourceRepo, tenantRepo, metricsRepo, alertRepo)
 	integrationsHandler := api.NewAdminIntegrationsHandler(integrationRepo, auditLogRepo)
@@ -186,6 +192,7 @@ func main() {
 	oauthGoogleAds      := api.NewOAuthGoogleAdsHandler(integrationRepo, cfg.BaseURL)
 	oauthMeta           := api.NewOAuthMetaHandler(integrationRepo, connectorResourceRepo, cfg.BaseURL)
 	metaPublish              := api.NewMetaPublishHandler(postRepo, integrationRepo, connectorResourceRepo, mediaResolver)
+	metaAccounts             := api.NewMetaAccountsHandler(integrationRepo, connectorResourceRepo)
 	connectorResourcesHandler := api.NewConnectorResourcesHandler(connectorResourceRepo)
 	mediaHandler            := api.NewMediaHandler(cfg.StoragePath, postRepo)
 	aiGenerateHandler       := api.NewAIGenerateHandler(llmSelector)
@@ -277,6 +284,7 @@ func main() {
 				r.With(middleware.RequirePermission("create:post")).Put("/posts/{id}", postsHandler.Update)
 				r.Patch("/posts/{id}/status", postsHandler.UpdateStatus)
 				r.With(middleware.RequirePermission("delete:post")).Delete("/posts/{id}", postsHandler.Delete)
+				r.With(middleware.RequirePermission("view:post")).Get("/posts/{id}/results", postsHandler.GetPublishResults)
 	
 				// campaigns
 				r.With(middleware.RequirePermission("view:campaign")).Get("/campaigns/live", googleAdsHandler.LiveCampaigns)
@@ -306,6 +314,11 @@ func main() {
 				// meta publishing
 				r.Get("/meta/accounts", metaPublish.ListAccounts)
 				r.With(middleware.RequirePermission("publish:post")).Post("/meta/publish", metaPublish.Publish)
+
+				// meta page management
+				r.With(middleware.RequirePermission("view:integrations")).Get("/meta/available-pages", metaAccounts.ListAvailablePages)
+				r.With(middleware.RequirePermission("manage:integrations")).Post("/meta/pages", metaAccounts.ActivatePage)
+				r.With(middleware.RequirePermission("manage:integrations")).Delete("/meta/pages/{resourceId}", metaAccounts.RemovePage)
 	
 				// pending adjustments
 				r.With(middleware.RequirePermission("view:campaign")).Get("/pending-adjustments", pendingAdjustmentsHandler.List)
@@ -438,6 +451,7 @@ func main() {
 		tenantRepo, agentRunRepo, metricsRepo,
 		scheduler.AdsClientFactory(adsFactory), llmSelector,
 		adjEngine, pendingAdjustmentRepo, auditLogRepo, alertRepo, connectorResourceRepo,
+		postRepo, postPublishResultRepo, postInsightRepo,
 	)
 	go sched.Start(schedCtx)
 

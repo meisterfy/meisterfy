@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -134,17 +133,17 @@ func (h *MetaPublishHandler) Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := meta.NewClient(*ig.RefreshToken)
-	caption := buildCaption(post)
+	caption := meta.BuildCaption(post)
 
 	var metaPostID string
 	switch req.Platform {
 	case "instagram":
-		meta := resource.MetaMetadata()
-		if meta.IgUserID == "" {
+		igMeta := resource.MetaMetadata()
+		if igMeta.IgUserID == "" {
 			Error(w, http.StatusBadRequest, "selected account has no Instagram Business account linked")
 			return
 		}
-		metaPostID, err = h.publishInstagram(r.Context(), client, meta.IgUserID, post, caption)
+		metaPostID, err = h.publishInstagram(r.Context(), client, igMeta.IgUserID, post, caption)
 	case "facebook":
 		metaPostID, err = h.publishFacebook(r.Context(), client, resource.ResourceID, post, caption)
 	default:
@@ -213,21 +212,3 @@ func (h *MetaPublishHandler) publishFacebook(ctx context.Context, client *meta.C
 	return postID, nil
 }
 
-func buildCaption(post *domain.Post) string {
-	var b strings.Builder
-	if post.Title != nil && *post.Title != "" {
-		b.WriteString(*post.Title)
-		b.WriteString("\n\n")
-	}
-	b.WriteString(post.Content)
-	if len(post.Hashtags) > 0 {
-		b.WriteString("\n\n")
-		for i, h := range post.Hashtags {
-			if i > 0 {
-				b.WriteString(" ")
-			}
-			b.WriteString(h)
-		}
-	}
-	return b.String()
-}

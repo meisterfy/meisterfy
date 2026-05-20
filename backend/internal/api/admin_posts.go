@@ -23,31 +23,37 @@ type PostRepo interface {
 	Delete(ctx context.Context, id, tenantID string) error
 }
 
-type AdminPostsHandler struct {
-	postRepo PostRepo
-	audit    AuditLogRepo
+type PostPublishResultRepo interface {
+	ListByPostID(ctx context.Context, postID string) ([]*domain.PostPublishResult, error)
 }
 
-func NewAdminPostsHandler(postRepo PostRepo, audit AuditLogRepo) *AdminPostsHandler {
-	return &AdminPostsHandler{postRepo: postRepo, audit: audit}
+type AdminPostsHandler struct {
+	postRepo          PostRepo
+	publishResultRepo PostPublishResultRepo
+	audit             AuditLogRepo
+}
+
+func NewAdminPostsHandler(postRepo PostRepo, publishResultRepo PostPublishResultRepo, audit AuditLogRepo) *AdminPostsHandler {
+	return &AdminPostsHandler{postRepo: postRepo, publishResultRepo: publishResultRepo, audit: audit}
 }
 
 type postResponse struct {
-	ID            string               `json:"id"`
-	TenantID      string               `json:"tenant_id"`
-	Status        domain.PostStatus    `json:"status"`
-	Title         *string              `json:"title"`
-	Content       string               `json:"content"`
-	Hashtags      []string             `json:"hashtags"`
-	MediaType     *string              `json:"media_type"`
-	MediaPath     *string              `json:"media_path"`
-	Platforms     []string             `json:"platforms"`
-	Workflow      *domain.PostWorkflow `json:"workflow"`
-	ScheduledDate *string              `json:"scheduled_date"`
-	ScheduledTime *string              `json:"scheduled_time"`
-	PublishedAt   *time.Time           `json:"published_at"`
-	CreatedAt     time.Time            `json:"created_at"`
-	UpdatedAt     time.Time            `json:"updated_at"`
+	ID                  string               `json:"id"`
+	TenantID            string               `json:"tenant_id"`
+	Status              domain.PostStatus    `json:"status"`
+	Title               *string              `json:"title"`
+	Content             string               `json:"content"`
+	Hashtags            []string             `json:"hashtags"`
+	MediaType           *string              `json:"media_type"`
+	MediaPath           *string              `json:"media_path"`
+	Platforms           []string             `json:"platforms"`
+	Workflow            *domain.PostWorkflow `json:"workflow"`
+	ScheduledDate       *string              `json:"scheduled_date"`
+	ScheduledTime       *string              `json:"scheduled_time"`
+	ConnectorResourceID *string              `json:"connector_resource_id"`
+	PublishedAt         *time.Time           `json:"published_at"`
+	CreatedAt           time.Time            `json:"created_at"`
+	UpdatedAt           time.Time            `json:"updated_at"`
 }
 
 func toPostResponse(p *domain.Post) postResponse {
@@ -60,21 +66,22 @@ func toPostResponse(p *domain.Post) postResponse {
 		platforms = []string{}
 	}
 	return postResponse{
-		ID:            p.ID,
-		TenantID:      p.TenantID,
-		Status:        p.Status,
-		Title:         p.Title,
-		Content:       p.Content,
-		Hashtags:      hashtags,
-		MediaType:     p.MediaType,
-		MediaPath:     p.MediaPath,
-		Platforms:     platforms,
-		Workflow:      p.Workflow,
-		ScheduledDate: p.ScheduledDate,
-		ScheduledTime: p.ScheduledTime,
-		PublishedAt:   p.PublishedAt,
-		CreatedAt:     p.CreatedAt,
-		UpdatedAt:     p.UpdatedAt,
+		ID:                  p.ID,
+		TenantID:            p.TenantID,
+		Status:              p.Status,
+		Title:               p.Title,
+		Content:             p.Content,
+		Hashtags:            hashtags,
+		MediaType:           p.MediaType,
+		MediaPath:           p.MediaPath,
+		Platforms:           platforms,
+		Workflow:            p.Workflow,
+		ScheduledDate:       p.ScheduledDate,
+		ScheduledTime:       p.ScheduledTime,
+		ConnectorResourceID: p.ConnectorResourceID,
+		PublishedAt:         p.PublishedAt,
+		CreatedAt:           p.CreatedAt,
+		UpdatedAt:           p.UpdatedAt,
 	}
 }
 
@@ -120,16 +127,17 @@ func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tenantID := chi.URLParam(r, "tenantId")
 
 	var req struct {
-		Title         *string              `json:"title"`
-		Content       string               `json:"content"`
-		Status        string               `json:"status"`
-		Hashtags      []string             `json:"hashtags"`
-		MediaType     *string              `json:"media_type"`
-		MediaPath     *string              `json:"media_path"`
-		Platforms     []string             `json:"platforms"`
-		Workflow      *domain.PostWorkflow `json:"workflow"`
-		ScheduledDate *string              `json:"scheduled_date"`
-		ScheduledTime *string              `json:"scheduled_time"`
+		Title               *string              `json:"title"`
+		Content             string               `json:"content"`
+		Status              string               `json:"status"`
+		Hashtags            []string             `json:"hashtags"`
+		MediaType           *string              `json:"media_type"`
+		MediaPath           *string              `json:"media_path"`
+		Platforms           []string             `json:"platforms"`
+		Workflow            *domain.PostWorkflow `json:"workflow"`
+		ScheduledDate       *string              `json:"scheduled_date"`
+		ScheduledTime       *string              `json:"scheduled_time"`
+		ConnectorResourceID *string              `json:"connector_resource_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		UnprocessableEntity(w, "invalid request body")
@@ -146,18 +154,19 @@ func (h *AdminPostsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := &domain.Post{
-		ID:            domain.NewID(),
-		TenantID:      tenantID,
-		Status:        initialStatus,
-		Title:         req.Title,
-		Content:       req.Content,
-		Hashtags:      req.Hashtags,
-		MediaType:     req.MediaType,
-		MediaPath:     req.MediaPath,
-		Platforms:     req.Platforms,
-		Workflow:      req.Workflow,
-		ScheduledDate: req.ScheduledDate,
-		ScheduledTime: req.ScheduledTime,
+		ID:                  domain.NewID(),
+		TenantID:            tenantID,
+		Status:              initialStatus,
+		Title:               req.Title,
+		Content:             req.Content,
+		Hashtags:            req.Hashtags,
+		MediaType:           req.MediaType,
+		MediaPath:           req.MediaPath,
+		Platforms:           req.Platforms,
+		Workflow:            req.Workflow,
+		ScheduledDate:       req.ScheduledDate,
+		ScheduledTime:       req.ScheduledTime,
+		ConnectorResourceID: req.ConnectorResourceID,
 	}
 	if err := h.postRepo.Create(r.Context(), p); err != nil {
 		InternalError(w)
@@ -197,15 +206,16 @@ func (h *AdminPostsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title         *string              `json:"title"`
-		Content       *string              `json:"content"`
-		Hashtags      []string             `json:"hashtags"`
-		MediaType     *string              `json:"media_type"`
-		MediaPath     *string              `json:"media_path"`
-		Platforms     []string             `json:"platforms"`
-		Workflow      *domain.PostWorkflow `json:"workflow"`
-		ScheduledDate *string              `json:"scheduled_date"`
-		ScheduledTime *string              `json:"scheduled_time"`
+		Title               *string              `json:"title"`
+		Content             *string              `json:"content"`
+		Hashtags            []string             `json:"hashtags"`
+		MediaType           *string              `json:"media_type"`
+		MediaPath           *string              `json:"media_path"`
+		Platforms           []string             `json:"platforms"`
+		Workflow            *domain.PostWorkflow `json:"workflow"`
+		ScheduledDate       *string              `json:"scheduled_date"`
+		ScheduledTime       *string              `json:"scheduled_time"`
+		ConnectorResourceID *string              `json:"connector_resource_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		UnprocessableEntity(w, "invalid request body")
@@ -238,6 +248,9 @@ func (h *AdminPostsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.ScheduledTime != nil {
 		p.ScheduledTime = req.ScheduledTime
+	}
+	if req.ConnectorResourceID != nil {
+		p.ConnectorResourceID = req.ConnectorResourceID
 	}
 
 	if err := h.postRepo.Update(r.Context(), p); err != nil {
@@ -376,4 +389,52 @@ func (h *AdminPostsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AdminPostsHandler) GetPublishResults(w http.ResponseWriter, r *http.Request) {
+	tenantID := chi.URLParam(r, "tenantId")
+	id := chi.URLParam(r, "id")
+
+	if _, err := h.postRepo.GetByIDAndTenant(r.Context(), id, tenantID); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			NotFound(w)
+			return
+		}
+		InternalError(w)
+		return
+	}
+
+	results, err := h.publishResultRepo.ListByPostID(r.Context(), id)
+	if err != nil {
+		InternalError(w)
+		return
+	}
+
+	type publishResultResponse struct {
+		ID           string     `json:"id"`
+		PostID       string     `json:"post_id"`
+		Platform     string     `json:"platform"`
+		Provider     string     `json:"provider"`
+		ExternalID   *string    `json:"external_id"`
+		Status       string     `json:"status"`
+		ErrorMessage *string    `json:"error_message"`
+		PublishedAt  *time.Time `json:"published_at"`
+		CreatedAt    time.Time  `json:"created_at"`
+	}
+
+	data := make([]publishResultResponse, len(results))
+	for i, res := range results {
+		data[i] = publishResultResponse{
+			ID:           res.ID,
+			PostID:       res.PostID,
+			Platform:     res.Platform,
+			Provider:     res.Provider,
+			ExternalID:   res.ExternalID,
+			Status:       res.Status,
+			ErrorMessage: res.ErrorMessage,
+			PublishedAt:  res.PublishedAt,
+			CreatedAt:    res.CreatedAt,
+		}
+	}
+	JSON(w, http.StatusOK, map[string]any{"data": data})
 }

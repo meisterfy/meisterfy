@@ -60,7 +60,7 @@ func samplePost(tenantID string) *domain.Post {
 }
 
 func newPostsHandler(repo *mockPostRepo) *AdminPostsHandler {
-	return NewAdminPostsHandler(repo, nil) // nil audit — not exercised here
+	return NewAdminPostsHandler(repo, nil, nil) // nil publishResultRepo and audit — not exercised here
 }
 
 // requestWithClaims issues a JWT, wraps handler with AuthenticateAdmin, and returns (handler, request).

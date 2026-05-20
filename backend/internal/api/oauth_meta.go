@@ -105,7 +105,9 @@ func (h *OAuthMetaHandler) Start(w http.ResponseWriter, r *http.Request) {
 		Nonce:         nonce,
 	})
 
-	scopes := "pages_manage_posts,instagram_content_publish,pages_read_engagement"
+	scopes := "pages_show_list,pages_manage_posts,pages_read_engagement," +
+		"instagram_content_publish,instagram_manage_comments," +
+		"ads_management,ads_read,business_management"
 
 	params := url.Values{
 		"client_id":     {*ig.OAuthClientID},
