@@ -26,58 +26,50 @@
 	--background-color-light: var(--color-slate-900);
 }
 
+/* Dialog animations — bits-ui v2 uses data-starting-style / data-ending-style */
+[data-dialog-overlay] {
+	transition: opacity 0.18s ease;
+	opacity: 1;
+}
+[data-dialog-overlay][data-starting-style],
+[data-dialog-overlay][data-ending-style] {
+	opacity: 0;
+}
+
+[data-dialog-content] {
+	transition: opacity 0.18s ease, transform 0.18s ease;
+	opacity: 1;
+	transform: translate(-50%, -50%) scale(1);
+}
+[data-dialog-content][data-starting-style],
+[data-dialog-content][data-ending-style] {
+	opacity: 0;
+	transform: translate(-50%, -48%) scale(0.96);
+}
+
 /* Fix calendar/clock picker icons in dark mode */
 .dark input[type='date']::-webkit-calendar-picker-indicator,
 .dark input[type='time']::-webkit-calendar-picker-indicator {
 	filter: invert(1) opacity(0.6);
 }
 
-/* Drawer animations — scoped via data-drawer-content attribute */
-@keyframes drawer-slide-in-right {
-	from {
-		transform: translateX(100%);
-	}
-	to {
-		transform: translateX(0);
-	}
+/* Drawer animations — bits-ui v2 uses data-starting-style / data-ending-style */
+[data-drawer-content] {
+	transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+	transform: translateX(0);
 }
-@keyframes drawer-slide-out-right {
-	from {
-		transform: translateX(0);
-	}
-	to {
-		transform: translateX(100%);
-	}
-}
-@keyframes drawer-slide-in-up {
-	from {
-		transform: translateY(100%);
-	}
-	to {
-		transform: translateY(0);
-	}
-}
-@keyframes drawer-slide-out-down {
-	from {
-		transform: translateY(0);
-	}
-	to {
-		transform: translateY(100%);
-	}
-}
-
-[data-drawer-content][data-state='open'] {
-	animation: drawer-slide-in-right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-}
-[data-drawer-content][data-state='closed'] {
-	animation: drawer-slide-out-right 0.22s ease-in;
+[data-drawer-content][data-starting-style],
+[data-drawer-content][data-ending-style] {
+	transform: translateX(100%);
 }
 
 @media (max-width: 767px) {
-	[data-drawer-content][data-state='open'] {
-		animation: drawer-slide-in-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+	[data-drawer-content] {
+		transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+		transform: translateY(0);
 	}
-	[data-drawer-content][data-state='closed'] {
-		animation: drawer-slide-out-down 0.22s ease-in;
+	[data-drawer-content][data-starting-style],
+	[data-drawer-content][data-ending-style] {
+		transform: translateY(100%);
 	}
 }

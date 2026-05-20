@@ -43,23 +43,5 @@
 			<div class="loader-ring"></div>
 		</div>
 		<div style="display: contents">%sveltekit.body%</div>
-		<script>
-			const overlay = document.getElementById('app-loading')
-			const observer = new MutationObserver(() => {
-				const ready =
-					document.querySelector('[data-sveltekit-hydrated]') || document.body.children.length > 1
-				if (ready) {
-					overlay.classList.add('done')
-					setTimeout(() => overlay.remove(), 220)
-					observer.disconnect()
-				}
-			})
-			observer.observe(document.body, {
-				childList: true,
-				subtree: true,
-				attributes: true,
-				attributeFilter: ['data-sveltekit-hydrated']
-			})
-		</script>
 	</body>
 </html>
