@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state'
-	import { Share2, Target, Menu, X, ChevronDown, List, Plus, Settings } from 'lucide-svelte'
+	import { Share2, Target, Bell, Menu, X, ChevronDown, List, Plus, Settings } from 'lucide-svelte'
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import ProfileLink from '$lib/components/ui/toolbar/link/profile.svelte'
 	import BrandIcon from '$lib/components/ui/brand-icon.svelte'
@@ -16,6 +16,13 @@
 	let currentPath = $derived(page.url.pathname)
 	let isMobileMenuOpen = $state(false)
 
+	let resolvedClients = $state<{ id: string; brand: { name: string } }[]>([])
+	$effect(() => {
+		Promise.resolve(data.clients).then((clients) => {
+			resolvedClients = Array.isArray(clients) ? clients : []
+		})
+	})
+
 	const navMain = $derived([
 		{
 			href: `/${page.params.tenant}/social` as `/${string}/social`,
@@ -28,13 +35,19 @@
 			label: 'Google Ads',
 			icon: Target,
 			active: currentPath.includes('/ads/google')
+		},
+		{
+			href: `/${page.params.tenant}/alerts` as `/${string}/alerts`,
+			label: 'Alerts',
+			icon: Bell,
+			active: currentPath.includes('/alerts')
 		}
 	])
 
 	const clientMenuItems = $derived<MenuItem[]>([
 		{ type: 'header', label: 'Switch Client' },
 		{ type: 'separator' },
-		...data.clients.map((t: { id: string; brand: { name: string } }) => ({
+		...resolvedClients.map((t) => ({
 			label: t.brand.name,
 			href: `/${t.id}/social`,
 			icon: BrandIcon,

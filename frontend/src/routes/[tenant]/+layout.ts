@@ -24,10 +24,7 @@ const toClient = (t: TenantResult) => ({
 })
 
 export const load: LayoutLoad = async ({ params, fetch }) => {
-	const [tenant, tenants] = await Promise.all([
-		withFallback(getTenant(params.tenant, fetch), null),
-		withFallback(getTenants(fetch), [])
-	])
+	const tenant = await withFallback(getTenant(params.tenant, fetch), null)
 
 	if (!tenant) {
 		error(404, 'Client not found')
@@ -36,6 +33,7 @@ export const load: LayoutLoad = async ({ params, fetch }) => {
 	return {
 		tenant: params.tenant,
 		client: toClient(tenant),
-		clients: tenants.map(toClientSummary)
+		// lazy — não bloqueia o render inicial; o dropdown de troca de cliente carrega depois
+		clients: getTenants(fetch).then((ts) => ts.map(toClientSummary)).catch(() => [])
 	}
 }

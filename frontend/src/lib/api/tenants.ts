@@ -18,6 +18,10 @@ export interface AdsMonitoringConfig {
 	max_increase_brl: number
 	max_decrease_pct: number
 	max_decrease_brl: number
+	// automatic adjustments
+	suggestions_enabled?: boolean
+	min_campaign_age_days?: number
+	adjustment_interval_days?: number
 }
 
 export interface ReportPrompts {
