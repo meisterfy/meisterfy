@@ -17,34 +17,36 @@ func RegisterLLMTools(s *mcp.Server, selector *llm.ProviderSelector) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string", "description": "Tenant ID"},
-				"prompt":    map[string]any{"type": "string", "description": "The prompt to send to the LLM"},
-				"model":     map[string]any{"type": "string", "description": "Optional model override"},
-				"system":    map[string]any{"type": "string", "description": "Optional system message"},
+				"prompt": map[string]any{"type": "string", "description": "The prompt to send to the LLM"},
+				"model":  map[string]any{"type": "string", "description": "Optional model override"},
+				"system": map[string]any{"type": "string", "description": "Optional system message"},
 			},
-			"required": []string{"tenant_id", "prompt"},
+			"required": []string{"prompt"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID string  `json:"tenant_id"`
-				Prompt   string  `json:"prompt"`
-				Model    *string `json:"model"`
-				System   *string `json:"system"`
+				Prompt string  `json:"prompt"`
+				Model  *string `json:"model"`
+				System *string `json:"system"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments")
 			}
-			if p.TenantID == "" || p.Prompt == "" {
-				return mcp.ErrResult("tenant_id and prompt are required")
+			if p.Prompt == "" {
+				return mcp.ErrResult("prompt is required")
 			}
 
-			candidates := selector.ResolveAll(ctx, p.TenantID)
+			candidates := selector.ResolveAll(ctx, tenantID)
 			if len(candidates) == 0 {
-				return mcp.ErrResult(fmt.Sprintf("no connected llm provider for tenant %s", p.TenantID))
+				return mcp.ErrResult(fmt.Sprintf("no connected llm provider for tenant %s", tenantID))
 			}
 
 			req := domain.LLMRequest{
-				TenantID: p.TenantID,
+				TenantID: tenantID,
 				Messages: []domain.Message{{Role: domain.RoleUser, Content: p.Prompt}},
 				Model:    deref(p.Model),
 				System:   deref(p.System),

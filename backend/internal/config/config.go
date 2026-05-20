@@ -13,7 +13,6 @@ type Config struct {
 	CookieDomain     string
 	AppEnv           string
 	BaseURL          string
-	MCPAPIKey        string
 	StoragePath      string
 	SentryDSN        string
 	DevFrontendURL   string
@@ -29,7 +28,6 @@ func Load() (*Config, error) {
 		CookieDomain:     os.Getenv("COOKIE_DOMAIN"),
 		AppEnv:           getEnv("APP_ENV", "development"),
 		BaseURL:          getEnv("BASE_URL", "http://localhost:8080"),
-		MCPAPIKey:        os.Getenv("MCP_API_KEY"),
 		StoragePath:      getEnv("STORAGE_PATH", "./storage/images"),
 		SentryDSN:        os.Getenv("SENTRY_DSN"),
 		DevFrontendURL:   os.Getenv("DEV_FRONTEND_URL"),
@@ -44,9 +42,6 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.JWTSecret) < 32 {
 		return nil, fmt.Errorf("JWT_SECRET must be at least 32 characters")
-	}
-	if cfg.AppEnv == "production" && cfg.MCPAPIKey == "" {
-		return nil, fmt.Errorf("MCP_API_KEY is required in production")
 	}
 	if cfg.CredentialKey != "" {
 		n := len(cfg.CredentialKey)

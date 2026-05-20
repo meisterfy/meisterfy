@@ -49,113 +49,48 @@ func slugify(s string) string {
 	return strings.Trim(s, "-")
 }
 
-// RegisterContentTools registers all 15 content tools on the MCP server.
+// RegisterContentTools registers content tools on the MCP server.
 func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
-	s.RegisterTool("list_tenants",
-		"List all clients",
+	s.RegisterTool("get_current_tenant",
+		"Get brand config and persona for the authenticated tenant",
 		map[string]any{"type": "object", "properties": map[string]any{}},
 		func(ctx context.Context, _ json.RawMessage) mcp.ToolResult {
-			tenants, err := repos.Tenants.List(ctx)
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			t, err := repos.Tenants.GetByID(ctx, tenantID)
 			if err != nil {
-				return mcp.ErrResult(err.Error())
-			}
-			return mcp.Ok(tenants)
-		},
-	)
-
-	s.RegisterTool("get_tenant",
-		"Get brand config and persona for a client",
-		map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"id": map[string]any{"type": "string", "description": `Tenant ID, e.g. "portico"`},
-			},
-			"required": []string{"id"},
-		},
-		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
-			var p struct {
-				ID string `json:"id"`
-			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return mcp.ErrResult("invalid arguments: " + err.Error())
-			}
-			t, err := repos.Tenants.GetByID(ctx, p.ID)
-			if err != nil {
-				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, p.ID))
+				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, tenantID))
 			}
 			return mcp.Ok(t)
 		},
 	)
 
-	s.RegisterTool("create_tenant",
-		"Create a new client",
-		map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"id":            map[string]any{"type": "string"},
-				"name":          map[string]any{"type": "string"},
-				"language":      map[string]any{"type": "string", "default": "pt_BR"},
-				"niche":         map[string]any{"type": "string"},
-				"location":      map[string]any{"type": "string"},
-				"tone":          map[string]any{"type": "string"},
-				"instructions":  map[string]any{"type": "string"},
-				"hashtags":     map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
-			},
-			"required": []string{"id", "name"},
-		},
-		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
-			var p struct {
-				ID           string   `json:"id"`
-				Name         string   `json:"name"`
-				Language     string   `json:"language"`
-				Niche        *string  `json:"niche"`
-				Location     *string  `json:"location"`
-				Tone         *string  `json:"tone"`
-				Instructions *string  `json:"instructions"`
-				Hashtags     []string `json:"hashtags"`
-			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return mcp.ErrResult("invalid arguments: " + err.Error())
-			}
-			if p.Language == "" {
-				p.Language = "pt_BR"
-			}
-			t := &domain.Tenant{
-				ID:           p.ID,
-				Name:         p.Name,
-				Language:     p.Language,
-				Niche:        p.Niche,
-				Location:     p.Location,
-				Tone:         p.Tone,
-				Instructions: p.Instructions,
-				Hashtags:     p.Hashtags,
-			}
-			if err := repos.Tenants.Create(ctx, t); err != nil {
-				return mcp.ErrResult(err.Error())
-			}
-			return mcp.Ok(map[string]string{"created": p.ID})
-		},
-	)
-
 	s.RegisterTool("update_tenant",
-		"Edit brand config for a client",
+		"Edit brand config for the authenticated tenant",
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"id":            map[string]any{"type": "string"},
-				"name":          map[string]any{"type": "string"},
-				"language":      map[string]any{"type": "string"},
-				"niche":         map[string]any{"type": "string"},
-				"location":      map[string]any{"type": "string"},
-				"tone":          map[string]any{"type": "string"},
-				"instructions":  map[string]any{"type": "string"},
+				"name":         map[string]any{"type": "string"},
+				"language":     map[string]any{"type": "string"},
+				"niche":        map[string]any{"type": "string"},
+				"location":     map[string]any{"type": "string"},
+				"tone":         map[string]any{"type": "string"},
+				"instructions": map[string]any{"type": "string"},
 				"hashtags":     map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 			},
-			"required": []string{"id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				ID           string   `json:"id"`
 				Name         *string  `json:"name"`
 				Language     *string  `json:"language"`
 				Niche        *string  `json:"niche"`
@@ -167,9 +102,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			t, err := repos.Tenants.GetByID(ctx, p.ID)
+			t, err := repos.Tenants.GetByID(ctx, tenantID)
 			if err != nil {
-				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, p.ID))
+				return mcp.ErrResult(fmt.Sprintf(`Tenant "%s" not found`, tenantID))
 			}
 			if p.Name != nil {
 				t.Name = *p.Name
@@ -195,24 +130,25 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			if err := repos.Tenants.Update(ctx, t); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
-			return mcp.Ok(map[string]string{"updated": p.ID})
+			return mcp.Ok(map[string]string{"updated": tenantID})
 		},
 	)
 
 	s.RegisterTool("list_posts",
-		"List posts for a client (optionally filtered by status)",
+		"List posts for the authenticated tenant (optionally filtered by status)",
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"status":    map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
+				"status": map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
 			},
-			"required": []string{"tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID string  `json:"tenant_id"`
-				Status   *string `json:"status"`
+				Status *string `json:"status"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -220,9 +156,9 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			var posts []*domain.Post
 			var err error
 			if p.Status != nil && *p.Status != "" {
-				posts, err = repos.Posts.ListByStatus(ctx, p.TenantID, *p.Status)
+				posts, err = repos.Posts.ListByStatus(ctx, tenantID, *p.Status)
 			} else {
-				posts, err = repos.Posts.List(ctx, p.TenantID)
+				posts, err = repos.Posts.List(ctx, tenantID)
 			}
 			if err != nil {
 				return mcp.ErrResult(err.Error())
@@ -256,21 +192,27 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 	)
 
 	s.RegisterTool("create_post",
-		"Create a new draft post",
+		"Create a new draft post for the authenticated tenant",
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":  map[string]any{"type": "string"},
 				"content":    map[string]any{"type": "string"},
 				"title":      map[string]any{"type": "string"},
 				"hashtags":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 				"media_type": map[string]any{"type": "string"},
 			},
-			"required": []string{"tenant_id", "content"},
+			"required": []string{"content"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID  string   `json:"tenant_id"`
 				Content   string   `json:"content"`
 				Title     *string  `json:"title"`
 				Hashtags  []string `json:"hashtags"`
@@ -287,7 +229,7 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 			}
 			post := &domain.Post{
 				ID:        id,
-				TenantID:  p.TenantID,
+				TenantID:  tenantID,
 				Status:    domain.PostStatusDraft,
 				Title:     p.Title,
 				Content:   p.Content,
@@ -306,17 +248,23 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"id":        map[string]any{"type": "string"},
-				"tenant_id": map[string]any{"type": "string"},
-				"status":    map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
+				"id":     map[string]any{"type": "string"},
+				"status": map[string]any{"type": "string", "enum": []string{"draft", "approved", "scheduled", "published"}},
 			},
-			"required": []string{"id", "tenant_id", "status"},
+			"required": []string{"id", "status"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				ID       string `json:"id"`
-				TenantID string `json:"tenant_id"`
-				Status   string `json:"status"`
+				ID     string `json:"id"`
+				Status string `json:"status"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -326,7 +274,7 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 				now := time.Now()
 				publishedAt = &now
 			}
-			if err := repos.Posts.UpdateStatus(ctx, p.ID, p.TenantID, p.Status, publishedAt); err != nil {
+			if err := repos.Posts.UpdateStatus(ctx, p.ID, tenantID, p.Status, publishedAt); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
 			return mcp.Ok(map[string]string{"updated": p.ID, "status": p.Status})
@@ -338,20 +286,26 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"id":        map[string]any{"type": "string"},
-				"tenant_id": map[string]any{"type": "string"},
+				"id": map[string]any{"type": "string"},
 			},
-			"required": []string{"id", "tenant_id"},
+			"required": []string{"id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				ID       string `json:"id"`
-				TenantID string `json:"tenant_id"`
+				ID string `json:"id"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			if err := repos.Posts.Delete(ctx, p.ID, p.TenantID); err != nil {
+			if err := repos.Posts.Delete(ctx, p.ID, tenantID); err != nil {
 				return mcp.ErrResult(err.Error())
 			}
 			return mcp.Ok(map[string]string{"deleted": p.ID})
@@ -359,22 +313,16 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 	)
 
 	s.RegisterTool("list_campaigns",
-		"List local campaign drafts for a client (without full JSON data)",
+		"List local campaign drafts for the authenticated tenant",
 		map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-			},
-			"required": []string{"tenant_id"},
+			"type": "object", "properties": map[string]any{},
 		},
-		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
-			var p struct {
-				TenantID string `json:"tenant_id"`
+		func(ctx context.Context, _ json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
 			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return mcp.ErrResult("invalid arguments: " + err.Error())
-			}
-			campaigns, err := repos.Campaigns.List(ctx, p.TenantID)
+			campaigns, err := repos.Campaigns.List(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -396,25 +344,26 @@ func RegisterContentTools(s *mcp.Server, repos ContentRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"slug":      map[string]any{"type": "string"},
+				"slug": map[string]any{"type": "string"},
 			},
-			"required": []string{"tenant_id", "slug"},
+			"required": []string{"slug"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID string `json:"tenant_id"`
-				Slug     string `json:"slug"`
+				Slug string `json:"slug"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			campaign, err := repos.Campaigns.GetBySlug(ctx, p.TenantID, p.Slug)
+			campaign, err := repos.Campaigns.GetBySlug(ctx, tenantID, p.Slug)
 			if err != nil {
 				return mcp.ErrResult(fmt.Sprintf(`Campaign "%s" not found`, p.Slug))
 			}
 			return mcp.Ok(campaign)
 		},
 	)
-
 }

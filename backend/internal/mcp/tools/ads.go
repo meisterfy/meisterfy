@@ -13,25 +13,17 @@ import (
 // Returns an error if the tenant has no connected Google Ads integration.
 type AdsClientFactory func(ctx context.Context, tenantID string) (*googleads.Client, *domain.Tenant, error)
 
-// RegisterAdsTools registers all 10 Google Ads tools on the MCP server.
+// RegisterAdsTools registers all Google Ads tools on the MCP server.
 func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 	s.RegisterTool("get_live_metrics",
 		"Get live campaign metrics from Google Ads API",
-		map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-			},
-			"required": []string{"tenant_id"},
-		},
-		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
-			var p struct {
-				TenantID string `json:"tenant_id"`
+		map[string]any{"type": "object", "properties": map[string]any{}},
+		func(ctx context.Context, _ json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
 			}
-			if err := json.Unmarshal(args, &p); err != nil {
-				return mcp.ErrResult("invalid arguments: " + err.Error())
-			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -48,20 +40,22 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 			},
-			"required": []string{"tenant_id", "campaign_id"},
+			"required": []string{"campaign_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -78,15 +72,17 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 				"days":        map[string]any{"type": "number", "default": 30, "minimum": 1, "maximum": 90},
 			},
-			"required": []string{"tenant_id", "campaign_id"},
+			"required": []string{"campaign_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 				Days       int    `json:"days"`
 			}
@@ -97,7 +93,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 				p.Days = 30
 			}
 			startDate, endDate := googleads.DaysToDateRange(p.Days)
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -114,15 +110,17 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 				"days":        map[string]any{"type": "number", "default": 7, "minimum": 1, "maximum": 30},
 			},
-			"required": []string{"tenant_id", "campaign_id"},
+			"required": []string{"campaign_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 				Days       int    `json:"days"`
 			}
@@ -132,7 +130,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if p.Days <= 0 {
 				p.Days = 7
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -149,16 +147,22 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 				"keywords":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 				"match_type":  map[string]any{"type": "string", "enum": []string{"broad", "phrase", "exact"}},
 			},
-			"required": []string{"tenant_id", "campaign_id", "keywords"},
+			"required": []string{"campaign_id", "keywords"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID   string   `json:"tenant_id"`
 				CampaignID string   `json:"campaign_id"`
 				Keywords   []string `json:"keywords"`
 				MatchType  string   `json:"match_type"`
@@ -169,7 +173,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if p.MatchType == "" {
 				p.MatchType = "broad"
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -186,16 +190,22 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":        map[string]any{"type": "string"},
 				"campaign_id":      map[string]any{"type": "string"},
 				"budget_id":        map[string]any{"type": "string"},
 				"daily_budget_brl": map[string]any{"type": "number"},
 			},
-			"required": []string{"tenant_id", "campaign_id", "budget_id", "daily_budget_brl"},
+			"required": []string{"campaign_id", "budget_id", "daily_budget_brl"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID       string  `json:"tenant_id"`
 				CampaignID     string  `json:"campaign_id"`
 				BudgetID       string  `json:"budget_id"`
 				DailyBudgetBRL float64 `json:"daily_budget_brl"`
@@ -203,7 +213,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -219,20 +229,26 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 			},
-			"required": []string{"tenant_id", "campaign_id"},
+			"required": []string{"campaign_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -249,16 +265,22 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":              map[string]any{"type": "string"},
 				"ad_group_resource_name": map[string]any{"type": "string"},
 				"keywords":               map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 				"match_type":             map[string]any{"type": "string"},
 			},
-			"required": []string{"tenant_id", "ad_group_resource_name", "keywords"},
+			"required": []string{"ad_group_resource_name", "keywords"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID            string   `json:"tenant_id"`
 				AdGroupResourceName string   `json:"ad_group_resource_name"`
 				Keywords            []string `json:"keywords"`
 				MatchType           string   `json:"match_type"`
@@ -269,7 +291,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if p.MatchType == "" {
 				p.MatchType = "broad"
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -290,7 +312,6 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 				"callouts":    map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
 				"sitelinks": map[string]any{
@@ -305,11 +326,18 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 					},
 				},
 			},
-			"required": []string{"tenant_id", "campaign_id"},
+			"required": []string{"campaign_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID   string   `json:"tenant_id"`
 				CampaignID string   `json:"campaign_id"`
 				Callouts   []string `json:"callouts"`
 				Sitelinks  []struct {
@@ -321,7 +349,7 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -342,22 +370,28 @@ func RegisterAdsTools(s *mcp.Server, factory AdsClientFactory) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id":   map[string]any{"type": "string"},
 				"campaign_id": map[string]any{"type": "string"},
 				"status":      map[string]any{"type": "string", "enum": []string{"ENABLED", "PAUSED"}},
 			},
-			"required": []string{"tenant_id", "campaign_id", "status"},
+			"required": []string{"campaign_id", "status"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID   string `json:"tenant_id"`
 				CampaignID string `json:"campaign_id"`
 				Status     string `json:"status"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
 			}
-			client, _, err := factory(ctx, p.TenantID)
+			client, _, err := factory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}

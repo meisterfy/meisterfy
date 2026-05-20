@@ -12,28 +12,29 @@ import (
 
 // MonitoringRepos groups dependencies for monitoring tools.
 type MonitoringRepos struct {
-	Metrics   *repository.MetricsRepository
-	Alerts    *repository.AlertRepository
-	AgentRuns *repository.AgentRunRepository
+	Metrics    *repository.MetricsRepository
+	Alerts     *repository.AlertRepository
+	AgentRuns  *repository.AgentRunRepository
 	AdsFactory AdsClientFactory
 }
 
 // RegisterMonitoringTools registers 4 monitoring tools: 2 read-only, 2 with Google Ads.
 func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 	s.RegisterTool("get_metrics_history",
-		"Get stored daily metrics for a client (last N days)",
+		"Get stored daily metrics for the authenticated tenant (last N days)",
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"days":      map[string]any{"type": "number", "default": 30, "minimum": 1, "maximum": 90},
+				"days": map[string]any{"type": "number", "default": 30, "minimum": 1, "maximum": 90},
 			},
-			"required": []string{"tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID string `json:"tenant_id"`
-				Days     int    `json:"days"`
+				Days int `json:"days"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -45,7 +46,7 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				p.Days = 90
 			}
 			since := time.Now().AddDate(0, 0, -p.Days)
-			rows, err := repos.Metrics.GetHistory(ctx, p.TenantID, since)
+			rows, err := repos.Metrics.GetHistory(ctx, tenantID, since)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -54,19 +55,20 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 	)
 
 	s.RegisterTool("get_monthly_summary",
-		"Get consolidated monthly metrics for a client",
+		"Get consolidated monthly metrics for the authenticated tenant",
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"months":    map[string]any{"type": "number", "default": 6, "minimum": 1, "maximum": 24},
+				"months": map[string]any{"type": "number", "default": 6, "minimum": 1, "maximum": 24},
 			},
-			"required": []string{"tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
 			var p struct {
-				TenantID string `json:"tenant_id"`
-				Months   int    `json:"months"`
+				Months int `json:"months"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -74,7 +76,7 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 			if p.Months <= 0 {
 				p.Months = 6
 			}
-			rows, err := repos.Metrics.GetMonthlySummary(ctx, p.TenantID, p.Months)
+			rows, err := repos.Metrics.GetMonthlySummary(ctx, tenantID, p.Months)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -87,15 +89,20 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"date":      map[string]any{"type": "string", "description": "YYYY-MM-DD, defaults to yesterday"},
+				"date": map[string]any{"type": "string", "description": "YYYY-MM-DD, defaults to yesterday"},
 			},
-			"required": []string{"tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID string `json:"tenant_id"`
-				Date     string `json:"date"`
+				Date string `json:"date"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -103,7 +110,7 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 			if p.Date == "" {
 				p.Date = time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 			}
-			client, tenant, err := repos.AdsFactory(ctx, p.TenantID)
+			client, tenant, err := repos.AdsFactory(ctx, tenantID)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
 			}
@@ -123,15 +130,20 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 		map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"tenant_id": map[string]any{"type": "string"},
-				"month":     map[string]any{"type": "string", "description": "YYYY-MM, defaults to last month"},
+				"month": map[string]any{"type": "string", "description": "YYYY-MM, defaults to last month"},
 			},
-			"required": []string{"tenant_id"},
 		},
 		func(ctx context.Context, args json.RawMessage) mcp.ToolResult {
+			tenantID, ok := mcp.TenantIDFromContext(ctx)
+			if !ok {
+				return mcp.ErrResult("tenant not authenticated")
+			}
+			role, _ := mcp.RoleFromContext(ctx)
+			if role == "readonly" {
+				return mcp.ErrResult("this key has read-only access")
+			}
 			var p struct {
-				TenantID string `json:"tenant_id"`
-				Month    string `json:"month"`
+				Month string `json:"month"`
 			}
 			if err := json.Unmarshal(args, &p); err != nil {
 				return mcp.ErrResult("invalid arguments: " + err.Error())
@@ -140,7 +152,7 @@ func RegisterMonitoringTools(s *mcp.Server, repos MonitoringRepos) {
 				p.Month = time.Now().AddDate(0, -1, 0).Format("2006-01")
 			}
 			result, err := googleads.ConsolidateMonthly(
-				ctx, p.TenantID, p.Month, repos.Metrics, repos.AgentRuns,
+				ctx, tenantID, p.Month, repos.Metrics, repos.AgentRuns,
 			)
 			if err != nil {
 				return mcp.ErrResult(err.Error())
