@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
@@ -115,7 +115,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
@@ -212,7 +212,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: '1.25.10'
           cache-dependency-path: backend/go.sum
       - name: Create stub ui/dist for embed
         run: mkdir -p backend/cmd/server/ui/dist && touch backend/cmd/server/ui/dist/.keep
