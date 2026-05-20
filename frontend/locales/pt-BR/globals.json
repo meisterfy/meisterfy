@@ -7,5 +7,9 @@
 	"back_to_app": "Voltar ao painel",
 	"no_options": "Nenhuma opção encontrada",
 	"previous": "Anterior",
-	"next": "Próximo"
+	"next": "Próximo",
+	"terms:update_title": "Atualização dos Termos",
+	"terms:agree_checkbox": "Li e concordo com os termos acima",
+	"terms:continue": "Continuar",
+	"terms:logout": "Sair em vez disso"
 }
