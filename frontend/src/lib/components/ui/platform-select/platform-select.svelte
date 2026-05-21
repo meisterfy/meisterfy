@@ -2,10 +2,11 @@
 	import { Check, ChevronDown, X } from 'lucide-svelte'
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import { BRAND_COLOR, PLATFORM_CONFIG, type PostPlatform } from '$lib/social'
+	import { m } from '$lib/paraglide/messages'
 
 	let {
 		value = $bindable<PostPlatform[]>([]),
-		placeholder = 'Select platforms…'
+		placeholder = m['globals:select_platforms_placeholder']()
 	}: {
 		value: PostPlatform[]
 		placeholder?: string

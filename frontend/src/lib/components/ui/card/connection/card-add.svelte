@@ -4,6 +4,7 @@
 	import { LucideBook } from 'lucide-svelte'
 	import Card from '$lib/components/ui/card/connection/card.svelte'
 	import FooterBtn from '$lib/components/ui/card/connection/card-footer-btn.svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let { provider, onclick } = $props<{
 		provider: ProviderSchema
@@ -35,7 +36,7 @@
 		<div class="mr-auto text-[10px] font-bold text-slate-200 uppercase">
 			#{provider.group.replace('_', '-')}
 		</div>
-		<FooterBtn href="#" variant="ghost" label="Read docs" icon={LucideBook} />
-		<FooterBtn {onclick} variant="primary" label="Add Connection" />
+		<FooterBtn href="#" variant="ghost" label={m['integrations:read_docs']()} icon={LucideBook} />
+		<FooterBtn {onclick} variant="primary" label={m['integrations:add_connection']()} />
 	{/snippet}
 </Card>

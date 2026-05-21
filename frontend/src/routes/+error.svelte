@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state'
 	import { resolve } from '$app/paths'
+	import { m } from '$lib/paraglide/messages'
 
 	const status = $derived(page.status)
 	const message = $derived(page.error?.message ?? '')
@@ -75,7 +76,7 @@
 					font-semibold text-slate-700 transition-colors hover:bg-slate-200
 					dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
 			>
-				Go back
+				{m['globals:go_back']()}
 			</button>
 		</div>
 	</div>

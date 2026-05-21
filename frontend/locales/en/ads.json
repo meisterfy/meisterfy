@@ -152,6 +152,11 @@
 		"ai_title": "AI Campaign Analysis",
 		"ai_description": "Generate an AI-powered report based on this campaign's live data, keywords, and search terms."
 	},
+	"chart_avg_cost": "Avg Cost (R$)",
+	"chart_avg_cpa": "Avg CPA (R$)",
+	"chart_cost": "Cost (R$)",
+	"chart_cpa": "CPA (R$)",
+
 	"vs_prev_week": "vs prev. wk.",
 	"campaign_manager": "Campaign Manager",
 	"new_campaign": "New Campaign",

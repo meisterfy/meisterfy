@@ -54,7 +54,7 @@ export function createDayOfWeekCostConfig(avgCosts: number[]): ChartConfiguratio
 			labels: DOW_LABELS,
 			datasets: [
 				{
-					label: 'Avg Cost (R$)',
+					label: m['ads:chart_avg_cost'](),
 					data: avgCosts,
 					backgroundColor: 'rgba(99,102,241,0.6)',
 					borderColor: '#6366f1',
@@ -73,7 +73,7 @@ export function createDayOfWeekCostConfig(avgCosts: number[]): ChartConfiguratio
 				}
 			},
 			scales: {
-				y: { beginAtZero: true, title: { display: true, text: 'Cost (R$)' } }
+				y: { beginAtZero: true, title: { display: true, text: m['ads:chart_cost']() } }
 			}
 		}
 	}
@@ -86,7 +86,7 @@ export function createDayOfWeekCpaConfig(avgCpas: (number | null)[]): ChartConfi
 			labels: DOW_LABELS,
 			datasets: [
 				{
-					label: 'Avg CPA (R$)',
+					label: m['ads:chart_avg_cpa'](),
 					data: avgCpas,
 					backgroundColor: 'rgba(245,158,11,0.6)',
 					borderColor: '#f59e0b',
@@ -105,7 +105,7 @@ export function createDayOfWeekCpaConfig(avgCpas: (number | null)[]): ChartConfi
 				}
 			},
 			scales: {
-				y: { beginAtZero: true, title: { display: true, text: 'CPA (R$)' } }
+				y: { beginAtZero: true, title: { display: true, text: m['ads:chart_cpa']() } }
 			}
 		}
 	}
@@ -119,7 +119,7 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 			datasets: [
 				{
 					type: 'bar',
-					label: 'Cost (R$)',
+					label: m['ads:chart_cost'](),
 					data: history.map((d) => d.cost),
 					backgroundColor: 'rgba(99,102,241,0.6)',
 					borderColor: '#6366f1',
@@ -128,7 +128,7 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 				},
 				{
 					type: 'line',
-					label: 'CPA (R$)',
+					label: m['ads:chart_cpa'](),
 					data: history.map((d) => (d.conversions > 0 ? d.cpa : null)),
 					borderColor: '#f59e0b',
 					backgroundColor: 'transparent',
@@ -148,8 +148,8 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 				tooltip: {
 					callbacks: {
 						label: (ctx) => {
-							if (ctx.dataset.label === 'Cost (R$)') return `Cost: R$${Number(ctx.raw).toFixed(2)}`
-							if (ctx.dataset.label === 'CPA (R$)' && ctx.raw != null)
+							if (ctx.datasetIndex === 0) return `Cost: R$${Number(ctx.raw).toFixed(2)}`
+							if (ctx.datasetIndex === 1 && ctx.raw != null)
 								return `CPA: R$${Number(ctx.raw).toFixed(2)}`
 							return ''
 						}
@@ -160,13 +160,13 @@ export function createDailyCostCpaConfig(history: DbHistoryDay[]): ChartConfigur
 				yCost: {
 					type: 'linear',
 					position: 'left',
-					title: { display: true, text: 'Cost (R$)' },
+					title: { display: true, text: m['ads:chart_cost']() },
 					beginAtZero: true
 				},
 				yCpa: {
 					type: 'linear',
 					position: 'right',
-					title: { display: true, text: 'CPA (R$)' },
+					title: { display: true, text: m['ads:chart_cpa']() },
 					grid: { drawOnChartArea: false },
 					beginAtZero: true
 				}

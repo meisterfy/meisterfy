@@ -6,7 +6,7 @@
 	let {
 		value = $bindable<string[]>([]),
 		options,
-		placeholder = 'Select…',
+		placeholder = m['globals:select_placeholder'](),
 		onchange
 	}: {
 		value?: string[]
@@ -64,7 +64,7 @@
 			<input
 				type="text"
 				bind:value={search}
-				placeholder="Search…"
+				placeholder={m['globals:search_placeholder']()}
 				class="w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:text-white"
 			/>
 		</div>

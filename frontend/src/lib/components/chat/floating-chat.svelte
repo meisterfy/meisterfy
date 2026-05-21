@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X, Send, Square, Trash2, MessageSquare } from 'lucide-svelte'
 	import type { CampaignChatStore } from '$lib/stores/campaign-chat.svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let {
 		chat,
@@ -53,7 +54,7 @@
 	<button
 		onclick={() => chat.open()}
 		class="fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-all hover:bg-indigo-700 hover:shadow-xl"
-		aria-label="Open AI chat"
+		aria-label={m['globals:chat_open_aria']()}
 	>
 		<MessageSquare class="h-6 w-6" />
 		{#if chat.messages.length > 0}
@@ -93,7 +94,7 @@
 					</svg>
 				</div>
 				<span class="text-sm font-semibold text-slate-700 dark:text-slate-200"
-					>AI Campaign Chat</span
+					>{m['globals:chat_title']()}</span
 				>
 			</div>
 			<div class="flex items-center gap-1">
@@ -101,7 +102,7 @@
 					<button
 						onclick={() => chat.clear()}
 						class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300"
-						title="Clear conversation"
+						title={m['globals:chat_clear_aria']()}
 					>
 						<Trash2 class="h-3.5 w-3.5" />
 					</button>
@@ -122,8 +123,8 @@
 					class="flex h-full flex-col items-center justify-center text-center text-slate-400 dark:text-slate-600"
 				>
 					<MessageSquare class="mb-2 h-8 w-8" />
-					<p class="text-sm">Ask anything about this campaign.</p>
-					<p class="mt-1 text-xs">Campaign data is pre-loaded as context.</p>
+					<p class="text-sm">{m['globals:chat_hint_1']()}</p>
+					<p class="mt-1 text-xs">{m['globals:chat_hint_2']()}</p>
 				</div>
 			{:else}
 				{#each chat.messages as msg (msg)}
@@ -174,7 +175,7 @@
 				<textarea
 					bind:value={input}
 					onkeydown={onKeydown}
-					placeholder="Ask about keywords, budget, CPA…"
+					placeholder={m['globals:chat_placeholder']()}
 					rows={1}
 					disabled={chat.busy}
 					class="flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 focus:outline-none disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
@@ -184,7 +185,7 @@
 					<button
 						onclick={() => chat.abort()}
 						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
-						title="Stop generation"
+						title={m['globals:chat_stop']()}
 					>
 						<Square class="h-4 w-4" />
 					</button>

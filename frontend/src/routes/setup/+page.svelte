@@ -64,9 +64,9 @@
 		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 	>
 		{#if step === 1}
-			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">Welcome to Maestro</h1>
+			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['globals:setup_title']()}</h1>
 			<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
-				Create the first admin account to get started.
+				{m['globals:setup_subtitle']()}
 			</p>
 			<form onsubmit={submit} class="flex flex-col gap-4">
 				<Label class="flex flex-col gap-1">
@@ -89,9 +89,9 @@
 				</Button>
 			</form>
 		{:else}
-			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">Configure your tools</h1>
+			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['globals:setup_tools_title']()}</h1>
 			<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
-				Connect your integrations now or later in Settings.
+				{m['globals:setup_tools_subtitle']()}
 			</p>
 
 			<div class="flex flex-col gap-3">
@@ -106,7 +106,7 @@
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-slate-900 dark:text-white">{m['settings:nav_google_ads']()}</p>
 						<p class="text-xs text-slate-500 dark:text-slate-400">
-							Connect your ad account to track campaigns
+							{m['globals:setup_gads_desc']()}
 						</p>
 					</div>
 					<!-- eslint-disable svelte/no-navigation-without-resolve -->
@@ -128,9 +128,9 @@
 						<Sparkles class="h-5 w-5 text-violet-600 dark:text-violet-400" />
 					</div>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-slate-900 dark:text-white">AI Provider</p>
+						<p class="text-sm font-medium text-slate-900 dark:text-white">{m['globals:setup_ai_provider']()}</p>
 						<p class="text-xs text-slate-500 dark:text-slate-400">
-							Add an API key to enable content generation
+							{m['globals:setup_ai_desc']()}
 						</p>
 					</div>
 					<button
@@ -146,7 +146,7 @@
 				onclick={skip}
 				class="mt-6 w-full border border-slate-300 bg-transparent text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-800"
 			>
-				Skip for now
+				{m['globals:setup_skip']()}
 			</Button>
 		{/if}
 	</div>

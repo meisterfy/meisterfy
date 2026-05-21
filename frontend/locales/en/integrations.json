@@ -9,6 +9,9 @@
 	"test": "Test connection",
 	"configure": "Configure",
 	"empty": "No integrations available.",
+	"read_docs": "Read docs",
+	"add_connection": "Add Connection",
+
 	"connected_title": "Connected",
 	"connected_desc": "Your active service integrations.",
 	"browse_title": "Connections",

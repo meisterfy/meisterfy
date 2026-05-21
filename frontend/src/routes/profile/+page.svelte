@@ -6,6 +6,7 @@
 	import * as Select from '$lib/components/ui/select'
 	import { auth } from '$lib/stores/auth.svelte'
 	import { updateMe, changePassword } from '$lib/api/users'
+	import { m } from '$lib/paraglide/messages'
 
 	const locales: Record<string, string> = {
 		pt_BR: 'Portuguese (BR)',
@@ -86,13 +87,13 @@
 			<a
 				href={resolve('/')}
 				class="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-				title="Back to Dashboard"
+				title={m['globals:profile_back_aria']()}
 			>
 				<ArrowLeft class="h-5 w-5" />
 			</a>
 			<div>
-				<h1 class="text-xl font-bold text-slate-900 dark:text-white">Your Profile</h1>
-				<p class="text-sm text-slate-500 dark:text-slate-400">Manage your personal preferences</p>
+				<h1 class="text-xl font-bold text-slate-900 dark:text-white">{m['globals:profile_title']()}</h1>
+				<p class="text-sm text-slate-500 dark:text-slate-400">{m['globals:profile_subtitle']()}</p>
 			</div>
 		</div>
 	</header>
@@ -106,7 +107,7 @@
 				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
 			>
 				<User class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Personal Information</h2>
+				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">{m['globals:profile_personal_info']()}</h2>
 			</div>
 
 			<form onsubmit={saveProfile} class="flex flex-col gap-5">
@@ -116,7 +117,7 @@
 							for="profile-name"
 							class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase"
 						>
-							Full Name <span class="text-red-400">*</span>
+							{m['globals:profile_full_name']()} <span class="text-red-400">*</span>
 						</label>
 						<Input id="profile-name" type="text" bind:value={name} required />
 					</div>
@@ -184,7 +185,7 @@
 						disabled={profileSaving}
 						class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
 					>
-						{profileSaving ? 'Saving…' : 'Save Changes'}
+						{profileSaving ? 'Saving…' : m['globals:profile_save_changes']()}
 					</button>
 					{#if profileSaved}
 						<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
@@ -203,7 +204,7 @@
 				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
 			>
 				<Key class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Change Password</h2>
+				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">{m['globals:profile_change_password']()}</h2>
 			</div>
 
 			<form onsubmit={savePassword} class="flex flex-col gap-5">
@@ -212,7 +213,7 @@
 						for="profile-current-pwd"
 						class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase"
 					>
-						Current Password
+						{m['globals:profile_current_password']()}
 					</label>
 					<Input id="profile-current-pwd" type="password" bind:value={currentPassword} required />
 				</div>
@@ -223,7 +224,7 @@
 							for="profile-new-pwd"
 							class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase"
 						>
-							New Password
+							{m['globals:profile_new_password']()}
 						</label>
 						<Input id="profile-new-pwd" type="password" bind:value={newPassword} required />
 					</div>
@@ -232,7 +233,7 @@
 							for="profile-confirm-pwd"
 							class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase"
 						>
-							Confirm New Password
+							{m['globals:profile_confirm_password']()}
 						</label>
 						<Input id="profile-confirm-pwd" type="password" bind:value={confirmPassword} required />
 					</div>
@@ -252,11 +253,11 @@
 						disabled={pwSaving}
 						class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
 					>
-						{pwSaving ? 'Saving…' : 'Change Password'}
+						{pwSaving ? 'Saving…' : m['globals:profile_change_password']()}
 					</button>
 					{#if pwSaved}
 						<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-							<CircleCheck class="h-4 w-4" /> Password updated
+							<CircleCheck class="h-4 w-4" /> {m['globals:profile_password_updated']()}
 						</span>
 					{/if}
 				</div>
