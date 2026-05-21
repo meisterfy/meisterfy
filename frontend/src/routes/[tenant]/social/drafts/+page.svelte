@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { untrack } from 'svelte'
 	import {
 		FileEdit,
@@ -122,7 +123,7 @@
 				</span>
 			</div>
 			<p class="text-sm text-slate-500 dark:text-slate-400">
-				Posts without a scheduled date. Approve and schedule to add to the planner.
+				{m['social-media:drafts_subtitle']()}
 			</p>
 		</div>
 		<div class="flex items-center gap-2">
@@ -130,13 +131,13 @@
 				onclick={() => (showAiGenerator = true)}
 				class="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400"
 			>
-				<Sparkles class="h-4 w-4" /> Generate with AI
+				<Sparkles class="h-4 w-4" /> {m['social-media:generate_with_ai']()}
 			</button>
 			<button
 				onclick={() => (showCreate = true)}
 				class="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
 			>
-				<Plus class="h-4 w-4" /> New Draft
+				<Plus class="h-4 w-4" /> {m['social-media:draft_new_title']()}
 			</button>
 		</div>
 	</div>
@@ -146,12 +147,12 @@
 			class="rounded-xl border-2 border-dashed border-slate-300 p-16 text-center dark:border-slate-700"
 		>
 			<FileEdit class="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
-			<p class="mb-3 text-sm text-slate-500 dark:text-slate-400">No drafts yet.</p>
+			<p class="mb-3 text-sm text-slate-500 dark:text-slate-400">{m['social-media:no_drafts_yet']()}</p>
 			<button
 				onclick={() => (showCreate = true)}
 				class="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
 			>
-				Create your first draft
+				{m['social-media:create_first_draft']()}
 			</button>
 		</div>
 	{:else}
@@ -231,7 +232,7 @@
 								onclick={() => openPublish(post)}
 								class="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
 							>
-								<Send class="h-3.5 w-3.5" /> Publish to Meta
+								<Send class="h-3.5 w-3.5" /> {m['social-media:publish_to_meta']()}
 							</button>
 						{/if}
 						<button
@@ -249,7 +250,7 @@
 
 <ConfirmDialog
 	bind:open={showDeleteConfirm}
-	title="Delete draft?"
+	title={m['social-media:delete_draft_title']()}
 	description={postToDelete ? `"${postToDelete.title}" will be permanently removed.` : ''}
 	isLoading={isDeletingPost}
 	onconfirm={confirmDelete}

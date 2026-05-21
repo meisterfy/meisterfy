@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { Sparkles, X, Loader2, AlertCircle, ChevronDown } from 'lucide-svelte'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
 	import PlatformSelect from '$lib/components/ui/platform-select/platform-select.svelte'
@@ -154,7 +155,7 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-bold text-slate-900 dark:text-white">Generate Drafts with AI</h2>
+				<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:ai_generate_title']()}</h2>
 			</div>
 			<button
 				onclick={() => (open = false)}
@@ -175,14 +176,14 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 					>
 						<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
 						<p>
-							No AI provider connected for this client. Go to <strong
-								>Settings → Integrations</strong
-							> and add a Claude, OpenAI, Gemini, Groq, or Kimi key.
+							{m['social-media:ai_no_provider_pre']()} <strong
+								>{m['social-media:ai_no_provider_link']()}</strong
+							> {m['social-media:ai_no_provider_post']()}
 						</p>
 					</div>
 				{:else if availableProviders.length > 1}
 					<div>
-						<label for="ai-provider" class={labelCls}> AI Provider </label>
+						<label for="ai-provider" class={labelCls}>{m['social-media:ai_provider_label']()}</label>
 						<div class="relative">
 							<select
 								id="ai-provider"
@@ -208,13 +209,13 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 
 				<div>
 					<label for="ai-topic" class={labelCls}>
-						Topic / Context <span class="text-red-400">*</span>
+						{m['social-media:ai_topic_label']()} <span class="text-red-400">*</span>
 					</label>
 					<textarea
 						id="ai-topic"
 						bind:value={topic}
 						rows="3"
-						placeholder="Describe what the posts should be about. Include product info, campaign context, key messages…"
+						placeholder={m['social-media:ai_topic_placeholder']()}
 						class="{inputCls} resize-none"
 					></textarea>
 				</div>
@@ -226,7 +227,7 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 
 				<div class="grid grid-cols-2 gap-3">
 					<div>
-						<label for="ai-count" class={labelCls}>Number of drafts</label>
+						<label for="ai-count" class={labelCls}>{m['social-media:ai_num_drafts_label']()}</label>
 						<select id="ai-count" bind:value={count} class={inputCls}>
 							{#each [1, 2, 3, 4, 5] as n (n)}
 								<option value={n}>{n}</option>
@@ -271,7 +272,7 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 			>
 				{#if isGenerating}
 					<Loader2 class="h-4 w-4 animate-spin" />
-					Generating…
+					{m['social-media:ai_generating']()}
 				{:else}
 					<Sparkles class="h-4 w-4" />
 					Generate {count} Draft{count > 1 ? 's' : ''}

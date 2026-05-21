@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { untrack } from 'svelte'
 	import { resolve } from '$app/paths'
 	import type { PageData } from './$types'
@@ -160,7 +161,7 @@
 		</a>
 		<h2 class="flex items-center gap-2 text-lg font-semibold">
 			<FileEdit class="h-4 w-4 text-slate-400" />
-			Edit Post
+			{m['social-media:edit_post']()}
 		</h2>
 	</div>
 	<div class="ml-auto flex items-center gap-3">
@@ -168,14 +169,14 @@
 			onclick={() => {
 				aiOpen = true
 			}}
-			title="Generate with AI"
+			title={m['social-media:generate_with_ai']()}
 			class="flex items-center gap-1.5 rounded-md border border-indigo-200 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
 		>
 			<Sparkles class="h-4 w-4" /> Generate
 		</button>
 		<button
 			onclick={deletePost}
-			title="Delete Post"
+			title={m['social-media:delete_post']()}
 			class="rounded-md p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
 		>
 			<Trash2 class="h-4 w-4" />
@@ -212,7 +213,7 @@
 		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="h-5 w-5 text-indigo-500" />
-				<span class="font-semibold text-slate-900 dark:text-white">Generate with AI</span>
+				<span class="font-semibold text-slate-900 dark:text-white">{m['social-media:generate_with_ai']()}</span>
 			</div>
 			<button
 				onclick={() => {
@@ -230,7 +231,7 @@
 			<div
 				class="mx-5 mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
 			>
-				Using brand context: <span class="font-semibold">{data.brand.name}</span>
+				{m['social-media:ai_brand_context_label']()} <span class="font-semibold">{data.brand.name}</span>
 				{#if data.brand.tone}
 					· {data.brand.tone}{/if}
 			</div>
@@ -243,13 +244,13 @@
 					for="ai-prompt"
 					class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase"
 				>
-					Instruction
+					{m['social-media:ai_instruction_label']()}
 				</label>
 				<textarea
 					id="ai-prompt"
 					bind:value={aiPrompt}
 					rows={4}
-					placeholder="e.g. Write a post announcing our summer sale with 20% off all items"
+					placeholder={m['social-media:ai_instruction_placeholder']()}
 					class="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 					disabled={aiStreaming}
 				></textarea>
@@ -286,7 +287,7 @@
 							onclick={applyPreview}
 							class="mt-2 w-full rounded-lg border border-indigo-300 bg-indigo-50 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50"
 						>
-							Apply to post
+							{m['social-media:apply_to_post']()}
 						</button>
 					{/if}
 				</div>
@@ -303,7 +304,7 @@
 			<label
 				for="post-title"
 				class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-				>Title (Internal)</label
+				>{m['social-media:post_title_label']()}</label
 			>
 			<input
 				id="post-title"
@@ -317,7 +318,7 @@
 			<label
 				for="post-content"
 				class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-				>Post Content</label
+				>{m['social-media:post_content_label']()}</label
 			>
 			<textarea
 				id="post-content"
@@ -331,7 +332,7 @@
 			<label
 				for="post-hashtags"
 				class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-				>Hashtags (space separated)</label
+				>Hashtags <span class="font-normal text-slate-400">{m['social-media:hashtags_hint']()}</span></label
 			>
 			<input
 				id="post-hashtags"
@@ -379,12 +380,12 @@
 				<div
 					class="mb-4 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 dark:border-slate-600 dark:bg-slate-800/50"
 				>
-					<span class="text-xs font-medium">No media attached</span>
+					<span class="text-xs font-medium">{m['social-media:no_media_attached']()}</span>
 				</div>
 			{/if}
 
 			<label class="block cursor-pointer">
-				<span class="sr-only">Choose media</span>
+				<span class="sr-only">{m['social-media:media_choose']()}</span>
 				<input
 					type="file"
 					multiple
@@ -395,14 +396,14 @@
 				/>
 			</label>
 			{#if uploadingMedia}
-				<p class="mt-2 animate-pulse text-xs font-medium text-indigo-600">Uploading...</p>
+				<p class="mt-2 animate-pulse text-xs font-medium text-indigo-600">{m['social-media:media_uploading_dots']()}</p>
 			{/if}
 		</div>
 
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">AI Workflow</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['social-media:ai_workflow_title']()}</h3>
 
 			{#if data.post.workflow}
 				<div class="space-y-4">
@@ -432,14 +433,14 @@
 					</div>
 				</div>
 			{:else}
-				<p class="text-sm text-slate-500">No workflow data available.</p>
+				<p class="text-sm text-slate-500">{m['social-media:no_workflow_data']()}</p>
 			{/if}
 		</div>
 
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">Post Info</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['social-media:post_info_title']()}</h3>
 			<div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
 				<div class="flex items-center justify-between">
 					<span>ID</span>

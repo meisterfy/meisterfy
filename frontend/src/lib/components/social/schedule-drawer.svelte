@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { X, Clock } from 'lucide-svelte'
 	import type { PostShape, PostPlatform } from '$lib/social'
 	import { normPlatforms } from '$lib/social'
@@ -75,7 +76,7 @@
 				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 			>
 				<div class="min-w-0 flex-1 pr-4">
-					<h2 class="text-lg font-bold text-slate-900 dark:text-white">Schedule Post</h2>
+					<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:schedule_title']()}</h2>
 					<p class="truncate text-sm text-slate-500">{draft.title}</p>
 				</div>
 				<button
@@ -93,9 +94,9 @@
 					</div>
 					{#if metaPages.length > 0}
 						<div>
-							<label for="sched-meta-account" class={labelCls}>Meta Account</label>
+							<label for="sched-meta-account" class={labelCls}>{m['social-media:meta_account_label']()}</label>
 							<select id="sched-meta-account" bind:value={selectedResourceId} class={inputCls}>
-								<option value="">— No specific account —</option>
+								<option value="">{m['social-media:meta_account_none']()}</option>
 								{#each metaPages as page (page.id)}
 									<option value={page.id}>
 										{page.resource_name ?? 'Page'}{page.metadata.ig_username
@@ -107,7 +108,7 @@
 						</div>
 					{:else if metaPagesLoaded}
 						<p class="text-xs text-slate-400">
-							Connect a Meta account in Settings → Social to publish automatically.
+							{m['social-media:meta_connect_hint']()}
 						</p>
 					{/if}
 					<div class="grid grid-cols-2 gap-3">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { ChevronLeft, ChevronRight, Plus } from 'lucide-svelte'
 	import ProviderIcon from '$lib/components/ui/provider-icon.svelte'
 	import Skeleton from '$lib/components/ui/skeleton.svelte'
@@ -131,7 +132,7 @@
 					>
 					<button
 						onclick={() => onCreatePost(cell.date!)}
-						aria-label="New post"
+						aria-label={m['social-media:calendar_new_post']()}
 						class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover/cell:bg-indigo-50 dark:bg-slate-800 dark:group-hover/cell:bg-indigo-900/20"
 					>
 						<Plus class="h-3.5 w-3.5" />

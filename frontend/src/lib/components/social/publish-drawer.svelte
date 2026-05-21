@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { X, Send, AlertCircle } from 'lucide-svelte'
 	import type { PostShape } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
@@ -59,7 +60,7 @@
 				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 			>
 				<div class="min-w-0 flex-1 pr-4">
-					<h2 class="text-lg font-bold text-slate-900 dark:text-white">Publish to Meta</h2>
+					<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:publish_to_meta']()}</h2>
 					<p class="truncate text-sm text-slate-500">{draft.title}</p>
 				</div>
 				<button
@@ -79,18 +80,17 @@
 								<AlertCircle class="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
 								<div>
 									<p class="text-sm font-medium text-amber-800 dark:text-amber-200">
-										No Meta accounts found
+										{m['social-media:publish_no_accounts']()}
 									</p>
 									<p class="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
-										Connect a Meta integration in Settings → Integrations and authorize it to
-										discover pages.
+										{m['social-media:publish_no_accounts_hint']()}
 									</p>
 								</div>
 							</div>
 						</div>
 					{:else}
 						<div>
-							<p class={labelCls}>Account</p>
+							<p class={labelCls}>{m['social-media:publish_account_label']()}</p>
 							<select bind:value={publishAccountId} class={inputCls}>
 								{#each metaAccounts as acc (acc.id)}
 									{@const igUsername = (acc.metadata?.ig_username as string | undefined) ?? ''}

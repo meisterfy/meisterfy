@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { FileEdit, CheckCircle, Trash2, Image as ImageIcon } from 'lucide-svelte'
 	import { resolve } from '$app/paths'
 
@@ -69,7 +70,7 @@
 								{#if post.status === 'draft'}
 									<button
 										onclick={() => onUpdateStatus(post.id, post.filename, 'approved')}
-										title="Approve Post"
+										title={m['social-media:approve_post']()}
 										class="rounded p-1.5 text-emerald-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30"
 									>
 										<CheckCircle class="h-4 w-4" />
@@ -77,7 +78,7 @@
 								{:else}
 									<button
 										onclick={() => onUpdateStatus(post.id, post.filename, 'draft')}
-										title="Back to Draft"
+										title={m['social-media:back_to_draft_action']()}
 										class="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
 									>
 										<FileEdit class="h-4 w-4" />
@@ -86,14 +87,14 @@
 
 								<a
 									href={resolve(`/${clientId}/social/${post.filename}`)}
-									title="Edit Post"
+									title={m['social-media:edit_post']()}
 									class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
 								>
 									<FileEdit class="h-4 w-4" />
 								</a>
 								<button
 									onclick={() => onDelete(post.id, post.filename)}
-									title="Delete Post"
+									title={m['social-media:delete_post']()}
 									class="rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
 								>
 									<Trash2 class="h-4 w-4" />
@@ -103,7 +104,7 @@
 									<button
 										class="ml-2 flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
 									>
-										Publish
+										{m['social-media:publish_to_meta']()}
 									</button>
 								{/if}
 							</div>

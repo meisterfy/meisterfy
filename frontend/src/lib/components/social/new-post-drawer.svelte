@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { X, Clock } from 'lucide-svelte'
 	import type { PostShape, PostPlatform } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
@@ -93,7 +94,7 @@
 			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 		>
 			<div>
-				<h2 class="text-lg font-bold text-slate-900 dark:text-white">New Post</h2>
+				<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:post_new_title']()}</h2>
 				{#if defaultDate}
 					<p class="font-mono text-xs text-slate-400">{defaultDate}</p>
 				{/if}
@@ -114,9 +115,9 @@
 				</div>
 				{#if metaPages.length > 0}
 					<div>
-						<label for="new-meta-account" class={labelCls}>Meta Account</label>
+						<label for="new-meta-account" class={labelCls}>{m['social-media:meta_account_label']()}</label>
 						<select id="new-meta-account" bind:value={selectedResourceId} class={inputCls}>
-							<option value="">— No specific account —</option>
+							<option value="">{m['social-media:meta_account_none']()}</option>
 							{#each metaPages as page (page.id)}
 								<option value={page.id}>
 									{page.resource_name ?? 'Page'}{page.metadata.ig_username
@@ -128,7 +129,7 @@
 					</div>
 				{:else if metaPagesLoaded}
 					<p class="text-xs text-slate-400">
-						Connect a Meta account in Settings → Social to publish automatically.
+						{m['social-media:meta_connect_hint']()}
 					</p>
 				{/if}
 				<div class="grid grid-cols-2 gap-3">
@@ -157,7 +158,7 @@
 						id="new-title"
 						bind:value={newTitle}
 						type="text"
-						placeholder="Post title"
+						placeholder={m['social-media:post_title_placeholder']()}
 						class={inputCls}
 					/>
 				</div>
@@ -167,20 +168,20 @@
 						id="new-content"
 						bind:value={newContent}
 						rows="5"
-						placeholder="Post copy…"
+						placeholder={m['social-media:post_copy_placeholder']()}
 						class="{inputCls} resize-none"
 					></textarea>
 				</div>
 				<div>
 					<label for="new-hashtags" class={labelCls}
-						>Hashtags <span class="font-normal text-slate-400 normal-case">(space separated)</span
+						>Hashtags <span class="font-normal text-slate-400 normal-case">{m['social-media:hashtags_hint']()}</span
 						></label
 					>
 					<input
 						id="new-hashtags"
 						bind:value={newHashtags}
 						type="text"
-						placeholder="#hashtag1 #hashtag2"
+						placeholder={m['social-media:hashtag_placeholder']()}
 						class={inputCls}
 					/>
 				</div>

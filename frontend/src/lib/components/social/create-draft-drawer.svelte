@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { X } from 'lucide-svelte'
 	import type { PostShape } from '$lib/social'
 	import Drawer from '$lib/components/ui/drawer/drawer.svelte'
@@ -65,7 +66,7 @@
 		<div
 			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 		>
-			<h2 class="text-lg font-bold text-slate-900 dark:text-white">New Draft</h2>
+			<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:draft_new_title']()}</h2>
 			<button
 				onclick={() => (open = false)}
 				class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
@@ -81,7 +82,7 @@
 						id="create-title"
 						bind:value={newTitle}
 						type="text"
-						placeholder="Post title"
+						placeholder={m['social-media:post_title_placeholder']()}
 						class={inputCls}
 					/>
 				</div>
@@ -91,20 +92,20 @@
 						id="create-content"
 						bind:value={newContent}
 						rows="5"
-						placeholder="Post copy…"
+						placeholder={m['social-media:post_copy_placeholder']()}
 						class="{inputCls} resize-none"
 					></textarea>
 				</div>
 				<div>
 					<label for="create-hashtags" class={labelCls}
-						>Hashtags <span class="font-normal text-slate-400 normal-case">(space separated)</span
+						>Hashtags <span class="font-normal text-slate-400 normal-case">{m['social-media:hashtags_hint']()}</span
 						></label
 					>
 					<input
 						id="create-hashtags"
 						bind:value={newHashtags}
 						type="text"
-						placeholder="#hashtag1 #hashtag2"
+						placeholder={m['social-media:hashtag_placeholder']()}
 						class={inputCls}
 					/>
 				</div>

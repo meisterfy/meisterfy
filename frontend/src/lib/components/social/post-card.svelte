@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import {
 		FileEdit,
 		CheckCircle,
@@ -53,7 +54,7 @@
 			</span>
 		{:else}
 			<span class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-500"
-				>Missing Media</span
+				>{m['social-media:missing_media']()}</span
 			>
 		{/if}
 	</div>
@@ -100,13 +101,13 @@
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400"
 				>
-					<AlertTriangle class="h-3 w-3" /> Publish failed
+					<AlertTriangle class="h-3 w-3" /> {m['social-media:publish_failed']()}
 				</span>
 			{:else if isPartial}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
 				>
-					<AlertCircle class="h-3 w-3" /> Partially published
+					<AlertCircle class="h-3 w-3" /> {m['social-media:partially_published']()}
 				</span>
 			{/if}
 		</div>
@@ -133,7 +134,7 @@
 			<label
 				class="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-600"
 			>
-				<ImageIcon class="h-3.5 w-3.5" /> Attach Media
+				<ImageIcon class="h-3.5 w-3.5" /> {m['social-media:attach_media']()}
 				<input
 					type="file"
 					multiple
@@ -147,21 +148,21 @@
 				onclick={() => onUpdateStatus(post.id, post.filename, 'draft')}
 				class="text-xs text-slate-400 hover:text-slate-700"
 			>
-				Back to draft
+				{m['social-media:back_to_draft']()}
 			</button>
 		{/if}
 
 		<div class="-mr-1 flex items-center gap-1">
 			<button
 				onclick={() => onDelete(post.id, post.filename)}
-				title="Delete Post"
+				title={m['social-media:delete_post']()}
 				class="rounded p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30"
 			>
 				<Trash2 class="h-4 w-4" />
 			</button>
 			<a
 				href={resolve(`/${clientId}/social/${post.filename}`)}
-				title="Edit Post"
+				title={m['social-media:edit_post']()}
 				class="rounded p-1.5 text-slate-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
 			>
 				<FileEdit class="h-4 w-4" />
@@ -169,7 +170,7 @@
 			{#if isDraft}
 				<button
 					onclick={() => onUpdateStatus(post.id, post.filename, 'approved')}
-					title="Approve Post"
+					title={m['social-media:approve_post']()}
 					class="rounded p-1.5 text-emerald-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30"
 				>
 					<CheckCircle class="h-4 w-4" />
@@ -178,7 +179,7 @@
 				<button
 					class="ml-1 flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
 				>
-					Publish <Send class="ml-0.5 h-3 w-3" />
+					{m['social-media:publish_to_meta']()} <Send class="ml-0.5 h-3 w-3" />
 				</button>
 			{/if}
 		</div>

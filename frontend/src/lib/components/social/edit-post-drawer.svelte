@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages'
 	import { X, Trash2, ImagePlus } from 'lucide-svelte'
 	import type { PostShape, PostPlatform } from '$lib/social'
 	import { PLATFORM_CONFIG as PLATFORM, normPlatforms } from '$lib/social'
@@ -231,7 +232,7 @@
 						<div>
 							<label for="edit-hashtags" class={labelCls}
 								>Hashtags <span class="font-normal text-slate-400 normal-case"
-									>(space separated)</span
+									>{m['social-media:hashtags_hint']()}</span
 								></label
 							>
 							<input id="edit-hashtags" bind:value={editHashtags} type="text" class={inputCls} />
@@ -249,7 +250,7 @@
 										onclick={removeMedia}
 										class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700"
 									>
-										<Trash2 class="h-3 w-3" /> Remove all
+										<Trash2 class="h-3 w-3" /> {m['social-media:media_remove_all']()}
 									</button>
 								{/if}
 							</div>
@@ -284,7 +285,7 @@
 								<div
 									class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50"
 								>
-									<ImagePlus class="mr-2 h-4 w-4" /> No image attached
+									<ImagePlus class="mr-2 h-4 w-4" /> {m['social-media:no_image_attached']()}
 								</div>
 							{/if}
 							<input
@@ -297,7 +298,7 @@
 							/>
 							{#if isUploadingMedia}
 								<p class="mt-1 animate-pulse text-xs text-indigo-600 dark:text-indigo-400">
-									Uploading…
+									{m['social-media:media_uploading']()}
 								</p>
 							{/if}
 						</div>
@@ -328,7 +329,7 @@
 
 <ConfirmDialog
 	bind:open={showDeleteConfirm}
-	title="Delete post?"
+	title={m['social-media:delete_post_title']()}
 	description={post ? `"${post.title}" will be permanently removed.` : ''}
 	isLoading={isDeletingPost}
 	onconfirm={confirmDelete}
