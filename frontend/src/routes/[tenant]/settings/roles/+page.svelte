@@ -361,7 +361,7 @@ py-3 text-left text-sm transition-colors last:border-b-0
 								{#if !isSystem && canUpdate}
 									<Input
 										bind:value={pendingName}
-										placeholder="Role Name"
+										placeholder={m['settings:roles_create_field_name']()}
 										class="h-9 max-w-[300px] text-base font-semibold"
 									/>
 								{:else}

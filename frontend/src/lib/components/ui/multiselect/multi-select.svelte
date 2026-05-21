@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Popover } from 'bits-ui'
 	import { Check, ChevronsUpDown } from 'lucide-svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let {
 		value = $bindable<string[]>([]),
@@ -89,7 +90,7 @@
 				</button>
 			{/each}
 			{#if filtered.length === 0}
-				<p class="py-3 text-center text-xs text-slate-400">No options found</p>
+				<p class="py-3 text-center text-xs text-slate-400">{m['globals:no_options']()}</p>
 			{/if}
 		</div>
 	</Popover.Content>

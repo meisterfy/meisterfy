@@ -1,5 +1,6 @@
 import type { ChartConfiguration } from 'chart.js'
 import type { HistoryEntry, DbHistoryDay } from '$lib/api/campaigns'
+import { m } from '$lib/paraglide/messages'
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -19,7 +20,7 @@ export function createPerformanceTimelineConfig(history: HistoryEntry[]): ChartC
 					fill: true
 				},
 				{
-					label: 'Impressions',
+					label: m['ads:impressions'](),
 					data: history.map((h) => h.impressions),
 					borderColor: '#8b5cf6',
 					backgroundColor: 'transparent',

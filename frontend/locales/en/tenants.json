@@ -2,5 +2,11 @@
 	"empty": "No clients found",
 	"create": "New Client",
 	"create_first": "Create your first client",
-	"switch": "Switch Client"
+	"switch": "Switch Client",
+	"create_desc": "Add a client to start managing content and campaigns.",
+	"create_field_name": "Client name",
+	"create_field_name_placeholder": "Acme Corp",
+	"create_field_id": "Identifier",
+	"create_field_id_hint": "(URL slug, cannot be changed)",
+	"create_field_id_placeholder": "acme-corp"
 }

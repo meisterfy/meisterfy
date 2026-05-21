@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths'
 	import { auth } from '$lib/stores/auth.svelte'
 	import { apiFetch } from '$lib/api/client'
+	import { m } from '$lib/paraglide/messages'
 
 	let name = $state('')
 	let id = $state('')
@@ -46,30 +47,30 @@
 	<div
 		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 	>
-		<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">Create your first client</h1>
+		<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['tenants:create_first']()}</h1>
 		<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
-			Add a client to start managing content and campaigns.
+			{m['tenants:create_desc']()}
 		</p>
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-				Client name
+				{m['tenants:create_field_name']()}
 				<input
 					type="text"
 					bind:value={name}
 					oninput={onNameInput}
 					required
-					placeholder="Grupo Pórtico"
+					placeholder={m['tenants:create_field_name_placeholder']()}
 					class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
 				/>
 			</label>
 			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-				Identifier <span class="font-normal text-slate-400">(URL slug, cannot be changed)</span>
+				{m['tenants:create_field_id']()} <span class="font-normal text-slate-400">{m['tenants:create_field_id_hint']()}</span>
 				<input
 					type="text"
 					bind:value={id}
 					required
 					pattern="[a-z0-9-]+"
-					placeholder="grupo-portico"
+					placeholder={m['tenants:create_field_id_placeholder']()}
 					class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-900 focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-white"
 				/>
 			</label>

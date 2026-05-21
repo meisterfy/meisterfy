@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button'
 	import { Alert } from '$lib/components/ui/alert'
 	import { BarChart3, Sparkles } from 'lucide-svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let step = $state<1 | 2>(1)
 	let needsTenant = $state(false)
@@ -103,7 +104,7 @@
 						<BarChart3 class="h-5 w-5 text-blue-600 dark:text-blue-400" />
 					</div>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-slate-900 dark:text-white">Google Ads</p>
+						<p class="text-sm font-medium text-slate-900 dark:text-white">{m['settings:nav_google_ads']()}</p>
 						<p class="text-xs text-slate-500 dark:text-slate-400">
 							Connect your ad account to track campaigns
 						</p>

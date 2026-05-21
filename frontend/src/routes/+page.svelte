@@ -5,9 +5,21 @@
 	import Toolbar from '$lib/components/ui/toolbar/toolbar.svelte'
 	import type { PageData } from './$types'
 	import ProfileLink from '$lib/components/ui/toolbar/link/profile.svelte'
+	import { auth } from '$lib/stores/auth.svelte'
+	import { isPlatformAdmin } from '$lib/utils/platform-access'
+	import { hasPermission } from '$lib/utils/permissions'
+	import { m } from '$lib/paraglide/messages'
+	import type { Tenant } from '$lib/api/tenants'
 
 	let { data } = $props<{ data: PageData }>()
-	let tenants = $derived(data.tenants ?? [])
+	let showGlobalSettings = $derived(isPlatformAdmin(auth.user))
+	let canCreateTenant = $derived(hasPermission(auth.user?.permissions, 'create:tenant'))
+	let tenants = $derived(
+		(data.tenants as Tenant[] ?? []).map((t) => ({
+			...t,
+			connectors: t.connectors ?? []
+		}))
+	)
 
 	function getInitials(name: string) {
 		return name
@@ -26,24 +38,28 @@
 				<div class="h-12 w-12">
 					<img src="/logo.svg" alt="Mkt Maestro" class="h-full w-full object-contain" />
 				</div>
-				<h1 class="text-lg font-bold text-slate-900 uppercase dark:text-white">Maestro</h1>
+				<h1 class="text-lg font-bold text-slate-900 uppercase dark:text-white">Meisterfy</h1>
 			</div>
 
 			<div class="flex items-center gap-2">
-				<a
-					href={resolve('/tenants/new')}
-					class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-				>
-					<Plus class="h-4 w-4" />
-					<span class="hidden sm:inline">New Client</span>
-				</a>
-				<a
-					href={resolve('/settings')}
-					class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-					title="Global Settings"
-				>
-					<Settings class="h-4 w-4" />
-				</a>
+				{#if canCreateTenant}
+					<a
+						href={resolve('/tenants/new')}
+						class="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+					>
+						<Plus class="h-4 w-4" />
+						<span class="hidden sm:inline">{m['tenants:create']()}</span>
+					</a>
+				{/if}
+				{#if showGlobalSettings}
+					<a
+						href={resolve('/settings')}
+						class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+						title="Global Settings"
+					>
+						<Settings class="h-4 w-4" />
+					</a>
+				{/if}
 				<ProfileLink />
 			</div>
 		{/snippet}
@@ -53,7 +69,7 @@
 		<div class="mx-auto max-w-[1200px] px-4 py-8 sm:px-6 lg:px-8 xl:max-w-[1600px]">
 			<div class="mt-8 mb-4">
 				<h2 class="text-2xl font-bold tracking-tight text-slate-900 lg:text-4xl dark:text-white">
-					Welcome back!
+					Welcome back{auth.user?.name ? ` ${auth.user.name}!` : '!'}
 				</h2>
 				<p class="mt-1 text-slate-500 lg:text-lg dark:text-slate-400">Select a client to manage</p>
 			</div>
@@ -67,16 +83,18 @@
 					>
 						<Building2 class="h-8 w-8 text-indigo-500" />
 					</div>
-					<h3 class="text-lg font-semibold text-slate-900 dark:text-white">No clients found</h3>
+					<h3 class="text-lg font-semibold text-slate-900 dark:text-white">{m['tenants:empty']()}</h3>
 					<p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
 						Get started by creating your first client account.
 					</p>
-					<a
-						href={resolve('/tenants/new')}
-						class="mt-6 flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-					>
-						<Plus class="h-4 w-4" /> Create Client
-					</a>
+					{#if canCreateTenant}
+						<a
+							href={resolve('/tenants/new')}
+							class="mt-6 flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+						>
+							<Plus class="h-4 w-4" /> Create Client
+						</a>
+					{/if}
 				</div>
 			{:else}
 				<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -112,7 +130,12 @@
 											class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white p-1.5 shadow-sm dark:border-slate-900 dark:bg-slate-800"
 											title={conn.name}
 										>
-											<ProviderIcon provider={conn.id} />
+											<ProviderIcon
+												provider={conn.id}
+												logoSvg={conn.logo_svg}
+												logoPng={conn.logo_png}
+												class="h-full w-full"
+											/>
 										</div>
 									{/each}
 

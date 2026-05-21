@@ -10,6 +10,7 @@
 	import type { MenuItem } from '$lib/types/menu'
 	import Footer from '$lib/components/layout/footer.svelte'
 	import { resolve } from '$app/paths'
+	import { m } from '$lib/paraglide/messages'
 
 	let { data, children } = $props<{ data: LayoutData; children: Snippet }>()
 
@@ -136,7 +137,7 @@
 							: 'text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'}"
 					>
 						<Settings class="h-5 w-5" />
-						Settings
+						{m['settings:title']()}
 					</a>
 				</div>
 			{/if}

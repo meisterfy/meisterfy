@@ -75,6 +75,7 @@
 				<Input type="password" bind:value={password} required />
 			</Label>
 			{#if error}
+				<!-- i18n-ignore -->
 				<Alert variant="destructive">
 					{error}
 				</Alert>
