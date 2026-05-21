@@ -22,7 +22,7 @@ export const columns: ColumnDef<UnifiedCampaign>[] = [
 	{
 		id: 'name',
 		accessorKey: 'name',
-		header: 'Campaign Name',
+		header: m['ads:campaign_name'](),
 		cell: ({ row }) =>
 			renderComponent(CampaignNameCell, {
 				name: row.original.name,

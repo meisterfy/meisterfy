@@ -77,9 +77,9 @@
 					<table class="w-full text-xs">
 						<thead>
 							<tr class="border-b border-white/10 text-left text-slate-500">
-								<th class="pr-3 pb-1 font-medium">Search Term</th>
+								<th class="pr-3 pb-1 font-medium">{m['ads:analytics.search_term']()}</th>
 								<th class="pr-3 pb-1 text-right font-medium">Clicks</th>
-								<th class="pr-3 pb-1 text-right font-medium">Conv.</th>
+								<th class="pr-3 pb-1 text-right font-medium">{m['ads:analytics.kw_conv']()}</th>
 								<th class="pr-3 pb-1 text-right font-medium">Cost</th>
 								<th class="pr-3 pb-1 text-right font-medium">CPA</th>
 								<th class="pr-3 pb-1 text-right font-medium">CTR</th>
@@ -134,9 +134,9 @@
 					<table class="w-full text-xs">
 						<thead>
 							<tr class="border-b border-white/10 text-left text-slate-500">
-								<th class="pr-3 pb-1 font-medium">Search Term</th>
+								<th class="pr-3 pb-1 font-medium">{m['ads:analytics.search_term']()}</th>
 								<th class="pr-3 pb-1 text-right font-medium">Clicks</th>
-								<th class="pr-3 pb-1 text-right font-medium">Conv.</th>
+								<th class="pr-3 pb-1 text-right font-medium">{m['ads:analytics.kw_conv']()}</th>
 								<th class="pr-3 pb-1 text-right font-medium">Cost</th>
 								<th class="pr-3 pb-1 text-right font-medium">CTR</th>
 								<th class="pb-1 font-medium">Status</th>

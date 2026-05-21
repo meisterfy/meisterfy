@@ -59,7 +59,7 @@
 					>
 						<span class="text-slate-500">{ddmm(d.date)}</span>
 						<span class="font-medium text-slate-700 dark:text-slate-300">{brl(d.cpa)}</span>
-						<span class="text-slate-400">{d.conversions} conv.</span>
+						<span class="text-slate-400">{d.conversions} {m['ads:analytics.conv_abbrev']()}</span>
 					</div>
 				{/each}
 			</div>
@@ -73,7 +73,7 @@
 					>
 						<span class="text-slate-500">{ddmm(d.date)}</span>
 						<span class="font-medium text-slate-700 dark:text-slate-300">{brl(d.cpa)}</span>
-						<span class="text-slate-400">{d.conversions} conv.</span>
+						<span class="text-slate-400">{d.conversions} {m['ads:analytics.conv_abbrev']()}</span>
 					</div>
 				{/each}
 			</div>

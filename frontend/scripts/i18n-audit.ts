@@ -91,7 +91,16 @@ function isSkippableText(text: string): boolean {
 	if (/^[\d\s.,:%$+-]+$/.test(t)) return true
 	if (!/[a-zA-ZÀ-ÿ]/.test(t)) return true
 	if (/^[a-z0-9_-]+$/.test(t) && t.includes('_')) return true
+	// Regex metacharacters without spaces (e.g., [a-z0-9-]+)
 	if (/[[\](){}+*?^$|\\]/.test(t) && !/\s/.test(t)) return true
+	// SVG path data (M9.937 15.5A2...) or SVG attribute values (currentColor)
+	if (/^[MmLlHhVvCcSsQqTtAaZz][\d\s.,+-]/.test(t)) return true
+	if (/^(currentColor|inherit|initial|unset|currentcolor)$/i.test(t)) return true
+	// CSS/style fragments that start with non-letter chars (%; background:)
+	if (/^[%;]/.test(t)) return true
+	// Multi-token CSS class string: every space-separated token is [a-z][a-z0-9.-]*-[a-z0-9.]+
+	// Catches: "h-3 w-3 text-red-400", "pb-2 text-left", "text-emerald-500", "campaign-objective"
+	if (/^([a-z][a-z0-9.-]*-[a-z0-9.]+(\s+|$))+$/.test(t)) return true
 	if (looksLikeTailwindOrCss(t)) return true
 	if (t.length < 10 && !looksLikeUiCopy(t) && /^[a-z0-9\s:.-]+$/i.test(t)) return true
 	return false

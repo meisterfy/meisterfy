@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths'
 	import { ArrowLeft, Save, Search, LayoutList } from 'lucide-svelte'
 	import { updateCampaign } from '$lib/api/campaigns'
+	import { m } from '$lib/paraglide/messages'
 
 	let { data } = $props<{ data: PageData }>()
 
@@ -40,7 +41,7 @@
 		</a>
 		<h2 class="flex items-center gap-2 text-lg font-semibold">
 			<Search class="h-4 w-4 text-slate-400" />
-			Edit Campaign
+			{m['ads:edit_campaign']()}
 		</h2>
 	</div>
 	<div class="ml-auto flex items-center gap-3">
@@ -67,7 +68,7 @@
 			<h3
 				class="mb-4 border-b border-slate-100 pb-2 text-lg font-bold text-slate-900 dark:border-slate-800 dark:text-white"
 			>
-				Campaign Details
+				{m['ads:campaign_details']()}
 			</h3>
 
 			<div class="space-y-4">
@@ -89,7 +90,7 @@
 					<label
 						for="campaign-budget"
 						class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-						>Budget Suggestion</label
+						>{m['ads:budget_suggestion']()}</label
 					>
 					<input
 						id="campaign-budget"
@@ -103,7 +104,7 @@
 
 		<div class="space-y-4">
 			<h3 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
-				<LayoutList class="h-5 w-5 text-indigo-500" /> Ad Groups
+				<LayoutList class="h-5 w-5 text-indigo-500" /> {m['ads:ad_groups_section']()}
 			</h3>
 
 			{#each campaign.ad_groups as group, i (i)}
@@ -114,7 +115,7 @@
 						<label
 							for="ad-group-name-{i}"
 							class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-							>Ad Group Name</label
+							>{m['ads:ad_group_name']()}</label
 						>
 						<input
 							id="ad-group-name-{i}"
@@ -142,7 +143,7 @@
 							<label
 								for="ad-group-neg-{i}"
 								class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-								>Negative Keywords</label
+								>{m['ads:negative_keywords']()}</label
 							>
 							<textarea
 								id="ad-group-neg-{i}"
@@ -155,12 +156,12 @@
 
 					<div class="border-t border-slate-100 pt-4 dark:border-slate-800">
 						<h4 class="mb-3 text-sm font-bold text-slate-900 dark:text-slate-100">
-							Responsive Search Ad
+							{m['ads:responsive_search_ad']()}
 						</h4>
 
 						<div class="mb-4 space-y-3">
 							<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase"
-								>Headlines (Max 30 chars)</span
+								>{m['ads:headlines_label']()}</span
 							>
 							{#each group.responsive_search_ad.headlines as headline (headline)}
 								<div class="flex items-center gap-2">
@@ -183,7 +184,7 @@
 
 						<div class="space-y-3">
 							<span class="text-xs font-semibold tracking-wider text-slate-500 uppercase"
-								>Descriptions (Max 90 chars)</span
+								>{m['ads:descriptions_label']()}</span
 							>
 							{#each group.responsive_search_ad.descriptions as description (description)}
 								<div class="flex items-center gap-2">
@@ -214,7 +215,7 @@
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">Campaign Info</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['ads:campaign_info']()}</h3>
 			<div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
 				<div class="flex items-center justify-between">
 					<span>ID</span>
@@ -246,7 +247,7 @@
 			<div
 				class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 			>
-				<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">AI Reasoning</h3>
+				<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['ads:ai_reasoning']()}</h3>
 				<p class="text-sm text-slate-700 dark:text-slate-300">
 					{campaign.workflow.reasoning}
 				</p>

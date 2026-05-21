@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths'
 	import { Activity, SquarePen, Trash2, Send } from 'lucide-svelte'
+	import { m } from '$lib/paraglide/messages'
 	import type { UnifiedCampaign } from '../columns'
 
 	let { campaign, onDeploy } = $props<{
@@ -19,7 +20,7 @@
 		<a
 			href={resolve(`/${campaign.tenant}/ads/google/live/${campaign.id}`)}
 			class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
-			title="View Detailed Report"
+			title={m['ads:view_detailed_report']()}
 		>
 			<Activity class="h-4 w-4" />
 		</a>
@@ -28,7 +29,7 @@
 			<button
 				onclick={() => campaign.slug && onDeploy(campaign.slug)}
 				class="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-emerald-900/30"
-				title="Deploy to Google Ads"
+				title={m['ads:deploy_to_google_ads']()}
 			>
 				<Send class="h-4 w-4" />
 			</button>

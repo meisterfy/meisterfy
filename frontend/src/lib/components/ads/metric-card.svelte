@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { TrendingUp, TrendingDown, Icon as LucideIcon } from 'lucide-svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	interface Delta {
 		pct: string
@@ -72,12 +73,12 @@
 			{#if delta.dir === 'up'}
 				<TrendingUp class="h-3 w-3 text-emerald-500" />
 				<span class="text-xs font-bold text-emerald-600 dark:text-emerald-400"
-					>{delta.pct} vs prev. wk.</span
+					>{delta.pct} {m['ads:vs_prev_week']()}</span
 				>
 			{:else}
 				<TrendingDown class="h-3 w-3 text-red-400" />
 				<span class="text-xs font-bold text-red-500 dark:text-red-400"
-					>{delta.pct} vs prev. wk.</span
+					>{delta.pct} {m['ads:vs_prev_week']()}</span
 				>
 			{/if}
 		</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths'
 	import { Search } from 'lucide-svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let { name, id, slug, type, objective, tenant } = $props<{
 		name: string
@@ -32,7 +33,7 @@
 		{#if type === 'local' && objective}
 			<span class="text-xs text-slate-500">{objective}</span>
 		{:else if type === 'live'}
-			<span class="text-xs text-slate-500">Live in Google Ads</span>
+			<span class="text-xs text-slate-500">{m['ads:live_in_google_ads']()}</span>
 		{/if}
 	</div>
 </div>

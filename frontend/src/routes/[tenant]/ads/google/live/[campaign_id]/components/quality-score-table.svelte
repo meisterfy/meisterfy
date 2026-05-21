@@ -69,8 +69,8 @@
 						<th class="pr-3 pb-1 font-medium">{m['ads:analytics.kw_adgroup']()}</th>
 						<th class="pr-3 pb-1 text-center font-medium">QS</th>
 						<th class="pr-3 pb-1 text-center font-medium">Creative</th>
-						<th class="pr-3 pb-1 text-center font-medium">Landing Page</th>
-						<th class="pb-1 text-center font-medium">Pred. CTR</th>
+						<th class="pr-3 pb-1 text-center font-medium">{m['ads:analytics.landing_page']()}</th>
+						<th class="pb-1 text-center font-medium">{m['ads:analytics.pred_ctr']()}</th>
 					</tr>
 				</thead>
 				<tbody>
