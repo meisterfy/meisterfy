@@ -45,6 +45,8 @@
 	"placeholder_instructions": "Specific guidelines for AI-generated content. e.g. Always mention our 5-year warranty. Never use the word 'cheap'.",
 	"placeholder_hashtags": "#marketing #brand #social",
 
+	"gads_enable_to_edit": "Enable to edit.",
+
 	"gads_no_integration": "No Google Ads integration connected.",
 	"gads_no_integration_desc": "Go to {link} to connect your Google Ads account before configuring these settings.",
 	"gads_integrations_link": "Integrations",
@@ -76,6 +78,9 @@
 	"params_modal_example": "e.g. {example}",
 	"params_modal_close": "Close",
 
+	"audit_details_title": "Audit Details",
+	"audit_details_no_changes": "No changes detected",
+
 	"audit_title": "Audit Log",
 	"audit_filter_all_types": "All types",
 	"audit_filter_user_placeholder": "Filter by user name…",
@@ -86,6 +91,9 @@
 	"audit_col_entity": "Entity",
 	"audit_empty": "No audit events found.",
 	"audit_pagination": "Page {page} of {total}",
+
+	"users_edit_user_aria": "Edit user",
+	"users_password_min_length": "Minimum 8 characters",
 
 	"users_title": "Team Members",
 	"users_invite": "Invite User",
@@ -127,6 +135,13 @@
 	"roles_name_scheduler": "Scheduler",
 	"roles_name_client_viewer": "Client Viewer",
 
+	"roles_system_cannot_modify": "System roles cannot be modified.",
+	"roles_select_all": "Select All",
+	"roles_deselect_all": "Deselect All",
+	"roles_perm_group_other": "Other",
+	"roles_create_name_placeholder": "e.g. Editor",
+	"roles_permissions_label": "Permissions",
+
 	"roles_title": "Roles & Permissions",
 	"roles_system_badge": "System",
 	"roles_custom_badge": "Custom",
@@ -165,6 +180,8 @@
 	"auto_adj_interval_label": "Minimum interval between adjustments",
 	"auto_adj_days_suffix": "days",
 	"auto_adj_aggressive_warning": "Aggressive settings may interfere with Google Ads learning period.",
+
+	"nav_back_aria": "Back to app",
 
 	"nav_mcp": "MCP Keys",
 	"mcp_title": "MCP API Keys",

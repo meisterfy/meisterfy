@@ -120,7 +120,7 @@
 		if (others.length > 0) {
 			groups.push({
 				key: 'other',
-				label: 'Other',
+				label: m['settings:roles_perm_group_other'](),
 				perms: others.map((p) => ({ name: p, has: permSet.has(p) }))
 			})
 		}
@@ -371,7 +371,7 @@ py-3 text-left text-sm transition-colors last:border-b-0
 								{/if}
 								{#if isSystem}
 									<span class="text-xs font-medium opacity-50">
-										System roles cannot be modified.
+										{m['settings:roles_system_cannot_modify']()}
 									</span>
 								{/if}
 							</div>
@@ -383,9 +383,9 @@ py-3 text-left text-sm transition-colors last:border-b-0
 										class="h-9 px-3 text-xs"
 									>
 										{#if pendingPerms.size === allPermissions.length}
-											<Square class="mr-1 h-3.5 w-3.5" /> Deselect All
+											<Square class="mr-1 h-3.5 w-3.5" /> {m['settings:roles_deselect_all']()}
 										{:else}
-											<CheckSquare class="mr-1 h-3.5 w-3.5" /> Select All
+											<CheckSquare class="mr-1 h-3.5 w-3.5" /> {m['settings:roles_select_all']()}
 										{/if}
 									</Button>
 								{/if}
@@ -499,7 +499,7 @@ py-3 text-left text-sm transition-colors last:border-b-0
 				<Input
 					id="new-role-name"
 					bind:value={newRoleName}
-					placeholder="e.g. Editor"
+					placeholder={m['settings:roles_create_name_placeholder']()}
 					class="max-w-[400px]"
 				/>
 			</div>
@@ -507,7 +507,7 @@ py-3 text-left text-sm transition-colors last:border-b-0
 			<div>
 				<div class="mb-4 flex items-center justify-between">
 					<p class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-						Permissions
+						{m['settings:roles_permissions_label']()}
 					</p>
 					<Button
 						onclick={() => selectAll(newRolePerms, (s) => (newRolePerms = s))}
@@ -515,9 +515,9 @@ py-3 text-left text-sm transition-colors last:border-b-0
 						class="h-8 px-3 text-xs"
 					>
 						{#if newRolePerms.size === allPermissions.length}
-							<Square class="mr-1 h-3.5 w-3.5" /> Deselect All
+							<Square class="mr-1 h-3.5 w-3.5" /> {m['settings:roles_deselect_all']()}
 						{:else}
-							<CheckSquare class="mr-1 h-3.5 w-3.5" /> Select All
+							<CheckSquare class="mr-1 h-3.5 w-3.5" /> {m['settings:roles_select_all']()}
 						{/if}
 					</Button>
 				</div>

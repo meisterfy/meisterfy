@@ -5,6 +5,7 @@
 	import MultiSelect from '$lib/components/ui/multiselect/multi-select.svelte'
 	import * as Select from '$lib/components/ui/select'
 	import type { IntegrationManager } from '../integrations.svelte'
+	import { m } from '$lib/paraglide/messages'
 
 	let {
 		manager,
@@ -110,7 +111,7 @@
 							id="int-name"
 							type="text"
 							bind:value={manager.formName}
-							placeholder="e.g. Agency – Default Account"
+							placeholder={m['integrations:modal_name_placeholder']()}
 							required
 							class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
 						/>
@@ -121,7 +122,7 @@
 
 					<div>
 						<p class="mb-1.5 block text-xs font-semibold tracking-wide text-slate-500 uppercase">
-							Assign to clients
+							{m['integrations:modal_assign_clients']()}
 						</p>
 						<MultiSelect
 							value={manager.formTenants}
@@ -129,7 +130,7 @@
 								manager.formTenants = v
 							}}
 							options={manager.tenantOptions}
-							placeholder="Select clients…"
+							placeholder={m['integrations:modal_clients_placeholder']()}
 						/>
 					</div>
 
@@ -137,7 +138,7 @@
 						<p
 							class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
 						>
-							After saving, you'll be redirected to authorize via OAuth.
+							{m['integrations:modal_oauth_note']()}
 						</p>
 					{/if}
 

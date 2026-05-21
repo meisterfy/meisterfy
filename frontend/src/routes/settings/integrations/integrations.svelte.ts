@@ -122,7 +122,7 @@ export class IntegrationManager {
 
 	async handleSave() {
 		if (!this.formName.trim() || !this.activeProvider) {
-			toast.error('Name is required')
+			toast.error(m['integrations:toast_name_required']())
 			return
 		}
 		this.isSubmitting = true
@@ -131,7 +131,7 @@ export class IntegrationManager {
 			if (this.editingId) {
 				const updated = await updateIntegration(this.editingId, payload)
 				this.integrations = this.integrations.map((i) => (i.id === this.editingId ? updated : i))
-				toast.success('Integration updated.')
+				toast.success(m['integrations:toast_updated']())
 			} else {
 				const created = await createIntegration(payload)
 				this.integrations = [...this.integrations, created]
@@ -139,7 +139,7 @@ export class IntegrationManager {
 					window.location.href = `${this.activeProvider.oauth_start_path}?integration_id=${created.id}`
 					return
 				}
-				toast.success('Integration added.')
+				toast.success(m['integrations:toast_added']())
 			}
 			this.showModal = false
 		} catch (err) {
@@ -195,7 +195,7 @@ export class IntegrationManager {
 			this.integrations = this.integrations.filter((i) => i.id !== this.deletingId)
 			this.showDelete = false
 			this.deletingId = null
-			toast.success('Integration deleted.')
+			toast.success(m['integrations:toast_deleted']())
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Delete failed')
 		} finally {

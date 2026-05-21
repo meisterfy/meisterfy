@@ -328,7 +328,7 @@
 			{#if canUpdate}
 				<button
 					class="text-muted-foreground hover:text-foreground transition-colors"
-					title="Edit user"
+					title={m['settings:users_edit_user_aria']()}
 					onclick={() => openEditDrawer(user)}
 				>
 					<Pencil class="h-4 w-4" />
@@ -466,7 +466,7 @@
 					required
 				/>
 				{#if invitePassword && invitePassword.length < 8}
-					<p class="mt-1 text-xs text-red-500">Minimum 8 characters</p>
+					<p class="mt-1 text-xs text-red-500">{m['settings:users_password_min_length']()}</p>
 				{/if}
 			</div>
 

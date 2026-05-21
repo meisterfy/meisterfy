@@ -20,7 +20,7 @@
 			<button
 				onclick={() => (history.length > 1 ? history.back() : (window.location.href = '/'))}
 				class="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-				title="Back to app"
+				title={m['settings:nav_back_aria']()}
 			>
 				<ArrowLeft class="h-4 w-4" />
 			</button>

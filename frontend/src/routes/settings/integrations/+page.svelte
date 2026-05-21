@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner'
+	import { m } from '$lib/paraglide/messages'
 	import Skeleton from '$lib/components/ui/skeleton.svelte'
 	import ConfirmDialog from '$lib/components/ui/dialog/confirm-dialog.svelte'
 	import type { PageData } from './$types'
@@ -50,7 +51,7 @@
 		</div>
 	{:else}
 		{#if manager.integrations.length > 0}
-			<IntegrationSection title="Connected" description="Your active service integrations.">
+			<IntegrationSection title={m['integrations:connected_title']()} description={m['integrations:connected_desc']()}>
 				{#each manager.integrations as integration (integration.id)}
 					{@const provider = manager.providerForIntegration(integration)}
 					{#if provider}
@@ -71,9 +72,9 @@
 			<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-						Connections
+						{m['integrations:browse_title']()}
 					</h2>
-					<p class="text-sm text-slate-500">Browse and add new integrations to your workspace.</p>
+					<p class="text-sm text-slate-500">{m['integrations:browse_desc']()}</p>
 				</div>
 
 				<IntegrationFilters
@@ -95,12 +96,12 @@
 				<div
 					class="rounded-xl border border-dashed border-slate-200 p-12 text-center dark:border-slate-700"
 				>
-					<p class="text-sm text-slate-400">No connections match your filters.</p>
+					<p class="text-sm text-slate-400">{m['integrations:no_match']()}</p>
 					<button
 						onclick={() => manager.clearFilters()}
 						class="mt-2 text-sm font-medium text-indigo-600 hover:underline"
 					>
-						Clear all filters
+						{m['integrations:clear_all_filters']()}
 					</button>
 				</div>
 			{/if}
@@ -110,7 +111,7 @@
 			<div
 				class="rounded-xl border border-dashed border-slate-200 p-12 text-center dark:border-slate-700"
 			>
-				<p class="text-sm text-slate-400">No providers available.</p>
+				<p class="text-sm text-slate-400">{m['integrations:no_providers']()}</p>
 			</div>
 		{/if}
 	{/if}
@@ -124,9 +125,9 @@
 
 <ConfirmDialog
 	bind:open={manager.showDelete}
-	title="Delete integration?"
-	description="This will permanently remove the integration and disconnect all associated clients. This cannot be undone."
-	confirmLabel="Delete"
+	title={m['integrations:delete_title']()}
+	description={m['integrations:delete_desc']()}
+	confirmLabel={m['integrations:delete_confirm']()}
 	isLoading={manager.isDeleting}
 	onconfirm={() => manager.handleDelete()}
 />
