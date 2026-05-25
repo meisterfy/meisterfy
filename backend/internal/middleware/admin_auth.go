@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 func AuthenticateAdmin(jwtSvc *domain.JWTService) func(http.Handler) http.Handler {

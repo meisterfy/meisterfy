@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector/social"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 // Publisher implements social.Publisher for Meta platforms (Instagram + Facebook).

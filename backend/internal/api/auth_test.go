@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	mw "github.com/mkt-maestro/mkt-maestro/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	mw "github.com/meisterfy/meisterfy/internal/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"

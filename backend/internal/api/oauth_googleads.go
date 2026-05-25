@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 type OAuthGoogleAdsHandler struct {

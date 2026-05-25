@@ -3,7 +3,7 @@ package connector
 import (
 	"context"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 type FieldType string

@@ -21,34 +21,34 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/adjuster"
-	"github.com/mkt-maestro/mkt-maestro/internal/api"
-	"github.com/mkt-maestro/mkt-maestro/internal/config"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	connmeta "github.com/mkt-maestro/mkt-maestro/internal/connector/meta"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
-	"github.com/mkt-maestro/mkt-maestro/internal/scheduler"
-	"github.com/mkt-maestro/mkt-maestro/internal/service/media"
-	mcpserver "github.com/mkt-maestro/mkt-maestro/internal/mcp"
-	mcpresources "github.com/mkt-maestro/mkt-maestro/internal/mcp/resources"
-	mcptools "github.com/mkt-maestro/mkt-maestro/internal/mcp/tools"
-	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/adjuster"
+	"github.com/meisterfy/meisterfy/internal/api"
+	"github.com/meisterfy/meisterfy/internal/config"
+	"github.com/meisterfy/meisterfy/internal/connector/googleads"
+	connmeta "github.com/meisterfy/meisterfy/internal/connector/meta"
+	"github.com/meisterfy/meisterfy/internal/connector/social"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/provider/llm"
+	"github.com/meisterfy/meisterfy/internal/scheduler"
+	"github.com/meisterfy/meisterfy/internal/service/media"
+	mcpserver "github.com/meisterfy/meisterfy/internal/mcp"
+	mcpresources "github.com/meisterfy/meisterfy/internal/mcp/resources"
+	mcptools "github.com/meisterfy/meisterfy/internal/mcp/tools"
+	"github.com/meisterfy/meisterfy/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/repository"
 
 	// Register all integration provider schemas.
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/anthropic"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/brevo"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/gemini"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/groq"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/kimi"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/r2"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/s3"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/resend"
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/sentry"
+	_ "github.com/meisterfy/meisterfy/internal/connector/anthropic"
+	_ "github.com/meisterfy/meisterfy/internal/connector/brevo"
+	_ "github.com/meisterfy/meisterfy/internal/connector/gemini"
+	_ "github.com/meisterfy/meisterfy/internal/connector/googleads"
+	_ "github.com/meisterfy/meisterfy/internal/connector/groq"
+	_ "github.com/meisterfy/meisterfy/internal/connector/kimi"
+	_ "github.com/meisterfy/meisterfy/internal/connector/openai"
+	_ "github.com/meisterfy/meisterfy/internal/connector/r2"
+	_ "github.com/meisterfy/meisterfy/internal/connector/s3"
+	_ "github.com/meisterfy/meisterfy/internal/connector/resend"
+	_ "github.com/meisterfy/meisterfy/internal/connector/sentry"
 )
 
 //go:embed all:ui/dist
@@ -90,7 +90,7 @@ func main() {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:              cfg.SentryDSN,
 			Environment:      cfg.AppEnv,
-			Release:          "mkt-maestro@1.0.0",
+			Release:          "meisterfy@1.0.0",
 			TracesSampleRate: 0.2,
 		})
 		if err != nil {
@@ -145,7 +145,7 @@ func main() {
 	// Register social publishers (must happen after config is loaded for baseURL).
 	social.Register(domain.ProviderMeta, connmeta.NewPublisher(cfg.BaseURL))
 
-	mcpSrv := mcpserver.NewServer("mkt-maestro", "1.0.0")
+	mcpSrv := mcpserver.NewServer("meisterfy", "1.0.0")
 	adsFactory := makeAdsFactory(tenantRepo, integrationRepo, connectorResourceRepo)
 	llmSelector := llm.NewProviderSelector(integrationRepo)
 	mcptools.RegisterContentTools(mcpSrv, mcptools.ContentRepos{
@@ -183,7 +183,7 @@ func main() {
 	authHandler         := api.NewAuthHandler(userRepo, rbacRepo, legalRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction())
 	usersHandler        := api.NewAdminUsersHandler(userRepo, rbacRepo, auditLogRepo)
 	rolesHandler        := api.NewAdminRolesHandler(rbacRepo)
-	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, rbacRepo, auditLogRepo)
+	tenantsHandler      := api.NewAdminTenantsHandler(tenantRepo, integrationRepo, rbacRepo, auditLogRepo)
 	postsHandler        := api.NewAdminPostsHandler(postRepo, postPublishResultRepo, auditLogRepo)
 	campaignsHandler    := api.NewAdminCampaignsHandler(campaignRepo)
 	googleAdsHandler    := api.NewAdminGoogleAdsHandler(integrationRepo, connectorResourceRepo, tenantRepo, metricsRepo, alertRepo)
@@ -268,7 +268,7 @@ func main() {
 			})
 	
 			// tenants
-			r.With(middleware.RequirePermission("view-any:tenant")).Get("/tenants", tenantsHandler.List)
+			r.Get("/tenants", tenantsHandler.List)
 			r.With(middleware.RequirePermission("create:tenant")).Post("/tenants", tenantsHandler.Create)
 			r.Route("/tenants/{tenantId}", func(r chi.Router) {
 				r.Use(middleware.RequireTenantMatch)

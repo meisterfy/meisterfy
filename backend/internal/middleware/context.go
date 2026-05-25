@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 type contextKey string
@@ -17,4 +17,9 @@ func UserClaimsFromContext(ctx context.Context) *domain.UserClaims {
 
 func withUserClaims(ctx context.Context, claims *domain.UserClaims) context.Context {
 	return context.WithValue(ctx, contextKeyUserClaims, claims)
+}
+
+// WithUserClaims attaches JWT claims to ctx (tests and internal use).
+func WithUserClaims(ctx context.Context, claims *domain.UserClaims) context.Context {
+	return withUserClaims(ctx, claims)
 }

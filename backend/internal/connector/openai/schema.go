@@ -4,8 +4,8 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 //go:embed logo.svg

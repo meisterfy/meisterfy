@@ -1,4 +1,4 @@
-module github.com/mkt-maestro/mkt-maestro
+module github.com/meisterfy/meisterfy
 
 go 1.25.10
 

@@ -1,8 +1,8 @@
 package groq
 
 import (
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/connector/openai"
 )
 
 const groqAPI = "https://api.groq.com/openai/v1/chat/completions"

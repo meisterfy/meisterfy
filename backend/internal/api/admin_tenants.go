@@ -8,20 +8,33 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/middleware"
 )
+
+type tenantConnectorResponse struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	LogoSVG string `json:"logo_svg"`
+	LogoPNG string `json:"logo_png"`
+}
 
 type AdminTenantsHandler struct {
 	tenantRepo interface {
 		List(ctx context.Context) ([]*domain.Tenant, error)
+		ListByIDs(ctx context.Context, ids []string) ([]*domain.Tenant, error)
 		GetByID(ctx context.Context, id string) (*domain.Tenant, error)
 		Create(ctx context.Context, t *domain.Tenant) error
 		Update(ctx context.Context, t *domain.Tenant) error
 		Delete(ctx context.Context, id string) error
 	}
+	integrationRepo interface {
+		ListConnectedProvidersByTenant(ctx context.Context) (map[string][]domain.IntegrationProvider, error)
+	}
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
+		GetTenantsForUser(ctx context.Context, userID string) ([]string, error)
 	}
 	audit AuditLogRepo
 }
@@ -29,17 +42,55 @@ type AdminTenantsHandler struct {
 func NewAdminTenantsHandler(
 	tenantRepo interface {
 		List(ctx context.Context) ([]*domain.Tenant, error)
+		ListByIDs(ctx context.Context, ids []string) ([]*domain.Tenant, error)
 		GetByID(ctx context.Context, id string) (*domain.Tenant, error)
 		Create(ctx context.Context, t *domain.Tenant) error
 		Update(ctx context.Context, t *domain.Tenant) error
 		Delete(ctx context.Context, id string) error
 	},
+	integrationRepo interface {
+		ListConnectedProvidersByTenant(ctx context.Context) (map[string][]domain.IntegrationProvider, error)
+	},
 	rbacRepo interface {
 		AssignRole(ctx context.Context, userID, tenantID, roleID string) error
+		GetTenantsForUser(ctx context.Context, userID string) ([]string, error)
 	},
 	audit AuditLogRepo,
 ) *AdminTenantsHandler {
-	return &AdminTenantsHandler{tenantRepo: tenantRepo, rbacRepo: rbacRepo, audit: audit}
+	return &AdminTenantsHandler{tenantRepo: tenantRepo, integrationRepo: integrationRepo, rbacRepo: rbacRepo, audit: audit}
+}
+
+func (h *AdminTenantsHandler) listAccessibleTenants(ctx context.Context, claims *domain.UserClaims) ([]*domain.Tenant, error) {
+	if claims.HasPermission("view-any:tenant") {
+		return h.tenantRepo.List(ctx)
+	}
+	ids, err := h.rbacRepo.GetTenantsForUser(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return h.tenantRepo.ListByIDs(ctx, ids)
+}
+
+func connectorsForTenant(tenantID string, byTenant map[string][]domain.IntegrationProvider) []tenantConnectorResponse {
+	providers := byTenant[tenantID]
+	if len(providers) == 0 {
+		return []tenantConnectorResponse{}
+	}
+	out := make([]tenantConnectorResponse, 0, len(providers))
+	for _, p := range providers {
+		schema, err := connector.GetProvider(p)
+		if err != nil {
+			out = append(out, tenantConnectorResponse{ID: string(p), Name: string(p)})
+			continue
+		}
+		out = append(out, tenantConnectorResponse{
+			ID:      string(p),
+			Name:    schema.DisplayName,
+			LogoSVG: schema.LogoSVG,
+			LogoPNG: schema.LogoPNG,
+		})
+	}
+	return out
 }
 
 type tenantResponse struct {
@@ -54,14 +105,18 @@ type tenantResponse struct {
 	Hashtags       []string                    `json:"hashtags"`
 	AdsMonitoring  *domain.AdsMonitoringConfig `json:"ads_monitoring"`
 	ReportPrompts  *domain.ReportPrompts       `json:"report_prompts"`
+	Connectors     []tenantConnectorResponse   `json:"connectors"`
 	CreatedAt      time.Time                   `json:"created_at"`
 	UpdatedAt      time.Time                   `json:"updated_at"`
 }
 
-func toTenantResponse(t *domain.Tenant) tenantResponse {
+func toTenantResponse(t *domain.Tenant, connectors []tenantConnectorResponse) tenantResponse {
 	hashtags := t.Hashtags
 	if hashtags == nil {
 		hashtags = []string{}
+	}
+	if connectors == nil {
+		connectors = []tenantConnectorResponse{}
 	}
 	return tenantResponse{
 		ID:             t.ID,
@@ -75,20 +130,31 @@ func toTenantResponse(t *domain.Tenant) tenantResponse {
 		Hashtags:       hashtags,
 		AdsMonitoring:  t.AdsMonitoring,
 		ReportPrompts:  t.ReportPrompts,
+		Connectors:     connectors,
 		CreatedAt:      t.CreatedAt,
 		UpdatedAt:      t.UpdatedAt,
 	}
 }
 
 func (h *AdminTenantsHandler) List(w http.ResponseWriter, r *http.Request) {
-	tenants, err := h.tenantRepo.List(r.Context())
+	claims := middleware.UserClaimsFromContext(r.Context())
+	if claims == nil {
+		Unauthorized(w)
+		return
+	}
+	tenants, err := h.listAccessibleTenants(r.Context(), claims)
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	providersByTenant, err := h.integrationRepo.ListConnectedProvidersByTenant(r.Context())
 	if err != nil {
 		InternalError(w)
 		return
 	}
 	data := make([]tenantResponse, len(tenants))
 	for i, t := range tenants {
-		data[i] = toTenantResponse(t)
+		data[i] = toTenantResponse(t, connectorsForTenant(t.ID, providersByTenant))
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": data})
 }
@@ -103,7 +169,12 @@ func (h *AdminTenantsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		InternalError(w)
 		return
 	}
-	JSON(w, http.StatusOK, map[string]any{"data": toTenantResponse(t)})
+	providersByTenant, err := h.integrationRepo.ListConnectedProvidersByTenant(r.Context())
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	JSON(w, http.StatusOK, map[string]any{"data": toTenantResponse(t, connectorsForTenant(t.ID, providersByTenant))})
 }
 
 func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -172,10 +243,15 @@ func (h *AdminTenantsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		h.audit.AsyncLog(domain.AuditEntry{
 			TenantID: claims.TenantID, UserID: claims.UserID, UserName: claims.UserName,
 			Action: "tenant.created", EntityType: "tenant", EntityID: created.ID, EntityName: &created.Name,
-			After: toTenantResponse(created), IP: auditIP(r),
+			After: toTenantResponse(created, nil), IP: auditIP(r),
 		})
 	}
-	JSON(w, http.StatusCreated, map[string]any{"data": toTenantResponse(created)})
+	providersByTenant, err := h.integrationRepo.ListConnectedProvidersByTenant(r.Context())
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	JSON(w, http.StatusCreated, map[string]any{"data": toTenantResponse(created, connectorsForTenant(created.ID, providersByTenant))})
 }
 
 func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +284,13 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	beforeState := toTenantResponse(t)
+	providersByTenant, err := h.integrationRepo.ListConnectedProvidersByTenant(r.Context())
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	tenantConnectors := connectorsForTenant(t.ID, providersByTenant)
+	beforeState := toTenantResponse(t, tenantConnectors)
 
 	if req.Name != nil {
 		t.Name = *req.Name
@@ -245,7 +327,7 @@ func (h *AdminTenantsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		t.ReportPrompts = req.ReportPrompts
 	}
 
-	afterState := toTenantResponse(t)
+	afterState := toTenantResponse(t, tenantConnectors)
 	bJSON, _ := json.Marshal(beforeState)
 	aJSON, _ := json.Marshal(afterState)
 	if string(bJSON) == string(aJSON) {
@@ -283,7 +365,7 @@ func (h *AdminTenantsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		h.audit.AsyncLog(domain.AuditEntry{
 			TenantID: id, UserID: claims.UserID, UserName: claims.UserName,
 			Action: "tenant.deleted", EntityType: "tenant", EntityID: id, EntityName: &before.Name,
-			Before: toTenantResponse(before), IP: auditIP(r),
+			Before: toTenantResponse(before, nil), IP: auditIP(r),
 		})
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository/db"
 )
 
 type TenantRepository struct {
@@ -23,6 +23,21 @@ func (r *TenantRepository) List(ctx context.Context) ([]*domain.Tenant, error) {
 	if err != nil {
 		return nil, mapError(err)
 	}
+	return mapTenantRows(rows)
+}
+
+func (r *TenantRepository) ListByIDs(ctx context.Context, ids []string) ([]*domain.Tenant, error) {
+	if len(ids) == 0 {
+		return []*domain.Tenant{}, nil
+	}
+	rows, err := r.queries.ListTenantsByIDs(ctx, ids)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return mapTenantRows(rows)
+}
+
+func mapTenantRows(rows []db.Tenant) ([]*domain.Tenant, error) {
 	tenants := make([]*domain.Tenant, len(rows))
 	for i, row := range rows {
 		t, err := mapTenant(row)

@@ -7,8 +7,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestIntegrationRepository_CreateAndGet(t *testing.T) {

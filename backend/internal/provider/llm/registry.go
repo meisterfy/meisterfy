@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/anthropic"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/gemini"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/groq"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/kimi"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector/anthropic"
+	"github.com/meisterfy/meisterfy/internal/connector/gemini"
+	"github.com/meisterfy/meisterfy/internal/connector/groq"
+	"github.com/meisterfy/meisterfy/internal/connector/kimi"
+	"github.com/meisterfy/meisterfy/internal/connector/openai"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 var (

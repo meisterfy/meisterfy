@@ -119,6 +119,44 @@ func (q *Queries) ListTenants(ctx context.Context) ([]Tenant, error) {
 	return items, nil
 }
 
+const listTenantsByIDs = `-- name: ListTenantsByIDs :many
+SELECT id, name, language, niche, location, primary_persona, tone, instructions, hashtags, ads_monitoring, created_at, updated_at, report_prompts FROM tenants WHERE id = ANY($1::text[]) ORDER BY name
+`
+
+func (q *Queries) ListTenantsByIDs(ctx context.Context, ids []string) ([]Tenant, error) {
+	rows, err := q.db.Query(ctx, listTenantsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tenant
+	for rows.Next() {
+		var i Tenant
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Language,
+			&i.Niche,
+			&i.Location,
+			&i.PrimaryPersona,
+			&i.Tone,
+			&i.Instructions,
+			&i.Hashtags,
+			&i.AdsMonitoring,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ReportPrompts,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateTenant = `-- name: UpdateTenant :exec
 UPDATE tenants
 SET name = $2, language = $3, niche = $4, location = $5,

@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
+	"github.com/meisterfy/meisterfy/internal/repository/db"
 )
 
 func uuidToString(u pgtype.UUID) string {

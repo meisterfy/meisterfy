@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mkt-maestro/mkt-maestro/internal/crypto"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
+	"github.com/meisterfy/meisterfy/internal/crypto"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository/db"
 )
 
 type IntegrationRepository struct {
@@ -18,6 +18,28 @@ type IntegrationRepository struct {
 
 func NewIntegrationRepository(pool *pgxpool.Pool, key []byte) *IntegrationRepository {
 	return &IntegrationRepository{pool: pool, queries: db.New(pool), key: key}
+}
+
+// ListConnectedProvidersByTenant returns unique connected provider IDs per tenant.
+func (r *IntegrationRepository) ListConnectedProvidersByTenant(ctx context.Context) (map[string][]domain.IntegrationProvider, error) {
+	rows, err := r.queries.ListTenantConnectorProviders(ctx)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	out := make(map[string][]domain.IntegrationProvider)
+	seen := make(map[string]map[domain.IntegrationProvider]bool)
+	for _, row := range rows {
+		p := domain.IntegrationProvider(row.Provider)
+		if seen[row.TenantID] == nil {
+			seen[row.TenantID] = make(map[domain.IntegrationProvider]bool)
+		}
+		if seen[row.TenantID][p] {
+			continue
+		}
+		seen[row.TenantID][p] = true
+		out[row.TenantID] = append(out[row.TenantID], p)
+	}
+	return out, nil
 }
 
 func (r *IntegrationRepository) List(ctx context.Context) ([]*domain.Integration, error) {

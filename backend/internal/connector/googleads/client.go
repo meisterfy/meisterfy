@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 const adsAPIBase = "https://googleads.googleapis.com/v23"

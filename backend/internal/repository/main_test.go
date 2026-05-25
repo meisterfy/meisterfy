@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/goleak"
 
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 var sharedDB *testutil.PostgresContainer

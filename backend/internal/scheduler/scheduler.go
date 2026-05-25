@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/adjuster"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/adjuster"
+	"github.com/meisterfy/meisterfy/internal/connector/googleads"
+	"github.com/meisterfy/meisterfy/internal/connector/social"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/provider/llm"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 // AdsClientFactory builds a Google Ads client for a given tenant.

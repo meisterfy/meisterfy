@@ -19,7 +19,7 @@ const PARAGLIDE_IMPORT = /paraglide\/messages/
 const EXCLUDE_PATH_RE =
 	/(paraglide\/|__test-mocks__|vitest-examples|\.test\.|\.spec\.)/
 
-const BRAND_LITERALS = new Set(['Maestro', 'Mkt Maestro', 'logo.svg'])
+const BRAND_LITERALS = new Set(['Meisterfy', 'MMeisterfy', 'logo.svg'])
 
 const UI_ATTRS = new Set(['placeholder', 'title', 'aria-label', 'alt'])
 

@@ -11,7 +11,7 @@ test.describe('Setup wizard — first-time configuration', () => {
 
 	test('renders the welcome form with name, email, and password fields', async ({ page }) => {
 		await page.goto('/setup')
-		await expect(page.getByText('Welcome to Maestro')).toBeVisible()
+		await expect(page.getByText('Welcome to Meisterfy')).toBeVisible()
 		await expect(page.locator('input[type="text"]')).toBeVisible()
 		await expect(page.locator('input[type="email"]')).toBeVisible()
 		await expect(page.locator('input[type="password"]')).toBeVisible()

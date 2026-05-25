@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestAlertRepository_CreateAndListOpen(t *testing.T) {

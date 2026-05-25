@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/middleware"
 )
 
-const refreshCookieName = "maestro_refresh"
+const refreshCookieName = "meisterfy_refresh"
 
 type AuthHandler struct {
 	userRepo interface {

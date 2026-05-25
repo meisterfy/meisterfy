@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/meta"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/service/media"
+	"github.com/meisterfy/meisterfy/internal/connector/meta"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/service/media"
 )
 
 type MetaPublishHandler struct {

@@ -1,8 +1,8 @@
 package kimi
 
 import (
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/openai"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/connector/openai"
 )
 
 const kimiAPI = "https://api.moonshot.ai/v1/chat/completions"

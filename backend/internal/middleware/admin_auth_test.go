@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,8 +45,8 @@ func issueExpiredTestToken(t *testing.T, claims domain.UserClaims) string {
 	ac := testJWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID,
-			Issuer:    "mkt-maestro",
-			Audience:  jwt.ClaimStrings{"mkt-maestro-api"},
+			Issuer:    "meisterfy",
+			Audience:  jwt.ClaimStrings{"meisterfy-api"},
 			IssuedAt:  jwt.NewNumericDate(past.Add(-15 * time.Minute)),
 			ExpiresAt: jwt.NewNumericDate(past),
 		},

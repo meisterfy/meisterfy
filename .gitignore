@@ -8,8 +8,15 @@ dev_log.txt
 
 # Agents local settings
 opencode.jsonc
+.agents/
 .gemini/
+.claude/
 .cursor/
+.project/
+opencode.jsonc
+.mcp.json
+CLAUDE.md
+skills-lock.json
 
 # Git worktrees
 .worktrees/

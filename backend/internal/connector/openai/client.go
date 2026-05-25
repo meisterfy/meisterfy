@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 const openaiAPI = "https://api.openai.com/v1/chat/completions"

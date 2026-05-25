@@ -26,7 +26,7 @@ interface CachedSession {
 	pendingTerms?: PendingTerms | null
 }
 
-const SESSION_KEY = 'mkt_session'
+const SESSION_KEY = 'meisterfy_session'
 
 function loadSession(): CachedSession | null {
 	try {
@@ -129,7 +129,7 @@ export const auth = {
 					if (data) applyRefreshData(data)
 					else auth.clear()
 				})
-				.catch(() => {})
+				.catch(() => { })
 
 			return true
 		}

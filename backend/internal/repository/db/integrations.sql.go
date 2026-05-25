@@ -238,3 +238,36 @@ func (q *Queries) UpdateIntegration(ctx context.Context, arg UpdateIntegrationPa
 	)
 	return err
 }
+
+const listTenantConnectorProviders = `-- name: ListTenantConnectorProviders :many
+SELECT it.tenant_id, i.provider
+FROM integration_tenants it
+JOIN integrations i ON i.id = it.integration_id
+WHERE i.status = 'connected'
+ORDER BY it.tenant_id, i.provider
+`
+
+type ListTenantConnectorProvidersRow struct {
+	TenantID string `json:"tenant_id"`
+	Provider string `json:"provider"`
+}
+
+func (q *Queries) ListTenantConnectorProviders(ctx context.Context) ([]ListTenantConnectorProvidersRow, error) {
+	rows, err := q.db.Query(ctx, listTenantConnectorProviders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTenantConnectorProvidersRow
+	for rows.Next() {
+		var i ListTenantConnectorProvidersRow
+		if err := rows.Scan(&i.TenantID, &i.Provider); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

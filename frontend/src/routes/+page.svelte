@@ -36,7 +36,7 @@
 		{#snippet header()}
 			<div class="flex items-center gap-3">
 				<div class="h-12 w-12">
-					<img src="/logo.svg" alt="Mkt Maestro" class="h-full w-full object-contain" />
+					<img src="/logo.svg" alt="Meisterfy" class="h-full w-full object-contain" />
 				</div>
 				<h1 class="text-lg font-bold text-slate-900 uppercase dark:text-white">Meisterfy</h1>
 			</div>

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
+	"github.com/meisterfy/meisterfy/internal/connector/googleads"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/mcp"
 )
 
 // AdsClientFactory returns a configured Google Ads client for a given tenant.

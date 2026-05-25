@@ -1,34 +1,15 @@
 import { getTenants } from '$lib/api/tenants'
-import { getIntegrations } from '$lib/api/integrations'
 import { redirect, isRedirect } from '@sveltejs/kit'
 import { withFallback } from '$lib/utils/loader'
-import { auth } from '$lib/stores/auth.svelte'
+import { bootstrapSessionToken } from '$lib/utils/session'
 import type { PageLoad } from './$types'
 
+// Connectors come from GET /admin/tenants (RBAC permissions). Do not gate on platform_admin here.
 export const load: PageLoad = async ({ fetch }) => {
+	bootstrapSessionToken()
 	try {
-		const isPlatformAdmin = auth.user?.system_role === 'platform_admin'
-
-		const [tenants, integrationsData] = await Promise.all([
-			withFallback(getTenants(fetch), []),
-			isPlatformAdmin
-				? withFallback(getIntegrations(fetch), { integrations: [], providers: [] })
-				: Promise.resolve({ integrations: [], providers: [] })
-		])
-
-		const tenantsWithIcons = tenants.map((tenant) => {
-			const connectedIntegrations = integrationsData.integrations.filter(
-				(i) => i.tenant_ids.includes(tenant.id) && i.status === 'connected'
-			)
-			const uniqueProviders = Array.from(new Set(connectedIntegrations.map((i) => i.provider)))
-			const connectors = uniqueProviders.map((pId) => {
-				const provider = integrationsData.providers.find((p) => p.provider === pId)
-				return { id: pId, name: provider?.display_name ?? pId }
-			})
-			return { ...tenant, connectors }
-		})
-
-		return { tenants: tenantsWithIcons }
+		const tenants = await withFallback(getTenants(fetch), [])
+		return { tenants }
 	} catch (err) {
 		if (isRedirect(err)) throw err
 		const status = (err as { status?: number })?.status

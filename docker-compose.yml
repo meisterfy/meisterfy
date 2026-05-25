@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: maestro
-      POSTGRES_PASSWORD: maestro
-      POSTGRES_DB: mkt_maestro
+      POSTGRES_USER: meisterfy
+      POSTGRES_PASSWORD: meisterfy
+      POSTGRES_DB: meisterfy
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U maestro -d mkt_maestro"]
+      test: ["CMD-SHELL", "pg_isready -U meisterfy -d meisterfy"]
       interval: 5s
       timeout: 5s
       retries: 5

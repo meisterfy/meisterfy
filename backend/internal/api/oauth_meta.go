@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 // OAuthMetaHandler implements the Meta (Facebook/Instagram) OAuth 2.0 flow.

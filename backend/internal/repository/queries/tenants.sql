@@ -1,6 +1,9 @@
 -- name: ListTenants :many
 SELECT * FROM tenants ORDER BY name;
 
+-- name: ListTenantsByIDs :many
+SELECT * FROM tenants WHERE id = ANY($1::text[]) ORDER BY name;
+
 -- name: GetTenantByID :one
 SELECT * FROM tenants WHERE id = $1 LIMIT 1;
 

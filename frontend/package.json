@@ -1,5 +1,5 @@
 {
-	"name": "mkt-maestro",
+	"name": "meisterfy",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -16,7 +16,9 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"paraglide:watch": "bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --watch",
-		"paraglide:build": "bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
+		"paraglide:build": "bunx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
+		"i18n:audit": "bun run scripts/i18n-audit.ts",
+		"i18n:audit:check": "bun run scripts/i18n-audit.ts --check"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.0.4",

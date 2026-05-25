@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/mcp"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 type mcpApiKeyRepository interface {

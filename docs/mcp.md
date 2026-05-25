@@ -1,6 +1,6 @@
-# MCP Server — Maestro
+# MCP Server — Meisterfy
 
-Maestro exposes a **Model Context Protocol (MCP)** server so that external AI agents can read and write all content programmatically.
+Meisterfy exposes a **Model Context Protocol (MCP)** server so that external AI agents can read and write all content programmatically.
 
 ## Endpoint
 
@@ -28,7 +28,7 @@ Add to your `.mcp.json` at the project root:
 ```json
 {
   "mcpServers": {
-    "mkt-maestro-mcp": {
+    "meisterfy-mcp": {
       "type": "http",
       "url": "http://localhost:8080/mcp",
       "headers": { "Authorization": "Bearer YOUR_MCP_KEY_HERE" }

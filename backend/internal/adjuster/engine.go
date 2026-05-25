@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 type AdjustmentType string

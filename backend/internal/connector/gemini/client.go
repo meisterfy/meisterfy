@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 const geminiAPI = "https://generativelanguage.googleapis.com/v1beta/models"

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/connector/googleads"
+	"github.com/meisterfy/meisterfy/internal/mcp"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 // MonitoringRepos groups dependencies for monitoring tools.

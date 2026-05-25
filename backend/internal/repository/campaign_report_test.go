@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestCampaignReportRepository_SaveAndList(t *testing.T) {

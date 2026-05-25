@@ -17,7 +17,7 @@
 {#if logoSvg}
 	<div
 		{style}
-		class="object-contain [&>svg]:h-full [&>svg]:w-full [&>svg]:object-contain {className}"
+		class="h-full w-full object-contain [&>svg]:h-full [&>svg]:w-full [&>svg]:object-contain {className}"
 	>
 		<!-- SVG from trusted source (admin-configured integration logos stored in DB, never user-provided) -->
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -28,6 +28,6 @@
 		src={logoPng.startsWith('data:') ? logoPng : `data:image/png;base64,${logoPng}`}
 		alt={provider}
 		{style}
-		class="object-contain {className}"
+		class="h-full w-full object-contain {className}"
 	/>
 {/if}

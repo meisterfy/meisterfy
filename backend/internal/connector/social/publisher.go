@@ -3,7 +3,7 @@ package social
 import (
 	"context"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 // Platform maps to the values stored in posts.platforms JSONB.

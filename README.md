@@ -1,4 +1,4 @@
-# Maestro
+# Meisterfy
 
 AI-assisted marketing management platform for agencies — Social Media scheduling, Google Ads management, AI content generation, and an MCP server. Everything managed through the UI, no CLI required.
 

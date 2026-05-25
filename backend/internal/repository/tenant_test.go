@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 func TestTenantRepository_CreateAndGet(t *testing.T) {

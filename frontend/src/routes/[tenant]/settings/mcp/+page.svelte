@@ -159,7 +159,7 @@
 			? JSON.stringify(
 					{
 						mcpServers: {
-							[`${tenantSlug}-maestro`]: {
+							[`${tenantSlug}-meisterfy`]: {
 								type: 'http',
 								url: mcpUrl,
 								headers: { Authorization: `Bearer ${createdKey.key}` }

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/social"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/connector/social"
+	"github.com/meisterfy/meisterfy/internal/domain"
 )
 
 func resourceWith(metadata map[string]any) *domain.ConnectorResource {

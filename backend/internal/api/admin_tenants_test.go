@@ -8,7 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,6 +29,22 @@ type mockTenantRepo struct {
 func (m *mockTenantRepo) List(_ context.Context) ([]*domain.Tenant, error) {
 	return m.tenants, m.listErr
 }
+func (m *mockTenantRepo) ListByIDs(_ context.Context, ids []string) ([]*domain.Tenant, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
+	byID := make(map[string]*domain.Tenant, len(m.tenants))
+	for _, t := range m.tenants {
+		byID[t.ID] = t
+	}
+	var out []*domain.Tenant
+	for _, id := range ids {
+		if t, ok := byID[id]; ok {
+			out = append(out, t)
+		}
+	}
+	return out, nil
+}
 func (m *mockTenantRepo) GetByID(_ context.Context, _ string) (*domain.Tenant, error) {
 	return m.tenant, m.getErr
 }
@@ -42,13 +59,37 @@ func (m *mockTenantRepo) Delete(_ context.Context, _ string) error {
 }
 
 type mockTenantRBACRepo struct {
-	assignErr error
-	calls     int
+	assignErr   error
+	tenantsErr  error
+	userTenants []string
+	calls       int
 }
 
 func (m *mockTenantRBACRepo) AssignRole(_ context.Context, _, _, _ string) error {
 	m.calls++
 	return m.assignErr
+}
+
+func (m *mockTenantRBACRepo) GetTenantsForUser(_ context.Context, _ string) ([]string, error) {
+	if m.tenantsErr != nil {
+		return nil, m.tenantsErr
+	}
+	return m.userTenants, nil
+}
+
+type mockTenantIntegrationRepo struct {
+	byTenant map[string][]domain.IntegrationProvider
+	err      error
+}
+
+func (m *mockTenantIntegrationRepo) ListConnectedProvidersByTenant(_ context.Context) (map[string][]domain.IntegrationProvider, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.byTenant == nil {
+		return map[string][]domain.IntegrationProvider{}, nil
+	}
+	return m.byTenant, nil
 }
 
 type capturingAudit struct {
@@ -79,15 +120,24 @@ func newTenantsHandler(repo *mockTenantRepo, rbac *mockTenantRBACRepo, audit Aud
 	if audit == nil {
 		audit = &mockAudit{}
 	}
-	return NewAdminTenantsHandler(repo, rbac, audit)
+	return NewAdminTenantsHandler(repo, &mockTenantIntegrationRepo{}, rbac, audit)
 }
 
 func defaultClaims() domain.UserClaims {
 	return domain.UserClaims{
-		UserID:   "user-1",
-		UserName: "Alice",
-		TenantID: "tenant-1",
+		UserID:      "user-1",
+		UserName:    "Alice",
+		TenantID:    "tenant-1",
+		Permissions: []string{"view-any:tenant"},
 	}
+}
+
+func tenantRequestWithClaims(method, target string, claims *domain.UserClaims) *http.Request {
+	r := httptest.NewRequest(method, target, nil)
+	if claims != nil {
+		r = r.WithContext(middleware.WithUserClaims(r.Context(), claims))
+	}
+	return r
 }
 
 // --- List tests ---
@@ -98,7 +148,8 @@ func TestAdminTenants_List(t *testing.T) {
 	h := newTenantsHandler(&mockTenantRepo{tenants: tenants}, nil, nil)
 
 	w := httptest.NewRecorder()
-	h.List(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	claims := defaultClaims()
+	h.List(w, tenantRequestWithClaims(http.MethodGet, "/", &claims))
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]any
@@ -107,12 +158,47 @@ func TestAdminTenants_List(t *testing.T) {
 	assert.Len(t, data, 1)
 }
 
+func TestAdminTenants_List_ScopedToUserTenants(t *testing.T) {
+	t.Parallel()
+	tenants := []*domain.Tenant{
+		sampleTenant(),
+		{ID: "tenant-2", Name: "Other", Language: "pt_BR", Hashtags: []string{}},
+	}
+	h := newTenantsHandler(
+		&mockTenantRepo{tenants: tenants},
+		&mockTenantRBACRepo{userTenants: []string{"tenant-1"}},
+		nil,
+	)
+
+	w := httptest.NewRecorder()
+	claims := defaultClaims()
+	claims.Permissions = []string{"view:tenant"}
+	h.List(w, tenantRequestWithClaims(http.MethodGet, "/", &claims))
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]any
+	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	data := resp["data"].([]any)
+	assert.Len(t, data, 1)
+}
+
+func TestAdminTenants_List_UnauthorizedWithoutClaims(t *testing.T) {
+	t.Parallel()
+	h := newTenantsHandler(&mockTenantRepo{tenants: []*domain.Tenant{sampleTenant()}}, nil, nil)
+
+	w := httptest.NewRecorder()
+	h.List(w, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
 func TestAdminTenants_List_Empty(t *testing.T) {
 	t.Parallel()
 	h := newTenantsHandler(&mockTenantRepo{tenants: []*domain.Tenant{}}, nil, nil)
 
 	w := httptest.NewRecorder()
-	h.List(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	claims := defaultClaims()
+	h.List(w, tenantRequestWithClaims(http.MethodGet, "/", &claims))
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]any

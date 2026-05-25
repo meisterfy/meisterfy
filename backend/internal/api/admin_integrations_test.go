@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	// side-effect import: registers "claude" provider so Create/Update tests have a valid provider.
-	_ "github.com/mkt-maestro/mkt-maestro/internal/connector/anthropic"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
+	_ "github.com/meisterfy/meisterfy/internal/connector/anthropic"
+	"github.com/meisterfy/meisterfy/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

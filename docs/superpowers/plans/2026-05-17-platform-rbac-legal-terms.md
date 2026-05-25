@@ -541,8 +541,8 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository/db"
 )
 
 type LegalRepository struct {
@@ -890,8 +890,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/middleware"
 )
 
 type LegalHandler struct {
@@ -1274,7 +1274,7 @@ interface CachedSession {
   pendingTerms: PendingTerms | null
 }
 
-const SESSION_KEY = 'mkt_session'
+const SESSION_KEY = 'meisterfy_session'
 
 function loadSession(): CachedSession | null {
   try {

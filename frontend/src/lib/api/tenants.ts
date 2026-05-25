@@ -31,9 +31,17 @@ export interface ReportPrompts {
 	monthly?: string
 }
 
+export interface TenantConnector {
+	id: string
+	name: string
+	logo_svg: string
+	logo_png: string
+}
+
 export interface Tenant {
 	id: string
 	name: string
+	connectors?: TenantConnector[]
 	language: string
 	niche: string | null
 	location: string | null

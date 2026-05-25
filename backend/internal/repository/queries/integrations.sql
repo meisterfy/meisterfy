@@ -35,3 +35,10 @@ DELETE FROM integration_tenants WHERE integration_id = $1;
 -- name: InsertIntegrationTenant :exec
 INSERT INTO integration_tenants (integration_id, tenant_id)
 VALUES ($1, $2) ON CONFLICT DO NOTHING;
+
+-- name: ListTenantConnectorProviders :many
+SELECT it.tenant_id, i.provider
+FROM integration_tenants it
+JOIN integrations i ON i.id = it.integration_id
+WHERE i.status = 'connected'
+ORDER BY it.tenant_id, i.provider;

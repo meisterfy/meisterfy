@@ -37,4 +37,4 @@ sqlc:
 	sqlc generate
 
 docker-build:
-	docker build -t mkt-maestro:latest ..
+	docker build -t meisterfy:latest ..

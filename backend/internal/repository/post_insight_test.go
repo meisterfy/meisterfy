@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestPostInsightRepository_UpsertAndList(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mkt-maestro/mkt-maestro/internal/middleware"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/middleware"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 type CampaignReportsHandler struct {

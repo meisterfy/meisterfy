@@ -13,14 +13,12 @@
 	"select_placeholder": "Select…",
 	"select_platforms_placeholder": "Select platforms…",
 	"global_settings_aria": "Global Settings",
-
 	"welcome_back": "Welcome back",
 	"select_client": "Select a client to manage",
 	"create_first_client_hint": "Get started by creating your first client account.",
 	"create_client": "Create Client",
 	"no_connectors": "No connectors",
 	"campaign_type_search": "Search Campaign",
-
 	"profile_title": "Your Profile",
 	"profile_subtitle": "Manage your personal preferences",
 	"profile_personal_info": "Personal Information",
@@ -32,8 +30,7 @@
 	"profile_confirm_password": "Confirm New Password",
 	"profile_password_updated": "Password updated",
 	"profile_back_aria": "Back to Dashboard",
-
-	"setup_title": "Welcome to Maestro",
+	"setup_title": "Welcome to Meisterfy",
 	"setup_subtitle": "Create the first admin account to get started.",
 	"setup_tools_title": "Configure your tools",
 	"setup_tools_subtitle": "Connect your integrations now or later in Settings.",
@@ -41,7 +38,6 @@
 	"setup_ai_provider": "AI Provider",
 	"setup_ai_desc": "Add an API key to enable content generation",
 	"setup_skip": "Skip for now",
-
 	"chat_title": "AI Campaign Chat",
 	"chat_hint_1": "Ask anything about this campaign.",
 	"chat_hint_2": "Campaign data is pre-loaded as context.",
@@ -49,7 +45,6 @@
 	"chat_clear_aria": "Clear conversation",
 	"chat_placeholder": "Ask about keywords, budget, CPA…",
 	"chat_stop": "Stop generation",
-
 	"terms:update_title": "Terms Update",
 	"terms:agree_checkbox": "I have read and agree to the terms above",
 	"terms:continue": "Continue",

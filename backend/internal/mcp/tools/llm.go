@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/mcp"
-	"github.com/mkt-maestro/mkt-maestro/internal/provider/llm"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/mcp"
+	"github.com/meisterfy/meisterfy/internal/provider/llm"
 )
 
 // RegisterLLMTools registers LLM-related MCP tools.

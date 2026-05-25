@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestAuditLogRepository_Log(t *testing.T) {

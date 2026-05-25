@@ -9,7 +9,7 @@
 		description?: string
 	} = $props()
 
-	const appName = env.PUBLIC_APP_NAME ?? 'Maestro'
+	const appName = env.PUBLIC_APP_NAME ?? 'Meisterfy'
 	let fullTitle = $derived(title ? `${title} - ${appName}` : appName)
 </script>
 

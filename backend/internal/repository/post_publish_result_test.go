@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/testutil"
+	"github.com/meisterfy/meisterfy/testutil"
 )
 
 func TestPostPublishResultRepository_CreateAndList(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository/db"
+	"github.com/meisterfy/meisterfy/internal/repository/db"
 )
 
 type CampaignRepository struct {

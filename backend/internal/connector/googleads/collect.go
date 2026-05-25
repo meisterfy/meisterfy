@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 // MonitoringDefaults applied when the tenant has no ads_monitoring config.

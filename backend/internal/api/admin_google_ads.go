@@ -10,9 +10,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/sync/errgroup"
-	"github.com/mkt-maestro/mkt-maestro/internal/connector/googleads"
-	"github.com/mkt-maestro/mkt-maestro/internal/domain"
-	"github.com/mkt-maestro/mkt-maestro/internal/repository"
+	"github.com/meisterfy/meisterfy/internal/connector/googleads"
+	"github.com/meisterfy/meisterfy/internal/domain"
+	"github.com/meisterfy/meisterfy/internal/repository"
 )
 
 type AdminGoogleAdsHandler struct {

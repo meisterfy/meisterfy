@@ -27,7 +27,7 @@ Baseline: [`.project/reports/i18n-audit/i18n-audit-baseline.json`](../../.projec
 - URLs, route paths, Tailwind classes, hex colors, pure numbers
 - Dynamic bindings: `title={...}`, `placeholder={expr}`, attribute values with `{expression}`
 - API-driven copy: tenant names, connector names, user names
-- Brand names (kept literal): `Maestro`, `Mkt Maestro` — see `BRAND_LITERALS` in script
+- Brand names (kept literal): `Meisterfy` — see `BRAND_LITERALS` in script
 - `console.*`, comments, env keys, technical IDs (snake_case, UUIDs)
 - Strings shorter than 2 characters or without letters
 
