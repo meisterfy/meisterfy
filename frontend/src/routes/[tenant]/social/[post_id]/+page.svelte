@@ -373,7 +373,7 @@
 							{:else}
 								<img
 									src="/api/media/{data.client_id}/{mediaFile}"
-									alt="Post Media"
+									alt={m['social-media:post_media_label']()}
 									class="h-full w-full object-cover"
 								/>
 							{/if}

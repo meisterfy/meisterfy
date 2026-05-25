@@ -306,7 +306,7 @@
 			<div>
 				<div class="text-primary mb-2 flex items-end justify-between text-xs font-semibold">
 					<span>Name</span>
-					<span>Permissions</span>
+					<span>{m['settings:roles_permissions_label']()}</span>
 				</div>
 				<div class="border-border flex flex-col overflow-hidden rounded-md border">
 					{#each roles as role (role.id)}
