@@ -2,20 +2,15 @@
 /storage/images/
 dev_log.txt
 
-# Claude Code runtime files (local machine state)
-.claude/scheduled_tasks.lock
-.claude/settings.local.json
-
-# Agents local settings
-opencode.jsonc
+# Local development files
 .agents/
-.gemini/
 .claude/
 .cursor/
+.gemini/
 .project/
-opencode.jsonc
 .mcp.json
 CLAUDE.md
+opencode.jsonc
 skills-lock.json
 
 # Git worktrees
