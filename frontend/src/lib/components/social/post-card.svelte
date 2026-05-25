@@ -101,13 +101,15 @@
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400"
 				>
-					<AlertTriangle class="h-3 w-3" /> {m['social-media:publish_failed']()}
+					<AlertTriangle class="h-3 w-3" />
+					{m['social-media:publish_failed']()}
 				</span>
 			{:else if isPartial}
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
 				>
-					<AlertCircle class="h-3 w-3" /> {m['social-media:partially_published']()}
+					<AlertCircle class="h-3 w-3" />
+					{m['social-media:partially_published']()}
 				</span>
 			{/if}
 		</div>
@@ -134,7 +136,8 @@
 			<label
 				class="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-600"
 			>
-				<ImageIcon class="h-3.5 w-3.5" /> {m['social-media:attach_media']()}
+				<ImageIcon class="h-3.5 w-3.5" />
+				{m['social-media:attach_media']()}
 				<input
 					type="file"
 					multiple
@@ -179,7 +182,8 @@
 				<button
 					class="ml-1 flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
 				>
-					{m['social-media:publish_to_meta']()} <Send class="ml-0.5 h-3 w-3" />
+					{m['social-media:publish_to_meta']()}
+					<Send class="ml-0.5 h-3 w-3" />
 				</button>
 			{/if}
 		</div>

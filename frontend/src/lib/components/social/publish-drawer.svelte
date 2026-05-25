@@ -60,7 +60,9 @@
 				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 			>
 				<div class="min-w-0 flex-1 pr-4">
-					<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:publish_to_meta']()}</h2>
+					<h2 class="text-lg font-bold text-slate-900 dark:text-white">
+						{m['social-media:publish_to_meta']()}
+					</h2>
 					<p class="truncate text-sm text-slate-500">{draft.title}</p>
 				</div>
 				<button

@@ -64,7 +64,9 @@
 		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 	>
 		{#if step === 1}
-			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['globals:setup_title']()}</h1>
+			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">
+				{m['globals:setup_title']()}
+			</h1>
 			<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
 				{m['globals:setup_subtitle']()}
 			</p>
@@ -89,7 +91,9 @@
 				</Button>
 			</form>
 		{:else}
-			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['globals:setup_tools_title']()}</h1>
+			<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">
+				{m['globals:setup_tools_title']()}
+			</h1>
 			<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
 				{m['globals:setup_tools_subtitle']()}
 			</p>
@@ -104,7 +108,9 @@
 						<BarChart3 class="h-5 w-5 text-blue-600 dark:text-blue-400" />
 					</div>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-slate-900 dark:text-white">{m['settings:nav_google_ads']()}</p>
+						<p class="text-sm font-medium text-slate-900 dark:text-white">
+							{m['settings:nav_google_ads']()}
+						</p>
 						<p class="text-xs text-slate-500 dark:text-slate-400">
 							{m['globals:setup_gads_desc']()}
 						</p>
@@ -128,7 +134,9 @@
 						<Sparkles class="h-5 w-5 text-violet-600 dark:text-violet-400" />
 					</div>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-slate-900 dark:text-white">{m['globals:setup_ai_provider']()}</p>
+						<p class="text-sm font-medium text-slate-900 dark:text-white">
+							{m['globals:setup_ai_provider']()}
+						</p>
 						<p class="text-xs text-slate-500 dark:text-slate-400">
 							{m['globals:setup_ai_desc']()}
 						</p>

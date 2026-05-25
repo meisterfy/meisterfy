@@ -129,7 +129,7 @@ export const auth = {
 					if (data) applyRefreshData(data)
 					else auth.clear()
 				})
-				.catch(() => { })
+				.catch(() => {})
 
 			return true
 		}

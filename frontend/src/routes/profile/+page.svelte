@@ -92,7 +92,9 @@
 				<ArrowLeft class="h-5 w-5" />
 			</a>
 			<div>
-				<h1 class="text-xl font-bold text-slate-900 dark:text-white">{m['globals:profile_title']()}</h1>
+				<h1 class="text-xl font-bold text-slate-900 dark:text-white">
+					{m['globals:profile_title']()}
+				</h1>
 				<p class="text-sm text-slate-500 dark:text-slate-400">{m['globals:profile_subtitle']()}</p>
 			</div>
 		</div>
@@ -107,7 +109,9 @@
 				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
 			>
 				<User class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">{m['globals:profile_personal_info']()}</h2>
+				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+					{m['globals:profile_personal_info']()}
+				</h2>
 			</div>
 
 			<form onsubmit={saveProfile} class="flex flex-col gap-5">
@@ -204,7 +208,9 @@
 				class="mb-6 flex items-center gap-2 border-b border-slate-100 pb-4 dark:border-slate-800"
 			>
 				<Key class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">{m['globals:profile_change_password']()}</h2>
+				<h2 class="text-lg font-semibold text-slate-900 dark:text-white">
+					{m['globals:profile_change_password']()}
+				</h2>
 			</div>
 
 			<form onsubmit={savePassword} class="flex flex-col gap-5">
@@ -257,7 +263,8 @@
 					</button>
 					{#if pwSaved}
 						<span class="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
-							<CircleCheck class="h-4 w-4" /> {m['globals:profile_password_updated']()}
+							<CircleCheck class="h-4 w-4" />
+							{m['globals:profile_password_updated']()}
 						</span>
 					{/if}
 				</div>

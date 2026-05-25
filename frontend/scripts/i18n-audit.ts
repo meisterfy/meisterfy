@@ -16,8 +16,7 @@ const BASELINE_PATH = path.join(REPORT_DIR, 'i18n-audit-baseline.json')
 
 const PARAGLIDE_IMPORT = /paraglide\/messages/
 
-const EXCLUDE_PATH_RE =
-	/(paraglide\/|__test-mocks__|vitest-examples|\.test\.|\.spec\.)/
+const EXCLUDE_PATH_RE = /(paraglide\/|__test-mocks__|vitest-examples|\.test\.|\.spec\.)/
 
 const BRAND_LITERALS = new Set(['Meisterfy', 'MMeisterfy', 'logo.svg'])
 
@@ -117,11 +116,7 @@ function suggestNamespace(file: string): string {
 	return 'globals'
 }
 
-function classifyPriority(
-	file: string,
-	kind: Candidate['kind'],
-	existingKey?: string
-): Priority {
+function classifyPriority(file: string, kind: Candidate['kind'], existingKey?: string): Priority {
 	if (existingKey) return 'quick_win'
 	if (file.includes('seo.svelte')) return 'maybe'
 	if (kind === 'attr') return 'should'

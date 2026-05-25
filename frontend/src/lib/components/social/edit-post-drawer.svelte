@@ -250,7 +250,8 @@
 										onclick={removeMedia}
 										class="flex items-center gap-1 text-xs text-red-500 transition-colors hover:text-red-700"
 									>
-										<Trash2 class="h-3 w-3" /> {m['social-media:media_remove_all']()}
+										<Trash2 class="h-3 w-3" />
+										{m['social-media:media_remove_all']()}
 									</button>
 								{/if}
 							</div>
@@ -285,7 +286,8 @@
 								<div
 									class="mb-3 flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 text-xs font-medium text-slate-400 dark:border-slate-700 dark:bg-slate-800/50"
 								>
-									<ImagePlus class="mr-2 h-4 w-4" /> {m['social-media:no_image_attached']()}
+									<ImagePlus class="mr-2 h-4 w-4" />
+									{m['social-media:no_image_attached']()}
 								</div>
 							{/if}
 							<input

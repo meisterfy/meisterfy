@@ -2,18 +2,18 @@
 
 Used by [`i18n-audit.ts`](./i18n-audit.ts).
 
-| Command | Purpose |
-|---------|---------|
-| `bun run i18n:audit` | Regenerate `.project/reports/i18n-audit/{i18n-audit.json,i18n-audit.md,i18n-audit-inventory.md}` |
-| `bun run i18n:audit:check` | CI: locale parity + routes `quick_win` must not exceed baseline |
+| Command                    | Purpose                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `bun run i18n:audit`       | Regenerate `.project/reports/i18n-audit/{i18n-audit.json,i18n-audit.md,i18n-audit-inventory.md}` |
+| `bun run i18n:audit:check` | CI: locale parity + routes `quick_win` must not exceed baseline                                  |
 
 Baseline: [`.project/reports/i18n-audit/i18n-audit-baseline.json`](../../.project/reports/i18n-audit/i18n-audit-baseline.json). After fixing route strings, lower `routes_quick_win_max` and commit.
 
 ## Included
 
-| Area | Paths |
-|------|-------|
-| Svelte UI | `frontend/src/**/*.svelte` |
+| Area          | Paths                                                           |
+| ------------- | --------------------------------------------------------------- |
+| Svelte UI     | `frontend/src/**/*.svelte`                                      |
 | UI TypeScript | `frontend/src/**/*.ts`, `*.svelte.ts` (labels, columns, toasts) |
 
 ## Excluded paths (never scanned)
@@ -38,13 +38,13 @@ Baseline: [`.project/reports/i18n-audit/i18n-audit-baseline.json`](../../.projec
 
 ## Priority rubric
 
-| Class | Meaning |
-|-------|---------|
+| Class       | Meaning                                                            |
+| ----------- | ------------------------------------------------------------------ |
 | `quick_win` | Hardcoded text matches an existing `namespace:key` in `locales/en` |
-| `must` | User-facing copy (buttons, headings, empty states, errors) |
-| `should` | `title`, `aria-label`, `alt` on product actions |
-| `maybe` | SEO-related file paths (`seo.svelte`) |
-| `skip` | Classified as non-UI per rules above |
+| `must`      | User-facing copy (buttons, headings, empty states, errors)         |
+| `should`    | `title`, `aria-label`, `alt` on product actions                    |
+| `maybe`     | SEO-related file paths (`seo.svelte`)                              |
+| `skip`      | Classified as non-UI per rules above                               |
 
 ## Locales
 

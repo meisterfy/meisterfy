@@ -94,7 +94,9 @@
 			class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 		>
 			<div>
-				<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:post_new_title']()}</h2>
+				<h2 class="text-lg font-bold text-slate-900 dark:text-white">
+					{m['social-media:post_new_title']()}
+				</h2>
 				{#if defaultDate}
 					<p class="font-mono text-xs text-slate-400">{defaultDate}</p>
 				{/if}
@@ -115,7 +117,9 @@
 				</div>
 				{#if metaPages.length > 0}
 					<div>
-						<label for="new-meta-account" class={labelCls}>{m['social-media:meta_account_label']()}</label>
+						<label for="new-meta-account" class={labelCls}
+							>{m['social-media:meta_account_label']()}</label
+						>
 						<select id="new-meta-account" bind:value={selectedResourceId} class={inputCls}>
 							<option value="">{m['social-media:meta_account_none']()}</option>
 							{#each metaPages as page (page.id)}
@@ -174,7 +178,8 @@
 				</div>
 				<div>
 					<label for="new-hashtags" class={labelCls}
-						>Hashtags <span class="font-normal text-slate-400 normal-case">{m['social-media:hashtags_hint']()}</span
+						>Hashtags <span class="font-normal text-slate-400 normal-case"
+							>{m['social-media:hashtags_hint']()}</span
 						></label
 					>
 					<input

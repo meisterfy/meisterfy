@@ -15,7 +15,7 @@
 	let showGlobalSettings = $derived(isPlatformAdmin(auth.user))
 	let canCreateTenant = $derived(hasPermission(auth.user?.permissions, 'create:tenant'))
 	let tenants = $derived(
-		(data.tenants as Tenant[] ?? []).map((t) => ({
+		((data.tenants as Tenant[]) ?? []).map((t) => ({
 			...t,
 			connectors: t.connectors ?? []
 		}))
@@ -71,7 +71,9 @@
 				<h2 class="text-2xl font-bold tracking-tight text-slate-900 lg:text-4xl dark:text-white">
 					{m['globals:welcome_back']()}{auth.user?.name ? ` ${auth.user.name}!` : '!'}
 				</h2>
-				<p class="mt-1 text-slate-500 lg:text-lg dark:text-slate-400">{m['globals:select_client']()}</p>
+				<p class="mt-1 text-slate-500 lg:text-lg dark:text-slate-400">
+					{m['globals:select_client']()}
+				</p>
 			</div>
 
 			{#if tenants.length === 0}
@@ -83,7 +85,9 @@
 					>
 						<Building2 class="h-8 w-8 text-indigo-500" />
 					</div>
-					<h3 class="text-lg font-semibold text-slate-900 dark:text-white">{m['tenants:empty']()}</h3>
+					<h3 class="text-lg font-semibold text-slate-900 dark:text-white">
+						{m['tenants:empty']()}
+					</h3>
 					<p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
 						{m['globals:create_first_client_hint']()}
 					</p>
@@ -92,7 +96,8 @@
 							href={resolve('/tenants/new')}
 							class="mt-6 flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
 						>
-							<Plus class="h-4 w-4" /> {m['globals:create_client']()}
+							<Plus class="h-4 w-4" />
+							{m['globals:create_client']()}
 						</a>
 					{/if}
 				</div>

@@ -204,7 +204,9 @@
 <Drawer bind:open={showDrawer}>
 	<div class="flex h-full flex-col">
 		<div class="border-border flex items-center justify-between border-b px-6 py-4">
-			<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['settings:audit_details_title']()}</h2>
+			<h2 class="text-lg font-bold text-slate-900 dark:text-white">
+				{m['settings:audit_details_title']()}
+			</h2>
 			<Button onclick={() => (showDrawer = false)} variant="outline" class="h-8 px-3 text-xs">
 				Close
 			</Button>

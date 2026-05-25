@@ -213,7 +213,9 @@
 		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="h-5 w-5 text-indigo-500" />
-				<span class="font-semibold text-slate-900 dark:text-white">{m['social-media:generate_with_ai']()}</span>
+				<span class="font-semibold text-slate-900 dark:text-white"
+					>{m['social-media:generate_with_ai']()}</span
+				>
 			</div>
 			<button
 				onclick={() => {
@@ -231,7 +233,8 @@
 			<div
 				class="mx-5 mt-4 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
 			>
-				{m['social-media:ai_brand_context_label']()} <span class="font-semibold">{data.brand.name}</span>
+				{m['social-media:ai_brand_context_label']()}
+				<span class="font-semibold">{data.brand.name}</span>
 				{#if data.brand.tone}
 					· {data.brand.tone}{/if}
 			</div>
@@ -332,7 +335,8 @@
 			<label
 				for="post-hashtags"
 				class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-				>Hashtags <span class="font-normal text-slate-400">{m['social-media:hashtags_hint']()}</span></label
+				>Hashtags <span class="font-normal text-slate-400">{m['social-media:hashtags_hint']()}</span
+				></label
 			>
 			<input
 				id="post-hashtags"
@@ -396,14 +400,18 @@
 				/>
 			</label>
 			{#if uploadingMedia}
-				<p class="mt-2 animate-pulse text-xs font-medium text-indigo-600">{m['social-media:media_uploading_dots']()}</p>
+				<p class="mt-2 animate-pulse text-xs font-medium text-indigo-600">
+					{m['social-media:media_uploading_dots']()}
+				</p>
 			{/if}
 		</div>
 
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['social-media:ai_workflow_title']()}</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">
+				{m['social-media:ai_workflow_title']()}
+			</h3>
 
 			{#if data.post.workflow}
 				<div class="space-y-4">
@@ -440,7 +448,9 @@
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['social-media:post_info_title']()}</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">
+				{m['social-media:post_info_title']()}
+			</h3>
 			<div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
 				<div class="flex items-center justify-between">
 					<span>ID</span>

@@ -396,7 +396,9 @@
 						class="mt-4"
 					/>
 				{:else}
-					<span class="text-sm text-slate-500 dark:text-slate-400">{m['settings:gads_enable_to_edit']()}</span>
+					<span class="text-sm text-slate-500 dark:text-slate-400"
+						>{m['settings:gads_enable_to_edit']()}</span
+					>
 				{/if}
 			</CardAside>
 

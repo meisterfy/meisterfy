@@ -31,7 +31,11 @@
 
 	<div class="relative min-w-[240px]">
 		<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
-		<Input placeholder={m['integrations:filter_search_placeholder']()} bind:value={searchQuery} class="pr-10 pl-9" />
+		<Input
+			placeholder={m['integrations:filter_search_placeholder']()}
+			bind:value={searchQuery}
+			class="pr-10 pl-9"
+		/>
 		{#if searchQuery}
 			<button
 				onclick={() => (searchQuery = '')}

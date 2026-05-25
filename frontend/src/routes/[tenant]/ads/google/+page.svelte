@@ -97,7 +97,9 @@
 
 <div class="mx-auto w-full max-w-full px-4 py-8 sm:px-6 lg:w-[1200px] lg:px-8 xl:w-[1600px]">
 	<div class="mb-6 flex items-center justify-between">
-		<h2 class="text-xl font-bold text-slate-900 lg:text-3xl dark:text-white">{m['ads:campaign_manager']()}</h2>
+		<h2 class="text-xl font-bold text-slate-900 lg:text-3xl dark:text-white">
+			{m['ads:campaign_manager']()}
+		</h2>
 		<div class="flex items-center gap-2">
 			<button
 				onclick={() => {
@@ -105,7 +107,8 @@
 				}}
 				class="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
 			>
-				<Plus class="h-4 w-4" /> {m['ads:new_campaign']()}
+				<Plus class="h-4 w-4" />
+				{m['ads:new_campaign']()}
 			</button>
 		</div>
 	</div>
@@ -161,7 +164,8 @@
 				class="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 			>
 				<h3 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
-					<FileBraces class="h-5 w-5 text-indigo-500" /> {m['ads:import_title']()}
+					<FileBraces class="h-5 w-5 text-indigo-500" />
+					{m['ads:import_title']()}
 				</h3>
 				<button
 					onclick={() => (isImportModalOpen = false)}
@@ -180,8 +184,8 @@
 					</div>
 				{/if}
 				<p class="mb-3 text-sm text-slate-500 dark:text-slate-400">
-					{m['ads:import_instructions']()} <code
-						class="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800"
+					{m['ads:import_instructions']()}
+					<code class="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800"
 						>{m['ads:import_platform_hint']()}</code
 					>.
 				</p>

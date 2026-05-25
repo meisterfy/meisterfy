@@ -104,7 +104,8 @@
 
 		<div class="space-y-4">
 			<h3 class="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white">
-				<LayoutList class="h-5 w-5 text-indigo-500" /> {m['ads:ad_groups_section']()}
+				<LayoutList class="h-5 w-5 text-indigo-500" />
+				{m['ads:ad_groups_section']()}
 			</h3>
 
 			{#each campaign.ad_groups as group, i (i)}
@@ -215,7 +216,9 @@
 		<div
 			class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 		>
-			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['ads:campaign_info']()}</h3>
+			<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">
+				{m['ads:campaign_info']()}
+			</h3>
 			<div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
 				<div class="flex items-center justify-between">
 					<span>ID</span>
@@ -247,7 +250,9 @@
 			<div
 				class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50"
 			>
-				<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">{m['ads:ai_reasoning']()}</h3>
+				<h3 class="mb-3 text-sm font-bold text-slate-900 dark:text-white">
+					{m['ads:ai_reasoning']()}
+				</h3>
 				<p class="text-sm text-slate-700 dark:text-slate-300">
 					{campaign.workflow.reasoning}
 				</p>

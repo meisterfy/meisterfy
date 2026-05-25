@@ -76,7 +76,9 @@
 				class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800"
 			>
 				<div class="min-w-0 flex-1 pr-4">
-					<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:schedule_title']()}</h2>
+					<h2 class="text-lg font-bold text-slate-900 dark:text-white">
+						{m['social-media:schedule_title']()}
+					</h2>
 					<p class="truncate text-sm text-slate-500">{draft.title}</p>
 				</div>
 				<button
@@ -94,7 +96,9 @@
 					</div>
 					{#if metaPages.length > 0}
 						<div>
-							<label for="sched-meta-account" class={labelCls}>{m['social-media:meta_account_label']()}</label>
+							<label for="sched-meta-account" class={labelCls}
+								>{m['social-media:meta_account_label']()}</label
+							>
 							<select id="sched-meta-account" bind:value={selectedResourceId} class={inputCls}>
 								<option value="">{m['social-media:meta_account_none']()}</option>
 								{#each metaPages as page (page.id)}

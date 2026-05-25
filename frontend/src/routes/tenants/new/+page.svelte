@@ -47,7 +47,9 @@
 	<div
 		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900"
 	>
-		<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">{m['tenants:create_first']()}</h1>
+		<h1 class="mb-2 text-xl font-bold text-slate-900 dark:text-white">
+			{m['tenants:create_first']()}
+		</h1>
 		<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
 			{m['tenants:create_desc']()}
 		</p>
@@ -64,7 +66,8 @@
 				/>
 			</label>
 			<label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
-				{m['tenants:create_field_id']()} <span class="font-normal text-slate-400">{m['tenants:create_field_id_hint']()}</span>
+				{m['tenants:create_field_id']()}
+				<span class="font-normal text-slate-400">{m['tenants:create_field_id_hint']()}</span>
 				<input
 					type="text"
 					bind:value={id}

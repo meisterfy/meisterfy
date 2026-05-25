@@ -51,7 +51,10 @@
 		</div>
 	{:else}
 		{#if manager.integrations.length > 0}
-			<IntegrationSection title={m['integrations:connected_title']()} description={m['integrations:connected_desc']()}>
+			<IntegrationSection
+				title={m['integrations:connected_title']()}
+				description={m['integrations:connected_desc']()}
+			>
 				{#each manager.integrations as integration (integration.id)}
 					{@const provider = manager.providerForIntegration(integration)}
 					{#if provider}

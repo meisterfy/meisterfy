@@ -155,7 +155,9 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 		>
 			<div class="flex items-center gap-2">
 				<Sparkles class="h-5 w-5 text-indigo-500" />
-				<h2 class="text-lg font-bold text-slate-900 dark:text-white">{m['social-media:ai_generate_title']()}</h2>
+				<h2 class="text-lg font-bold text-slate-900 dark:text-white">
+					{m['social-media:ai_generate_title']()}
+				</h2>
 			</div>
 			<button
 				onclick={() => (open = false)}
@@ -176,14 +178,15 @@ Return ONLY a valid JSON array with this exact structure, no other text before o
 					>
 						<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
 						<p>
-							{m['social-media:ai_no_provider_pre']()} <strong
-								>{m['social-media:ai_no_provider_link']()}</strong
-							> {m['social-media:ai_no_provider_post']()}
+							{m['social-media:ai_no_provider_pre']()}
+							<strong>{m['social-media:ai_no_provider_link']()}</strong>
+							{m['social-media:ai_no_provider_post']()}
 						</p>
 					</div>
 				{:else if availableProviders.length > 1}
 					<div>
-						<label for="ai-provider" class={labelCls}>{m['social-media:ai_provider_label']()}</label>
+						<label for="ai-provider" class={labelCls}>{m['social-media:ai_provider_label']()}</label
+						>
 						<div class="relative">
 							<select
 								id="ai-provider"
