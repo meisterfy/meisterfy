@@ -9,8 +9,11 @@ export const updateMe = (
 		body: JSON.stringify(body)
 	})
 
+// changePassword rotates the password server-side, which revokes every other
+// session and returns a fresh access token for the current one. Callers must
+// persist the returned access_token, otherwise the next request 401s.
 export const changePassword = (body: { current_password: string; new_password: string }) =>
-	apiFetch<void>('/auth/change-password', {
+	apiFetch<{ access_token: string; expires_at: string }>('/auth/change-password', {
 		method: 'POST',
 		body: JSON.stringify(body)
 	})

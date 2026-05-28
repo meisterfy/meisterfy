@@ -394,7 +394,7 @@
 					type="file"
 					multiple
 					class="block w-full cursor-pointer text-sm text-slate-500 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
-					accept="image/*,video/*"
+					accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
 					onchange={handleFileUpload}
 					disabled={uploadingMedia}
 				/>

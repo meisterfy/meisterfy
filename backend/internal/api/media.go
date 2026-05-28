@@ -16,32 +16,29 @@ import (
 )
 
 // allowedMediaTypes maps permitted (lowercase) file extensions to the exact
-// Content-Type served back. Restricting both the stored extension and the
-// served Content-Type to images prevents uploading an HTML/SVG payload that
-// would execute as script when fetched from the public Serve endpoint
-// (stored XSS).
+// Content-Type served back. Pinning the served Content-Type to this allowlist
+// (never text/html or image/svg+xml) means stored bytes can never execute as
+// script when fetched from the public Serve endpoint, preventing stored XSS,
+// while still supporting the images and videos the app publishes.
 var allowedMediaTypes = map[string]string{
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
 	".png":  "image/png",
 	".gif":  "image/gif",
 	".webp": "image/webp",
+	".mp4":  "video/mp4",
+	".webm": "video/webm",
+	".mov":  "video/quicktime",
 }
 
-// canonicalImageExt returns the server-chosen extension for a sniffed image
-// content type. The client-supplied filename extension is never trusted.
-func canonicalImageExt(contentType string) (string, bool) {
-	switch contentType {
-	case "image/jpeg":
-		return ".jpg", true
-	case "image/png":
-		return ".png", true
-	case "image/gif":
-		return ".gif", true
-	case "image/webp":
-		return ".webp", true
-	}
-	return "", false
+// isSafeMediaContent reports whether sniffed content is binary image/video data
+// rather than markup or text (e.g. HTML/SVG/XML) that a browser could execute.
+func isSafeMediaContent(contentType string) bool {
+	ct, _, _ := strings.Cut(contentType, ";")
+	ct = strings.TrimSpace(ct)
+	return strings.HasPrefix(ct, "image/") ||
+		strings.HasPrefix(ct, "video/") ||
+		ct == "application/octet-stream"
 }
 
 type MediaHandler struct {
@@ -142,21 +139,27 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	var savedNames []string
 	for i, fh := range files {
+		ext := strings.ToLower(filepath.Ext(fh.Filename))
+		if _, ok := allowedMediaTypes[ext]; !ok {
+			UnprocessableEntity(w, "unsupported file type")
+			return
+		}
+
 		src, err := fh.Open()
 		if err != nil {
 			InternalError(w)
 			return
 		}
 
-		// Sniff the actual content and derive a server-controlled extension;
-		// the client-supplied filename extension is never trusted.
+		// Reject markup/text payloads disguised by extension. Serve also pins
+		// the Content-Type from allowedMediaTypes, so stored bytes can never be
+		// executed regardless — this is defense in depth.
 		head := make([]byte, 512)
 		n, _ := io.ReadFull(src, head)
 		head = head[:n]
-		ext, ok := canonicalImageExt(http.DetectContentType(head))
-		if !ok {
+		if !isSafeMediaContent(http.DetectContentType(head)) {
 			src.Close()
-			UnprocessableEntity(w, "unsupported file type (images only)")
+			UnprocessableEntity(w, "unsupported file content")
 			return
 		}
 
@@ -171,7 +174,6 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 			InternalError(w)
 			return
 		}
-
 		dst, err := os.Create(filepath.Join(dir, name))
 		if err != nil {
 			src.Close()

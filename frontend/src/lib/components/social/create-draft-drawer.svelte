@@ -120,7 +120,7 @@
 						id="create-image"
 						bind:this={newMediaInput}
 						type="file"
-						accept="image/*,video/*"
+						accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
 						multiple
 						class="w-full cursor-pointer text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400"
 					/>
