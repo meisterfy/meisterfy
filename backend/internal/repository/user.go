@@ -120,6 +120,22 @@ func (r *UserRepository) SetSystemRole(ctx context.Context, userID, role string)
 	}))
 }
 
+// GetTokenVersion returns the user's current token version, used to validate
+// that a presented JWT has not been revoked.
+func (r *UserRepository) GetTokenVersion(ctx context.Context, userID string) (int, error) {
+	v, err := r.queries.GetUserTokenVersion(ctx, userID)
+	if err != nil {
+		return 0, mapError(err)
+	}
+	return int(v), nil
+}
+
+// IncrementTokenVersion bumps the user's token version, invalidating every
+// previously issued access and refresh token.
+func (r *UserRepository) IncrementTokenVersion(ctx context.Context, userID string) error {
+	return mapError(r.queries.IncrementUserTokenVersion(ctx, userID))
+}
+
 func mapUser(row db.User) *domain.User {
 	return &domain.User{
 		ID:           row.ID,
@@ -130,6 +146,7 @@ func mapUser(row db.User) *domain.User {
 		Timezone:     row.Timezone,
 		IsActive:     row.IsActive,
 		SystemRole:   row.SystemRole,
+		TokenVersion: int(row.TokenVersion),
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,
 	}

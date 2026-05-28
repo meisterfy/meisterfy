@@ -17,7 +17,13 @@ SET name = $2, email = $3, locale = $4, timezone = $5, is_active = $6, updated_a
 WHERE id = $1;
 
 -- name: UpdateUserPassword :exec
-UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1;
+UPDATE users SET password_hash = $2, token_version = token_version + 1, updated_at = NOW() WHERE id = $1;
+
+-- name: GetUserTokenVersion :one
+SELECT token_version FROM users WHERE id = $1;
+
+-- name: IncrementUserTokenVersion :exec
+UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = $1;
 
 -- name: SetUserSystemRole :exec
 UPDATE users SET system_role = $2, updated_at = NOW() WHERE id = $1;

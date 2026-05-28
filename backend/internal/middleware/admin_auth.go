@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,6 +10,32 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/meisterfy/meisterfy/internal/domain"
 )
+
+// TokenVersionChecker reports the token version currently persisted for a user.
+type TokenVersionChecker interface {
+	GetTokenVersion(ctx context.Context, userID string) (int, error)
+}
+
+// RequireActiveToken rejects a request whose JWT token version no longer matches
+// the user's persisted version — i.e. the token was revoked (password change,
+// forced logout). It must run after AuthenticateAdmin so the claims are present.
+func RequireActiveToken(checker TokenVersionChecker) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims := UserClaimsFromContext(r.Context())
+			if claims == nil {
+				writeErr(w, http.StatusUnauthorized, "unauthorized")
+				return
+			}
+			current, err := checker.GetTokenVersion(r.Context(), claims.UserID)
+			if err != nil || current != claims.TokenVersion {
+				writeErr(w, http.StatusUnauthorized, "token revoked")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 func AuthenticateAdmin(jwtSvc *domain.JWTService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

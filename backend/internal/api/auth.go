@@ -164,7 +164,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, tenantID, err := h.jwtSvc.ParseRefreshToken(cookie.Value)
+	userID, tenantID, tokenVersion, err := h.jwtSvc.ParseRefreshToken(cookie.Value)
 	if err != nil {
 		h.clearRefreshCookie(w)
 		if errors.Is(err, domain.ErrExpired) {
@@ -187,6 +187,12 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	if !user.IsActive {
 		h.clearRefreshCookie(w)
 		Error(w, http.StatusForbidden, "account_inactive")
+		return
+	}
+	// Reject refresh tokens revoked by a password change / forced logout.
+	if tokenVersion != user.TokenVersion {
+		h.clearRefreshCookie(w)
+		Error(w, http.StatusUnauthorized, "token revoked")
 		return
 	}
 
@@ -355,20 +361,44 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		InternalError(w)
 		return
 	}
+	// UpdatePasswordHash also bumps the user's token version, revoking every
+	// previously issued token. Re-issue a fresh pair so the caller's current
+	// session survives while all other sessions are logged out.
 	if err := h.userRepo.UpdatePasswordHash(r.Context(), user.ID, user.PasswordHash); err != nil {
 		InternalError(w)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	updated, err := h.userRepo.GetByID(r.Context(), user.ID)
+	if err != nil {
+		InternalError(w)
+		return
+	}
+
+	var pair domain.TokenPair
+	if claims.TenantID == "" {
+		pair, err = h.issueBootstrapToken(updated)
+	} else {
+		pair, _, err = h.issueTokens(r.Context(), updated, claims.TenantID)
+	}
+	if err != nil {
+		InternalError(w)
+		return
+	}
+	h.setRefreshCookie(w, pair.RefreshToken)
+	JSON(w, http.StatusOK, map[string]any{
+		"access_token": pair.AccessToken,
+		"expires_at":   pair.ExpiresAt,
+	})
 }
 
 func (h *AuthHandler) issueBootstrapToken(user *domain.User) (domain.TokenPair, error) {
 	pair, err := h.jwtSvc.IssueTokenPair(domain.UserClaims{
-		UserID:      user.ID,
-		SystemRole:  user.SystemRole,
-		TenantID:    "",
-		Permissions: []string{"create:tenant", "view-any:tenant"},
+		UserID:       user.ID,
+		SystemRole:   user.SystemRole,
+		TenantID:     "",
+		Permissions:  []string{"create:tenant", "view-any:tenant"},
+		TokenVersion: user.TokenVersion,
 	})
 	return pair, err
 }
@@ -437,11 +467,12 @@ func (h *AuthHandler) issueTokens(ctx context.Context, user *domain.User, tenant
 		return domain.TokenPair{}, nil, err
 	}
 	claims := domain.UserClaims{
-		UserID:      user.ID,
-		UserName:    user.Name,
-		TenantID:    tenantID,
-		Permissions: perms,
-		SystemRole:  user.SystemRole,
+		UserID:       user.ID,
+		UserName:     user.Name,
+		TenantID:     tenantID,
+		Permissions:  perms,
+		SystemRole:   user.SystemRole,
+		TokenVersion: user.TokenVersion,
 	}
 	pair, err := h.jwtSvc.IssueTokenPair(claims)
 	if err != nil {

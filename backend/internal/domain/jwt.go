@@ -32,15 +32,17 @@ func NewJWTService(secret string) *JWTService {
 
 type accessClaims struct {
 	jwt.RegisteredClaims
-	TenantID    string   `json:"tid"`
-	Permissions []string `json:"perms"`
-	UserName    string   `json:"uname,omitempty"`
-	SystemRole  string   `json:"sr,omitempty"`
+	TenantID     string   `json:"tid"`
+	Permissions  []string `json:"perms"`
+	UserName     string   `json:"uname,omitempty"`
+	SystemRole   string   `json:"sr,omitempty"`
+	TokenVersion int      `json:"tv"`
 }
 
 type refreshClaims struct {
 	jwt.RegisteredClaims
-	TenantID string `json:"tid"`
+	TenantID     string `json:"tid"`
+	TokenVersion int    `json:"tv"`
 }
 
 func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
@@ -56,10 +58,11 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(accessExp),
 		},
-		TenantID:    claims.TenantID,
-		Permissions: claims.Permissions,
-		UserName:    claims.UserName,
-		SystemRole:  claims.SystemRole,
+		TenantID:     claims.TenantID,
+		Permissions:  claims.Permissions,
+		UserName:     claims.UserName,
+		SystemRole:   claims.SystemRole,
+		TokenVersion: claims.TokenVersion,
 	}
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, ac).SignedString(s.secret)
 	if err != nil {
@@ -74,7 +77,8 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(refreshExp),
 		},
-		TenantID: claims.TenantID,
+		TenantID:     claims.TenantID,
+		TokenVersion: claims.TokenVersion,
 	}
 	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, rc).SignedString(s.secret)
 	if err != nil {
@@ -102,15 +106,16 @@ func (s *JWTService) ParseAccessToken(token string) (*UserClaims, error) {
 		return nil, ErrUnauthorized
 	}
 	return &UserClaims{
-		UserID:      ac.Subject,
-		TenantID:    ac.TenantID,
-		Permissions: ac.Permissions,
-		UserName:    ac.UserName,
-		SystemRole:  ac.SystemRole,
+		UserID:       ac.Subject,
+		TenantID:     ac.TenantID,
+		Permissions:  ac.Permissions,
+		UserName:     ac.UserName,
+		SystemRole:   ac.SystemRole,
+		TokenVersion: ac.TokenVersion,
 	}, nil
 }
 
-func (s *JWTService) ParseRefreshToken(token string) (userID, tenantID string, err error) {
+func (s *JWTService) ParseRefreshToken(token string) (userID, tenantID string, tokenVersion int, err error) {
 	var rc refreshClaims
 	_, parseErr := jwt.ParseWithClaims(token, &rc, s.keyFunc,
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
@@ -119,11 +124,11 @@ func (s *JWTService) ParseRefreshToken(token string) (userID, tenantID string, e
 	)
 	if parseErr != nil {
 		if errors.Is(parseErr, jwt.ErrTokenExpired) {
-			return "", "", ErrExpired
+			return "", "", 0, ErrExpired
 		}
-		return "", "", ErrUnauthorized
+		return "", "", 0, ErrUnauthorized
 	}
-	return rc.Subject, rc.TenantID, nil
+	return rc.Subject, rc.TenantID, rc.TokenVersion, nil
 }
 
 func (s *JWTService) keyFunc(_ *jwt.Token) (any, error) {
