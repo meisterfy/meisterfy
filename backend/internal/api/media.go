@@ -174,7 +174,6 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 			InternalError(w)
 			return
 		}
-
 		dst, err := os.Create(filepath.Join(dir, name))
 		if err != nil {
 			src.Close()
