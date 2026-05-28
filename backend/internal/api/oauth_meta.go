@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 	"net/url"
 	"strings"
@@ -200,12 +201,13 @@ func (h *OAuthMetaHandler) Callback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *OAuthMetaHandler) htmlError(w http.ResponseWriter, title, detail string) {
-	safe := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", `"`, "&quot;").Replace(detail)
+	safeTitle := html.EscapeString(title)
+	safe := html.EscapeString(detail)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)
 	fmt.Fprintf(w, `<!doctype html><html><head><meta charset="utf-8"><title>%s</title>
 <style>body{font-family:sans-serif;max-width:640px;margin:60px auto;padding:20px;line-height:1.6}</style>
-</head><body><h1>❌ %s</h1><p>%s</p></body></html>`, title, title, safe)
+</head><body><h1>❌ %s</h1><p>%s</p></body></html>`, safeTitle, safeTitle, safe)
 }
 
 type metaExchangeParams struct {
@@ -242,7 +244,7 @@ func exchangeMetaCode(ctx context.Context, p metaExchangeParams) (string, error)
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := externalHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -279,7 +281,7 @@ func exchangeLongLivedToken(ctx context.Context, clientID, clientSecret, shortTo
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := externalHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}

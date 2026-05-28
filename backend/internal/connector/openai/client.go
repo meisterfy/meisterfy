@@ -31,7 +31,7 @@ func NewOpenAIProvider(apiKey string, cfg map[string]any) *OpenAIProvider {
 		baseURL:            openaiAPI,
 		defaultModel:       connector.ConfigString(cfg, "model", "gpt-4o-mini"),
 		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
-		client:             &http.Client{},
+		client:             connector.StreamingHTTPClient(),
 	}
 }
 
@@ -43,7 +43,7 @@ func NewOpenAIProviderWithBaseURL(apiKey, baseURL, defaultModel string, defaultT
 		baseURL:            baseURL,
 		defaultModel:       defaultModel,
 		defaultTemperature: defaultTemperature,
-		client:             &http.Client{},
+		client:             connector.StreamingHTTPClient(),
 	}
 }
 

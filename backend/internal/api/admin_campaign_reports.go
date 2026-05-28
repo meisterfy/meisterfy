@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -35,7 +36,8 @@ func (h *CampaignReportsHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	reports, err := h.repo.List(r.Context(), tenantID, campaignID, reportType, limit)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err.Error())
+		slog.Error("list campaign reports failed", "tenant_id", tenantID, "campaign_id", campaignID, "err", err)
+		InternalError(w)
 		return
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": reports})
@@ -81,7 +83,8 @@ func (h *CampaignReportsHandler) Save(w http.ResponseWriter, r *http.Request) {
 		Model:       req.Model,
 	})
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err.Error())
+		slog.Error("save campaign report failed", "tenant_id", tenantID, "campaign_id", campaignID, "err", err)
+		InternalError(w)
 		return
 	}
 	JSON(w, http.StatusCreated, map[string]any{"data": report})

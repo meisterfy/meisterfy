@@ -60,6 +60,9 @@ func NewMediaHandler(storagePath string, postRepo interface {
 }
 
 func (h *MediaHandler) isValidSegment(s string) bool {
+	if s == "." || s == ".." {
+		return false
+	}
 	base := filepath.Base(s)
 	if base != s {
 		return false

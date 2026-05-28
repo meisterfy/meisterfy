@@ -28,7 +28,7 @@ func NewAnthropicProvider(apiKey string, cfg map[string]any) *AnthropicProvider 
 		apiKey:             apiKey,
 		defaultModel:       connector.ConfigString(cfg, "model", "claude-3-5-sonnet-20241022"),
 		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
-		client:             &http.Client{},
+		client:             connector.StreamingHTTPClient(),
 	}
 }
 

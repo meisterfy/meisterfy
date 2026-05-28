@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -125,7 +126,8 @@ func (h *AIGenerateHandler) Generate(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.gen(ctx, candidates, llmReq, nil)
 	if err != nil {
-		Error(w, http.StatusInternalServerError, err.Error())
+		slog.Error("ai generate failed", "task_type", req.TaskType, "err", err)
+		Error(w, http.StatusInternalServerError, "generation failed")
 		return
 	}
 	JSON(w, http.StatusOK, resp)
@@ -178,8 +180,9 @@ func (h *AIGenerateHandler) streamSSE(ctx context.Context, w http.ResponseWriter
 		return nil
 	})
 	if err != nil {
+		slog.Error("ai generate stream failed", "err", err)
 		if !firstChunk {
-			errData, _ := json.Marshal(map[string]string{"error": err.Error()})
+			errData, _ := json.Marshal(map[string]string{"error": "generation failed"})
 			fmt.Fprintf(w, "data: %s\n\n", errData)
 			flusher.Flush()
 			return

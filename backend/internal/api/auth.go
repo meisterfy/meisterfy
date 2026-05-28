@@ -97,6 +97,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userRepo.GetByEmail(r.Context(), req.Email)
 	if err != nil {
+		// Spend comparable time hashing so a missing account can't be
+		// distinguished from a wrong password by response latency.
+		domain.FakePasswordCheck(req.Password)
 		Error(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -178,6 +181,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Error(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
+	// Deactivated/disabled accounts must not be able to mint new tokens.
+	// Because access tokens are short-lived, refusing refresh here effectively
+	// revokes access within one access-token lifetime.
+	if !user.IsActive {
+		h.clearRefreshCookie(w)
+		Error(w, http.StatusForbidden, "account_inactive")
+		return
+	}
 
 	// Bootstrap token: re-check if the user now has tenants assigned.
 	if tenantID == "" {
@@ -241,6 +252,10 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
 	if err != nil {
 		Unauthorized(w)
+		return
+	}
+	if !user.IsActive {
+		Error(w, http.StatusForbidden, "account_inactive")
 		return
 	}
 

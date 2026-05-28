@@ -92,6 +92,20 @@ func main() {
 			Environment:      cfg.AppEnv,
 			Release:          "meisterfy@1.0.0",
 			TracesSampleRate: 0.2,
+			// Strip credentials from captured requests so tokens/cookies are
+			// never shipped to Sentry.
+			BeforeSend: func(event *sentry.Event, _ *sentry.EventHint) *sentry.Event {
+				if event.Request != nil {
+					event.Request.Cookies = ""
+					for k := range event.Request.Headers {
+						switch http.CanonicalHeaderKey(k) {
+						case "Authorization", "Cookie", "X-Api-Key":
+							event.Request.Headers[k] = "[redacted]"
+						}
+					}
+				}
+				return event
+			},
 		})
 		if err != nil {
 			slog.Error("sentry init error", "err", err)
@@ -99,6 +113,10 @@ func main() {
 			slog.Info("sentry initialized")
 			defer sentry.Flush(2 * time.Second)
 		}
+	}
+
+	if cfg.CredentialKey == "" {
+		slog.Warn("CREDENTIAL_ENCRYPTION_KEY is not set; integration secrets will be stored UNENCRYPTED (intended for development only)")
 	}
 
 	ctx := context.Background()
@@ -167,12 +185,19 @@ func main() {
 	})
 
 	r := chi.NewRouter()
-	r.Use(chimw.RealIP)
+	// Only rewrite the client IP from proxy headers when explicitly trusted —
+	// otherwise X-Forwarded-For / X-Real-IP are attacker-controlled.
+	if cfg.TrustProxyHeaders {
+		r.Use(chimw.RealIP)
+	}
 	r.Use(middleware.SentryHubMiddleware)
 	r.Use(middleware.SentryRecovery)
 	r.Use(chimw.Recoverer)
 	r.Use(middleware.RequestLogger(slog.Default()))
-	r.Use(middleware.NPlus1Detector)
+	// N+1 query detection is a development diagnostic; keep it out of production.
+	if !cfg.IsProduction() {
+		r.Use(middleware.NPlus1Detector)
+	}
 	r.Use(middleware.SecurityHeaders)
 	r.Use(chimw.RequestSize(4 * 1024 * 1024)) // 4 MB global limit
 
@@ -208,7 +233,7 @@ func main() {
 
 		r.Route("/auth", func(r chi.Router) {
 			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-			r.With(middleware.RateLimitLogin).Post("/login", authHandler.Login)
+			r.With(middleware.RateLimitLogin(cfg.TrustProxyHeaders)).Post("/login", authHandler.Login)
 			r.Post("/refresh", authHandler.Refresh)
 			r.Post("/logout", authHandler.Logout)
 			r.Group(func(r chi.Router) {
@@ -436,11 +461,12 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      r,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 5 * time.Minute, // generous for SSE; chi Timeout(30s) protects regular routes
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second, // bound slow-header (Slowloris) attacks
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      5 * time.Minute, // generous for SSE; chi Timeout(30s) protects regular routes
+		IdleTimeout:       60 * time.Second,
 	}
 
 	// Background scheduler — shares lifetime with the server process.

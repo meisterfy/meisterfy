@@ -282,6 +282,30 @@ func TestAuthHandler_Refresh_UserNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
+func TestAuthHandler_Refresh_InactiveUser(t *testing.T) {
+	t.Parallel()
+	jwtSvc := newTestJWT()
+	user := newTestUser()
+	user.IsActive = false
+	h := NewAuthHandler(
+		&mockAuthUserRepo{user: user},
+		&mockRBACRepo{tenants: []string{"tenant-1"}, perms: []string{"read:posts"}},
+		&mockLegalRepo{},
+		jwtSvc, "localhost", false,
+	)
+
+	pair, err := jwtSvc.IssueTokenPair(domain.UserClaims{UserID: user.ID, TenantID: "tenant-1"})
+	require.NoError(t, err)
+
+	r := httptest.NewRequest(http.MethodPost, "/auth/refresh", nil)
+	r.AddCookie(&http.Cookie{Name: refreshCookieName, Value: pair.RefreshToken})
+	w := httptest.NewRecorder()
+	h.Refresh(w, r)
+
+	// A deactivated account must not be able to refresh into new tokens.
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
 func TestAuthHandler_Refresh_Bootstrap_NoTenants(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
