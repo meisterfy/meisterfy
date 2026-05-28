@@ -201,6 +201,12 @@ func main() {
 	r.Use(middleware.SecurityHeaders)
 	r.Use(chimw.RequestSize(4 * 1024 * 1024)) // 4 MB global limit
 
+	// adminAuth authenticates the JWT and then rejects tokens whose version has
+	// been revoked (e.g. after a password change), giving immediate revocation.
+	adminAuth := func(next http.Handler) http.Handler {
+		return middleware.AuthenticateAdmin(jwtSvc)(middleware.RequireActiveToken(userRepo)(next))
+	}
+
 	r.Get("/health", api.NewHealthHandler(userRepo).Handle)
 
 	r.Post("/setup", api.NewSetupHandler(userRepo, tenantRepo, rbacRepo, jwtSvc, cfg.CookieDomain, cfg.IsProduction()).Create)
@@ -237,7 +243,7 @@ func main() {
 			r.Post("/refresh", authHandler.Refresh)
 			r.Post("/logout", authHandler.Logout)
 			r.Group(func(r chi.Router) {
-				r.Use(middleware.AuthenticateAdmin(jwtSvc))
+				r.Use(adminAuth)
 				r.Get("/me", authHandler.Me)
 				r.Put("/me", authHandler.UpdateMe)
 				r.Post("/change-password", authHandler.ChangePassword)
@@ -253,7 +259,7 @@ func main() {
 	
 		r.Route("/admin", func(r chi.Router) {
 			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(adminAuth)
 	
 			r.With(middleware.RequirePermission("view-any:user")).Get("/users", usersHandler.List)
 			r.With(middleware.RequirePermission("create:user")).Post("/users", usersHandler.Create)
@@ -364,7 +370,7 @@ func main() {
 		r.Get("/api/media/{tenantId}/{filename}", mediaHandler.Serve)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(adminAuth)
 			r.Post("/api/media/{tenantId}/{postId}", mediaHandler.Upload)
 			r.Delete("/api/media/{tenantId}/{postId}", mediaHandler.Delete)
 		})
@@ -374,7 +380,7 @@ func main() {
 	// SSE streaming — no timeout middleware (would kill the stream at 30s)
 	r.Route("/ai", func(r chi.Router) {
 		r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-		r.Use(middleware.AuthenticateAdmin(jwtSvc))
+		r.Use(adminAuth)
 		r.Post("/generate", aiGenerateHandler.Generate)
 	})
 
@@ -384,7 +390,7 @@ func main() {
 		// Tenant-scoped AI routes (providers list lives here to keep tenant context clear)
 		r.Route("/admin/tenants/{tenantId}/ai", func(r chi.Router) {
 			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(adminAuth)
 			r.Use(middleware.RequireTenantMatch)
 			r.Get("/providers", aiGenerateHandler.ListProviders)
 		})
@@ -392,7 +398,7 @@ func main() {
 		// Tenant-scoped Google Ads status
 		r.Route("/admin/tenants/{tenantId}/google-ads", func(r chi.Router) {
 			r.Use(middleware.AdminCORS(cfg.AdminCORSOrigins))
-			r.Use(middleware.AuthenticateAdmin(jwtSvc))
+			r.Use(adminAuth)
 			r.Use(middleware.RequireTenantMatch)
 			r.Get("/status", googleAdsHandler.Status)
 		})

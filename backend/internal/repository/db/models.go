@@ -274,6 +274,7 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	SystemRole   string    `json:"system_role"`
+	TokenVersion int32     `json:"token_version"`
 }
 
 type UserLegalAcceptance struct {
