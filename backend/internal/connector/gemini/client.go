@@ -28,7 +28,7 @@ func NewGeminiProvider(apiKey string, cfg map[string]any) *GeminiProvider {
 		apiKey:             apiKey,
 		defaultModel:       connector.ConfigString(cfg, "model", "gemini-1.5-flash"),
 		defaultTemperature: connector.ConfigFloat(cfg, "temperature", 0.7),
-		client:             &http.Client{},
+		client:             connector.StreamingHTTPClient(),
 	}
 }
 

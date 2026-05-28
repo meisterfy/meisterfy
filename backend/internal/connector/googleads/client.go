@@ -16,6 +16,10 @@ import (
 
 const adsAPIBase = "https://googleads.googleapis.com/v23"
 
+// httpClient bounds Google Ads REST calls so a stalled upstream can't hang the
+// request indefinitely.
+var httpClient = &http.Client{Timeout: 30 * time.Second}
+
 type Client struct {
 	creds      domain.GoogleAdsCreds
 	customerID string // numeric, no dashes
@@ -59,7 +63,7 @@ func (c *Client) refresh(ctx context.Context) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("token refresh: %w", err)
 	}
@@ -108,7 +112,7 @@ func (c *Client) do(ctx context.Context, method, path string, body io.Reader) ([
 	}
 	req.Header = headers
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("google ads api: %w", err)
 	}

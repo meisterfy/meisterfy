@@ -490,5 +490,13 @@ func (h *AdminUsersHandler) SetSystemRole(w http.ResponseWriter, r *http.Request
 		InternalError(w)
 		return
 	}
+	// Platform-role changes are high impact — always audit them.
+	if callerClaims != nil && h.audit != nil {
+		h.audit.AsyncLog(domain.AuditEntry{
+			TenantID: callerClaims.TenantID, UserID: callerClaims.UserID, UserName: callerClaims.UserName,
+			Action: "user.system_role_set", EntityType: "user", EntityID: targetID,
+			After: map[string]any{"system_role": req.SystemRole}, IP: auditIP(r),
+		})
+	}
 	w.WriteHeader(http.StatusNoContent)
 }

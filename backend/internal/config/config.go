@@ -6,32 +6,34 @@ import (
 )
 
 type Config struct {
-	Port             string
-	DatabaseURL      string
-	JWTSecret        string
-	AdminCORSOrigins string
-	CookieDomain     string
-	AppEnv           string
-	BaseURL          string
-	StoragePath      string
-	SentryDSN        string
-	DevFrontendURL   string
-	CredentialKey    string
+	Port              string
+	DatabaseURL       string
+	JWTSecret         string
+	AdminCORSOrigins  string
+	CookieDomain      string
+	AppEnv            string
+	BaseURL           string
+	StoragePath       string
+	SentryDSN         string
+	DevFrontendURL    string
+	CredentialKey     string
+	TrustProxyHeaders bool
 }
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:             getEnv("PORT", "8080"),
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
-		JWTSecret:        os.Getenv("JWT_SECRET"),
-		AdminCORSOrigins: getEnv("ADMIN_CORS_ORIGINS", "http://localhost:5173"),
-		CookieDomain:     os.Getenv("COOKIE_DOMAIN"),
-		AppEnv:           getEnv("APP_ENV", "development"),
-		BaseURL:          getEnv("BASE_URL", "http://localhost:8080"),
-		StoragePath:      getEnv("STORAGE_PATH", "./storage/images"),
-		SentryDSN:        os.Getenv("SENTRY_DSN"),
-		DevFrontendURL:   os.Getenv("DEV_FRONTEND_URL"),
-		CredentialKey:    os.Getenv("CREDENTIAL_ENCRYPTION_KEY"),
+		Port:              getEnv("PORT", "8080"),
+		DatabaseURL:       os.Getenv("DATABASE_URL"),
+		JWTSecret:         os.Getenv("JWT_SECRET"),
+		AdminCORSOrigins:  getEnv("ADMIN_CORS_ORIGINS", "http://localhost:5173"),
+		CookieDomain:      os.Getenv("COOKIE_DOMAIN"),
+		AppEnv:            getEnv("APP_ENV", "development"),
+		BaseURL:           getEnv("BASE_URL", "http://localhost:8080"),
+		StoragePath:       getEnv("STORAGE_PATH", "./storage/images"),
+		SentryDSN:         os.Getenv("SENTRY_DSN"),
+		DevFrontendURL:    os.Getenv("DEV_FRONTEND_URL"),
+		CredentialKey:     os.Getenv("CREDENTIAL_ENCRYPTION_KEY"),
+		TrustProxyHeaders: os.Getenv("TRUST_PROXY_HEADERS") == "true",
 	}
 
 	if cfg.DatabaseURL == "" {

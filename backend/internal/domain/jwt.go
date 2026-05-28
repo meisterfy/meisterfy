@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	accessTokenTTL  = 15 * time.Minute
-	refreshTokenTTL = 7 * 24 * time.Hour
-	jwtIssuer   = "meisterfy"
-	jwtAudience = "meisterfy-api"
+	accessTokenTTL     = 15 * time.Minute
+	refreshTokenTTL    = 7 * 24 * time.Hour
+	jwtIssuer          = "meisterfy"
+	jwtAudience        = "meisterfy-api"
+	jwtRefreshAudience = "meisterfy-refresh"
 )
 
 type TokenPair struct {
@@ -69,7 +70,7 @@ func (s *JWTService) IssueTokenPair(claims UserClaims) (TokenPair, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID,
 			Issuer:    jwtIssuer,
-			Audience:  jwt.ClaimStrings{jwtAudience},
+			Audience:  jwt.ClaimStrings{jwtRefreshAudience},
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(refreshExp),
 		},
@@ -113,6 +114,8 @@ func (s *JWTService) ParseRefreshToken(token string) (userID, tenantID string, e
 	var rc refreshClaims
 	_, parseErr := jwt.ParseWithClaims(token, &rc, s.keyFunc,
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithIssuer(jwtIssuer),
+		jwt.WithAudience(jwtRefreshAudience),
 	)
 	if parseErr != nil {
 		if errors.Is(parseErr, jwt.ErrTokenExpired) {

@@ -58,28 +58,43 @@ func (rl *rateLimiter) cleanup() {
 
 var loginLimiter = newRateLimiter(rate.Every(10*time.Second), 5) // 5 attempts per 10s per IP
 
-func realIP(r *http.Request) string {
-	if v := r.Header.Get("X-Real-IP"); v != "" {
-		return v
-	}
-	if v := r.Header.Get("X-Forwarded-For"); v != "" {
-		if i := strings.Index(v, ","); i != -1 {
-			return strings.TrimSpace(v[:i])
+// clientIP returns the key used for per-client rate limiting. By default only
+// the real TCP peer (RemoteAddr) is trusted: X-Forwarded-For / X-Real-IP are
+// attacker-controlled, so trusting them lets a single client rotate the header
+// to mint unlimited limiter buckets and bypass brute-force protection (and
+// grow the limiter map unbounded). When the server runs behind a trusted proxy
+// that sets these headers (trustProxy=true), the leftmost forwarded address is
+// used instead.
+func clientIP(r *http.Request, trustProxy bool) string {
+	if trustProxy {
+		if v := r.Header.Get("X-Real-IP"); v != "" {
+			return v
 		}
-		return strings.TrimSpace(v)
+		if v := r.Header.Get("X-Forwarded-For"); v != "" {
+			if i := strings.Index(v, ","); i != -1 {
+				return strings.TrimSpace(v[:i])
+			}
+			return strings.TrimSpace(v)
+		}
 	}
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
 	return ip
 }
 
-// RateLimitLogin limits POST /auth/login to 5 requests per 10 seconds per IP.
-func RateLimitLogin(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := realIP(r)
-		if !loginLimiter.get(ip).Allow() {
-			http.Error(w, `{"error":"too many requests"}`, http.StatusTooManyRequests)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+// RateLimitLogin limits POST /auth/login to 5 requests per 10 seconds per
+// client. Pass trustProxy=true only when behind a proxy that strips inbound
+// X-Forwarded-For / X-Real-IP and sets a trustworthy value.
+func RateLimitLogin(trustProxy bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !loginLimiter.get(clientIP(r, trustProxy)).Allow() {
+				http.Error(w, `{"error":"too many requests"}`, http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

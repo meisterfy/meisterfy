@@ -40,7 +40,7 @@ func expiredRefreshToken(t *testing.T, svc *JWTService, userID, tenantID string)
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
 			Issuer:    jwtIssuer,
-			Audience:  jwt.ClaimStrings{jwtAudience},
+			Audience:  jwt.ClaimStrings{jwtRefreshAudience},
 			IssuedAt:  jwt.NewNumericDate(past.Add(-refreshTokenTTL)),
 			ExpiresAt: jwt.NewNumericDate(past),
 		},
@@ -174,4 +174,19 @@ func TestJWTService_ParseRefreshToken_Expired(t *testing.T) {
 	_, _, err := svc.ParseRefreshToken(tok)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrExpired)
+}
+
+// Access and refresh tokens use distinct audiences so one cannot be replayed
+// as the other (e.g. exchanging a short-lived access token for a 7-day refresh).
+func TestJWTService_TokenTypesAreNotInterchangeable(t *testing.T) {
+	t.Parallel()
+	svc := newTestJWTService()
+	pair, err := svc.IssueTokenPair(UserClaims{UserID: "u1", TenantID: "t1"})
+	require.NoError(t, err)
+
+	_, _, err = svc.ParseRefreshToken(pair.AccessToken)
+	require.Error(t, err, "access token must not be valid as a refresh token")
+
+	_, err = svc.ParseAccessToken(pair.RefreshToken)
+	require.Error(t, err, "refresh token must not be valid as an access token")
 }
