@@ -59,7 +59,7 @@
 										type="file"
 										multiple
 										class="hidden"
-										accept="image/*,video/*"
+										accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
 										onchange={(e) => onUpload(e, post.id, post.filename)}
 									/>
 								</label>

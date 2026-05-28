@@ -65,7 +65,13 @@
 		}
 		pwSaving = true
 		try {
-			await changePassword({ current_password: currentPassword, new_password: newPassword })
+			const res = await changePassword({
+				current_password: currentPassword,
+				new_password: newPassword
+			})
+			// The password change revoked the old token; adopt the fresh one so
+			// this session keeps working.
+			if (res?.access_token) auth.setToken(res.access_token)
 			currentPassword = ''
 			newPassword = ''
 			confirmPassword = ''

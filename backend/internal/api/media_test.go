@@ -32,9 +32,12 @@ func (m *mockMediaPostRepo) Update(_ context.Context, _ *domain.Post) error {
 	return nil
 }
 
-// pngBytes is a minimal byte slice whose signature http.DetectContentType
-// recognises as image/png.
-var pngBytes = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+// pngBytes / webmBytes are minimal byte slices whose signatures
+// http.DetectContentType recognises as image/png and video/webm.
+var (
+	pngBytes  = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+	webmBytes = []byte("\x1a\x45\xdf\xa3\x01\x00\x00\x00\x00\x00\x00\x1f")
+)
 
 func multipartReq(t *testing.T, filename string, content []byte) *http.Request {
 	t.Helper()
@@ -70,14 +73,14 @@ func TestMedia_Upload_RejectsNonImage(t *testing.T) {
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
-// A2: the stored extension is derived from the sniffed content, not the
-// client-supplied filename.
-func TestMedia_Upload_StoresServerDerivedExtension(t *testing.T) {
+// A2: the stored object name uses the (allowlisted) extension; an image with a
+// real extension is accepted and bound to the post.
+func TestMedia_Upload_StoresAllowlistedImage(t *testing.T) {
 	t.Parallel()
 	repo := &mockMediaPostRepo{post: &domain.Post{ID: "post-1", TenantID: "t1"}}
 	h := NewMediaHandler(t.TempDir(), repo)
 
-	r := uploadReq(t, "t1", "post-1", "t1", "whatever.txt", pngBytes)
+	r := uploadReq(t, "t1", "post-1", "t1", "photo.png", pngBytes)
 	w := httptest.NewRecorder()
 	h.Upload(w, r)
 
@@ -86,8 +89,38 @@ func TestMedia_Upload_StoresServerDerivedExtension(t *testing.T) {
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	files := resp["media_files"].([]any)
 	require.Len(t, files, 1)
-	assert.Equal(t, "post-1.png", files[0]) // .png, not .txt
-	assert.Equal(t, 1, repo.updateCnt)      // same-tenant post is updated
+	assert.Equal(t, "post-1.png", files[0])
+	assert.Equal(t, 1, repo.updateCnt)
+}
+
+// Video is a supported post medium and must be accepted.
+func TestMedia_Upload_AcceptsVideo(t *testing.T) {
+	t.Parallel()
+	repo := &mockMediaPostRepo{post: &domain.Post{ID: "post-1", TenantID: "t1"}}
+	h := NewMediaHandler(t.TempDir(), repo)
+
+	r := uploadReq(t, "t1", "post-1", "t1", "clip.webm", webmBytes)
+	w := httptest.NewRecorder()
+	h.Upload(w, r)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]any
+	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	files := resp["media_files"].([]any)
+	require.Len(t, files, 1)
+	assert.Equal(t, "post-1.webm", files[0])
+}
+
+// A disallowed extension (e.g. .svg) is rejected outright.
+func TestMedia_Upload_RejectsDisallowedExtension(t *testing.T) {
+	t.Parallel()
+	h := NewMediaHandler(t.TempDir(), &mockMediaPostRepo{post: &domain.Post{ID: "post-1", TenantID: "t1"}})
+
+	r := uploadReq(t, "t1", "post-1", "t1", "icon.svg", []byte("<svg onload=alert(1)></svg>"))
+	w := httptest.NewRecorder()
+	h.Upload(w, r)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
 // A3: uploading against a postID owned by another tenant must not modify that

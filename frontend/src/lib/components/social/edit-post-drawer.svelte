@@ -292,7 +292,7 @@
 							{/if}
 							<input
 								type="file"
-								accept="image/*,video/*"
+								accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
 								multiple
 								onchange={handleMediaUpload}
 								disabled={isUploadingMedia}

@@ -76,4 +76,10 @@ describe('changePassword', () => {
 			changePassword({ current_password: 'wrong', new_password: 'new123!' })
 		).rejects.toThrow('current password incorrect')
 	})
+
+	it('returns the fresh access token', async () => {
+		stubFetch({ access_token: 'newtok', expires_at: '2026-01-01T00:00:00Z' })
+		const res = await changePassword({ current_password: 'old', new_password: 'new123!' })
+		expect(res.access_token).toBe('newtok')
+	})
 })
