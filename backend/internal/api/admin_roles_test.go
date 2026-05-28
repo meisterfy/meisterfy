@@ -99,17 +99,46 @@ func TestAdminRoles_List_Empty(t *testing.T) {
 
 func TestAdminRoles_Get_Found(t *testing.T) {
 	t.Parallel()
-	role := sampleRoleFull()
+	role := sampleRoleFull() // TenantID "tenant-1" == defaultClaims().TenantID
 	h := newRolesHandler(&mockRolesRepo{role: &role})
 
-	r := withChiParam(httptest.NewRequest(http.MethodGet, "/", nil), "id", "role-custom")
+	_, r, jwtSvc := requestWithClaims(t, defaultClaims(), http.MethodGet, "/", nil)
+	r = withChiParam(r, "id", "role-custom")
 	w := httptest.NewRecorder()
-	h.Get(w, r)
+	wrapAuth(jwtSvc, h.Get).ServeHTTP(w, r)
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var resp map[string]any
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	assert.NotNil(t, resp["data"])
+}
+
+func TestAdminRoles_Get_GlobalRole_Allowed(t *testing.T) {
+	t.Parallel()
+	global := domain.Role{ID: "role_owner", Name: "owner", TenantID: nil}
+	h := newRolesHandler(&mockRolesRepo{role: &global})
+
+	_, r, jwtSvc := requestWithClaims(t, defaultClaims(), http.MethodGet, "/", nil)
+	r = withChiParam(r, "id", "role_owner")
+	w := httptest.NewRecorder()
+	wrapAuth(jwtSvc, h.Get).ServeHTTP(w, r)
+
+	require.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestAdminRoles_Get_OtherTenant_NotFound(t *testing.T) {
+	t.Parallel()
+	other := "other-tenant"
+	role := domain.Role{ID: "role-x", Name: "Secret", TenantID: &other, Permissions: []string{"delete:tenant"}}
+	h := newRolesHandler(&mockRolesRepo{role: &role})
+
+	_, r, jwtSvc := requestWithClaims(t, defaultClaims(), http.MethodGet, "/", nil)
+	r = withChiParam(r, "id", "role-x")
+	w := httptest.NewRecorder()
+	wrapAuth(jwtSvc, h.Get).ServeHTTP(w, r)
+
+	// Must not leak another tenant's role name/permissions (BOLA).
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestAdminRoles_Get_NotFound(t *testing.T) {

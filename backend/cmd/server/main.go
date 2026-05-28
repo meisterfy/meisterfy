@@ -282,7 +282,7 @@ func main() {
 				r.With(middleware.RequirePermission("create:post")).Post("/posts", postsHandler.Create)
 				r.With(middleware.RequirePermission("view:post")).Get("/posts/{id}", postsHandler.Get)
 				r.With(middleware.RequirePermission("create:post")).Put("/posts/{id}", postsHandler.Update)
-				r.Patch("/posts/{id}/status", postsHandler.UpdateStatus)
+				r.With(middleware.RequirePermission("view:post")).Patch("/posts/{id}/status", postsHandler.UpdateStatus)
 				r.With(middleware.RequirePermission("delete:post")).Delete("/posts/{id}", postsHandler.Delete)
 				r.With(middleware.RequirePermission("view:post")).Get("/posts/{id}/results", postsHandler.GetPublishResults)
 	

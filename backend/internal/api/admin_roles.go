@@ -59,6 +59,7 @@ func (h *AdminRolesHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminRolesHandler) Get(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.UserClaimsFromContext(r.Context())
 	role, err := h.rbacRepo.GetRoleByID(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -66,6 +67,13 @@ func (h *AdminRolesHandler) Get(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		InternalError(w)
+		return
+	}
+	// Only global roles (tenant_id NULL) and the caller's own tenant roles are
+	// visible — matching the set returned by List. Returning another tenant's
+	// role here would leak its name and full permission set (BOLA).
+	if role.TenantID != nil && (claims == nil || *role.TenantID != claims.TenantID) {
+		NotFound(w)
 		return
 	}
 	JSON(w, http.StatusOK, map[string]any{"data": toRoleAdminResponse(*role)})
