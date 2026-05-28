@@ -26,6 +26,7 @@ type adminUserRepo interface {
 type adminRBACRepo interface {
 	AssignRole(ctx context.Context, userID, tenantID, roleID string) error
 	RemoveRole(ctx context.Context, userID, tenantID, roleID string) error
+	GetRoleByID(ctx context.Context, id string) (*domain.Role, error)
 	GetRoleForUser(ctx context.Context, userID, tenantID string) (*domain.Role, error)
 	GetRolesForUsers(ctx context.Context, userIDs []string, tenantID string) (map[string]*domain.Role, error)
 	RemoveAllRolesForUserInTenant(ctx context.Context, userID, tenantID string) error
@@ -59,14 +60,32 @@ type userAdminResponse struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+// effectiveTenantID resolves the tenant a request operates on. The tenant is
+// derived solely from the authenticated token, except for super-admins
+// (view-any:tenant) who may target another tenant via the ?tenant_id query
+// param. Honouring that param for regular users would allow cross-tenant
+// access, so it is ignored unless the caller is a super-admin.
 func effectiveTenantID(r *http.Request, claims *domain.UserClaims) string {
-	if t := r.URL.Query().Get("tenant_id"); t != "" {
+	if claims == nil {
+		return ""
+	}
+	if t := r.URL.Query().Get("tenant_id"); t != "" && claims.HasPermission("view-any:tenant") {
 		return t
 	}
-	if claims != nil {
-		return claims.TenantID
+	return claims.TenantID
+}
+
+// roleAssignableInTenant reports whether roleID may be granted to a user in
+// tenantID. Global roles (tenant_id NULL) are assignable in any tenant; a
+// tenant-scoped role may only be granted within its owning tenant. This blocks
+// granting another tenant's role, which would otherwise allow privilege
+// escalation across tenants.
+func (h *AdminUsersHandler) roleAssignableInTenant(ctx context.Context, roleID, tenantID string) bool {
+	role, err := h.rbacRepo.GetRoleByID(ctx, roleID)
+	if err != nil || role == nil {
+		return false
 	}
-	return ""
+	return role.TenantID == nil || *role.TenantID == tenantID
 }
 
 func (h *AdminUsersHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -165,9 +184,17 @@ func (h *AdminUsersHandler) Create(w http.ResponseWriter, r *http.Request) {
 		InternalError(w)
 		return
 	}
-	tenantID := req.TenantID
-	if tenantID == "" {
-		tenantID = claims.TenantID
+	tenantID := claims.TenantID
+	if req.TenantID != "" {
+		if req.TenantID != claims.TenantID && !claims.HasPermission("view-any:tenant") {
+			Forbidden(w)
+			return
+		}
+		tenantID = req.TenantID
+	}
+	if req.RoleID != "" && !h.roleAssignableInTenant(r.Context(), req.RoleID, tenantID) {
+		UnprocessableEntity(w, "invalid role for tenant")
+		return
 	}
 
 	// Upsert: if email already exists and user is inactive, reactivate instead of 409.
@@ -350,6 +377,10 @@ func (h *AdminUsersHandler) Reactivate(w http.ResponseWriter, r *http.Request) {
 		InternalError(w)
 		return
 	}
+	if !h.roleAssignableInTenant(r.Context(), req.RoleID, tenantID) {
+		UnprocessableEntity(w, "invalid role for tenant")
+		return
+	}
 	u.IsActive = true
 	if err := h.userRepo.Update(r.Context(), u); err != nil {
 		InternalError(w)
@@ -390,6 +421,11 @@ func (h *AdminUsersHandler) AssignRole(w http.ResponseWriter, r *http.Request) {
 	}
 	if role, _ := h.rbacRepo.GetRoleForUser(r.Context(), userID, tenantID); role == nil {
 		NotFound(w)
+		return
+	}
+
+	if !h.roleAssignableInTenant(r.Context(), req.RoleID, tenantID) {
+		UnprocessableEntity(w, "invalid role for tenant")
 		return
 	}
 

@@ -277,10 +277,12 @@ func (h *AdminPostsHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 var transitionPermissions = map[domain.PostStatus]string{
-	domain.PostStatusApproved:  "approve:post",
-	domain.PostStatusScheduled: "schedule:post",
-	domain.PostStatusPublished: "publish:post",
-	domain.PostStatusDraft:     "review:post",
+	domain.PostStatusApproved:           "approve:post",
+	domain.PostStatusScheduled:          "schedule:post",
+	domain.PostStatusPublished:          "publish:post",
+	domain.PostStatusDraft:              "review:post",
+	domain.PostStatusFailed:             "publish:post",
+	domain.PostStatusPartiallyPublished: "publish:post",
 }
 
 func (h *AdminPostsHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {

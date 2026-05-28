@@ -1,10 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,6 +14,35 @@ import (
 	"github.com/meisterfy/meisterfy/internal/domain"
 	"github.com/meisterfy/meisterfy/internal/middleware"
 )
+
+// allowedMediaTypes maps permitted (lowercase) file extensions to the exact
+// Content-Type served back. Restricting both the stored extension and the
+// served Content-Type to images prevents uploading an HTML/SVG payload that
+// would execute as script when fetched from the public Serve endpoint
+// (stored XSS).
+var allowedMediaTypes = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".webp": "image/webp",
+}
+
+// canonicalImageExt returns the server-chosen extension for a sniffed image
+// content type. The client-supplied filename extension is never trusted.
+func canonicalImageExt(contentType string) (string, bool) {
+	switch contentType {
+	case "image/jpeg":
+		return ".jpg", true
+	case "image/png":
+		return ".png", true
+	case "image/gif":
+		return ".gif", true
+	case "image/webp":
+		return ".webp", true
+	}
+	return "", false
+}
 
 type MediaHandler struct {
 	storagePath string
@@ -53,6 +82,12 @@ func (h *MediaHandler) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ct, ok := allowedMediaTypes[strings.ToLower(filepath.Ext(filename))]
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+
 	filePath := filepath.Join(h.storagePath, tenantID, filename)
 	f, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
@@ -61,12 +96,11 @@ func (h *MediaHandler) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	ext := strings.ToLower(filepath.Ext(filename))
-	ct := mime.TypeByExtension(ext)
-	if ct == "" {
-		ct = "application/octet-stream"
-	}
+	// Force the served Content-Type to an allowlisted image type and forbid
+	// MIME sniffing / inline scripting so stored content can never execute.
 	w.Header().Set("Content-Type", ct)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	_, _ = io.Copy(w, f)
 }
@@ -105,10 +139,24 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	var savedNames []string
 	for i, fh := range files {
-		ext := filepath.Ext(fh.Filename)
-		if ext == "" {
-			ext = ".jpg"
+		src, err := fh.Open()
+		if err != nil {
+			InternalError(w)
+			return
 		}
+
+		// Sniff the actual content and derive a server-controlled extension;
+		// the client-supplied filename extension is never trusted.
+		head := make([]byte, 512)
+		n, _ := io.ReadFull(src, head)
+		head = head[:n]
+		ext, ok := canonicalImageExt(http.DetectContentType(head))
+		if !ok {
+			src.Close()
+			UnprocessableEntity(w, "unsupported file type (images only)")
+			return
+		}
+
 		var name string
 		if len(files) > 1 {
 			name = fmt.Sprintf("%s-%02d%s", postID, i+1, ext)
@@ -116,22 +164,18 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 			name = postID + ext
 		}
 		if !h.isValidSegment(name) {
+			src.Close()
 			InternalError(w)
 			return
 		}
 
-		src, err := fh.Open()
-		if err != nil {
-			InternalError(w)
-			return
-		}
 		dst, err := os.Create(filepath.Join(dir, name))
 		if err != nil {
 			src.Close()
 			InternalError(w)
 			return
 		}
-		_, copyErr := io.Copy(dst, src)
+		_, copyErr := io.Copy(dst, io.MultiReader(bytes.NewReader(head), src))
 		src.Close()
 		dst.Close()
 		if copyErr != nil {
@@ -141,9 +185,9 @@ func (h *MediaHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		savedNames = append(savedNames, name)
 	}
 
-	// Update post media_path with first file if postId provided and exists
+	// Update post media_path only when the post belongs to this tenant.
 	if postID != "" {
-		if p, err := h.postRepo.GetByID(r.Context(), postID); err == nil {
+		if p, err := h.postRepo.GetByID(r.Context(), postID); err == nil && p.TenantID == tenantID {
 			p.MediaPath = &savedNames[0]
 			_ = h.postRepo.Update(r.Context(), p)
 		}
@@ -167,9 +211,9 @@ func (h *MediaHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clear post media_path and delete the file
+	// Clear post media_path and delete the file (only for this tenant's post)
 	if postID != "" {
-		if p, err := h.postRepo.GetByID(r.Context(), postID); err == nil && p.MediaPath != nil {
+		if p, err := h.postRepo.GetByID(r.Context(), postID); err == nil && p.TenantID == tenantID && p.MediaPath != nil {
 			filename := *p.MediaPath
 			if h.isValidSegment(filename) {
 				filePath := filepath.Join(h.storagePath, tenantID, filename)

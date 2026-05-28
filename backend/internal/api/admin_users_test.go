@@ -48,12 +48,27 @@ func (m *mockUserAdminRepo) SetSystemRole(_ context.Context, _, _ string) error 
 
 type mockUsersRBACRepo struct {
 	role              *domain.Role
+	roleByID          *domain.Role
 	roles             map[string]*domain.Role
 	assignErr         error
 	removeErr         error
 	removeAllErr      error
 	getRoleErr        error
+	getRoleByIDErr    error
 	getRolesErr       error
+}
+
+// globalRole returned by GetRoleByID when a test doesn't set roleByID — a
+// global (tenant-agnostic) role is assignable in any tenant, so role-assignment
+// success paths work without extra setup.
+func (m *mockUsersRBACRepo) GetRoleByID(_ context.Context, id string) (*domain.Role, error) {
+	if m.getRoleByIDErr != nil {
+		return nil, m.getRoleByIDErr
+	}
+	if m.roleByID != nil {
+		return m.roleByID, nil
+	}
+	return &domain.Role{ID: id, Name: "global", TenantID: nil}, nil
 }
 
 func (m *mockUsersRBACRepo) AssignRole(_ context.Context, _, _, _ string) error {
@@ -438,4 +453,86 @@ func TestAdminUsers_AssignRole_NotInTenant(t *testing.T) {
 	wrapAuth(jwtSvc, h.AssignRole).ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+// C2: assigning a role that belongs to a DIFFERENT tenant must be rejected,
+// otherwise a tenant admin could grant another tenant's (possibly more
+// privileged) role and escalate.
+func TestAdminUsers_AssignRole_ForeignTenantRole_Rejected(t *testing.T) {
+	t.Parallel()
+	otherTenant := "other-tenant"
+	h := newUsersHandler(
+		&mockUserAdminRepo{user: sampleAdminUser()},
+		&mockUsersRBACRepo{
+			role:     sampleRole(), // target user is in caller's tenant
+			roleByID: &domain.Role{ID: "role-x", Name: "x", TenantID: &otherTenant},
+		},
+	)
+
+	_, r, jwtSvc := requestWithClaims(t, defaultClaims(), http.MethodPut, "/", map[string]any{"role_id": "role-x"})
+	r = withChiParam(r, "id", "user-2")
+	w := httptest.NewRecorder()
+	wrapAuth(jwtSvc, h.AssignRole).ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+// C2: a role that doesn't exist is not assignable.
+func TestAdminUsers_AssignRole_UnknownRole_Rejected(t *testing.T) {
+	t.Parallel()
+	h := newUsersHandler(
+		&mockUserAdminRepo{user: sampleAdminUser()},
+		&mockUsersRBACRepo{role: sampleRole(), getRoleByIDErr: domain.ErrNotFound},
+	)
+
+	_, r, jwtSvc := requestWithClaims(t, defaultClaims(), http.MethodPut, "/", map[string]any{"role_id": "ghost"})
+	r = withChiParam(r, "id", "user-2")
+	w := httptest.NewRecorder()
+	wrapAuth(jwtSvc, h.AssignRole).ServeHTTP(w, r)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+// C1: effectiveTenantID must ignore the ?tenant_id query param for non
+// super-admins (no view-any:tenant), scoping to the caller's own tenant.
+func TestEffectiveTenantID(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name   string
+		query  string
+		claims *domain.UserClaims
+		want   string
+	}{
+		{
+			name:   "no param uses claims tenant",
+			query:  "/",
+			claims: &domain.UserClaims{TenantID: "tenant-1"},
+			want:   "tenant-1",
+		},
+		{
+			name:   "regular user cannot override via query param",
+			query:  "/?tenant_id=victim-tenant",
+			claims: &domain.UserClaims{TenantID: "tenant-1"},
+			want:   "tenant-1",
+		},
+		{
+			name:   "super-admin may target another tenant",
+			query:  "/?tenant_id=victim-tenant",
+			claims: &domain.UserClaims{TenantID: "tenant-1", Permissions: []string{"view-any:tenant"}},
+			want:   "victim-tenant",
+		},
+		{
+			name:   "nil claims yields empty",
+			query:  "/?tenant_id=x",
+			claims: nil,
+			want:   "",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			r := httptest.NewRequest(http.MethodGet, tc.query, nil)
+			assert.Equal(t, tc.want, effectiveTenantID(r, tc.claims))
+		})
+	}
 }
