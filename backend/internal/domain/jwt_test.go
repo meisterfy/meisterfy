@@ -161,7 +161,7 @@ func TestJWTService_IssueAndParseRefreshToken(t *testing.T) {
 	pair, err := svc.IssueTokenPair(in)
 	require.NoError(t, err)
 
-	userID, tenantID, err := svc.ParseRefreshToken(pair.RefreshToken)
+	userID, tenantID, _, err := svc.ParseRefreshToken(pair.RefreshToken)
 	require.NoError(t, err)
 	assert.Equal(t, in.UserID, userID)
 	assert.Equal(t, in.TenantID, tenantID)
@@ -171,7 +171,7 @@ func TestJWTService_ParseRefreshToken_Expired(t *testing.T) {
 	t.Parallel()
 	svc := newTestJWTService()
 	tok := expiredRefreshToken(t, svc, "u-1", "t-1")
-	_, _, err := svc.ParseRefreshToken(tok)
+	_, _, _, err := svc.ParseRefreshToken(tok)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrExpired)
 }
@@ -184,9 +184,26 @@ func TestJWTService_TokenTypesAreNotInterchangeable(t *testing.T) {
 	pair, err := svc.IssueTokenPair(UserClaims{UserID: "u1", TenantID: "t1"})
 	require.NoError(t, err)
 
-	_, _, err = svc.ParseRefreshToken(pair.AccessToken)
+	_, _, _, err = svc.ParseRefreshToken(pair.AccessToken)
 	require.Error(t, err, "access token must not be valid as a refresh token")
 
 	_, err = svc.ParseAccessToken(pair.RefreshToken)
 	require.Error(t, err, "refresh token must not be valid as an access token")
+}
+
+// TokenVersion is round-tripped through both token types so revocation checks
+// can compare it against the persisted value.
+func TestJWTService_TokenVersionRoundTrip(t *testing.T) {
+	t.Parallel()
+	svc := newTestJWTService()
+	pair, err := svc.IssueTokenPair(UserClaims{UserID: "u1", TenantID: "t1", TokenVersion: 7})
+	require.NoError(t, err)
+
+	ac, err := svc.ParseAccessToken(pair.AccessToken)
+	require.NoError(t, err)
+	assert.Equal(t, 7, ac.TokenVersion)
+
+	_, _, tv, err := svc.ParseRefreshToken(pair.RefreshToken)
+	require.NoError(t, err)
+	assert.Equal(t, 7, tv)
 }

@@ -58,7 +58,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users WHERE email = $1 LIMIT 1
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role, token_version FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -75,12 +75,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SystemRole,
+		&i.TokenVersion,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users WHERE id = $1 LIMIT 1
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role, token_version FROM users WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
@@ -97,12 +98,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.SystemRole,
+		&i.TokenVersion,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role FROM users ORDER BY created_at DESC
+SELECT id, name, email, password_hash, locale, timezone, is_active, created_at, updated_at, system_role, token_version FROM users ORDER BY created_at DESC
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -125,6 +127,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.SystemRole,
+			&i.TokenVersion,
 		); err != nil {
 			return nil, err
 		}
@@ -178,7 +181,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec
-UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1
+UPDATE users SET password_hash = $2, token_version = token_version + 1, updated_at = NOW() WHERE id = $1
 `
 
 type UpdateUserPasswordParams struct {
@@ -188,5 +191,25 @@ type UpdateUserPasswordParams struct {
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
 	_, err := q.db.Exec(ctx, updateUserPassword, arg.ID, arg.PasswordHash)
+	return err
+}
+
+const getUserTokenVersion = `-- name: GetUserTokenVersion :one
+SELECT token_version FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserTokenVersion(ctx context.Context, id string) (int32, error) {
+	row := q.db.QueryRow(ctx, getUserTokenVersion, id)
+	var token_version int32
+	err := row.Scan(&token_version)
+	return token_version, err
+}
+
+const incrementUserTokenVersion = `-- name: IncrementUserTokenVersion :exec
+UPDATE users SET token_version = token_version + 1, updated_at = NOW() WHERE id = $1
+`
+
+func (q *Queries) IncrementUserTokenVersion(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, incrementUserTokenVersion, id)
 	return err
 }

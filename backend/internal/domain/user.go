@@ -15,6 +15,7 @@ type User struct {
 	Timezone     string
 	IsActive     bool
 	SystemRole   string
+	TokenVersion int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -32,11 +33,12 @@ type Permission struct {
 }
 
 type UserClaims struct {
-	UserID      string
-	UserName    string
-	TenantID    string
-	Permissions []string
-	SystemRole  string
+	UserID       string
+	UserName     string
+	TenantID     string
+	Permissions  []string
+	SystemRole   string
+	TokenVersion int
 }
 
 func (u *User) SetPassword(plain string) error {

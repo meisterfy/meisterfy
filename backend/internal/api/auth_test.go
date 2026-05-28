@@ -306,6 +306,29 @@ func TestAuthHandler_Refresh_InactiveUser(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
+func TestAuthHandler_Refresh_StaleTokenVersion(t *testing.T) {
+	t.Parallel()
+	jwtSvc := newTestJWT()
+	user := newTestUser() // TokenVersion == 0
+	h := NewAuthHandler(
+		&mockAuthUserRepo{user: user},
+		&mockRBACRepo{tenants: []string{"tenant-1"}, perms: []string{"read:posts"}},
+		&mockLegalRepo{},
+		jwtSvc, "localhost", false,
+	)
+
+	// Refresh token carries an old version (5) that no longer matches the user.
+	pair, err := jwtSvc.IssueTokenPair(domain.UserClaims{UserID: user.ID, TenantID: "tenant-1", TokenVersion: 5})
+	require.NoError(t, err)
+
+	r := httptest.NewRequest(http.MethodPost, "/auth/refresh", nil)
+	r.AddCookie(&http.Cookie{Name: refreshCookieName, Value: pair.RefreshToken})
+	w := httptest.NewRecorder()
+	h.Refresh(w, r)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
 func TestAuthHandler_Refresh_Bootstrap_NoTenants(t *testing.T) {
 	t.Parallel()
 	jwtSvc := newTestJWT()
@@ -519,6 +542,39 @@ func TestAuthHandler_ChangePassword_TooShort(t *testing.T) {
 	wrapped.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+}
+
+func TestAuthHandler_ChangePassword_Success_ReissuesToken(t *testing.T) {
+	t.Parallel()
+	jwtSvc := newTestJWT()
+	user := newTestUser()
+	h := NewAuthHandler(
+		&mockAuthUserRepo{user: user},
+		&mockRBACRepo{tenants: []string{"tenant-1"}, perms: []string{"read:posts"}},
+		&mockLegalRepo{}, jwtSvc, "localhost", false,
+	)
+	tok := issueTestToken(t, jwtSvc, domain.UserClaims{UserID: user.ID, TenantID: "tenant-1"})
+	wrapped := mw.AuthenticateAdmin(jwtSvc)(http.HandlerFunc(h.ChangePassword))
+
+	body := jsonBody(map[string]string{"current_password": testPassword, "new_password": "new-password-123"})
+	r := httptest.NewRequest(http.MethodPost, "/auth/change-password", body)
+	r.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	wrapped.ServeHTTP(w, r)
+
+	// Password change returns a fresh token pair so the current session survives.
+	require.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]any
+	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	assert.NotEmpty(t, resp["access_token"])
+
+	var refreshed bool
+	for _, c := range w.Result().Cookies() {
+		if c.Name == refreshCookieName && c.Value != "" {
+			refreshed = true
+		}
+	}
+	assert.True(t, refreshed, "a new refresh cookie should be set")
 }
 
 func TestAuthHandler_ChangePassword_WrongCurrent(t *testing.T) {
