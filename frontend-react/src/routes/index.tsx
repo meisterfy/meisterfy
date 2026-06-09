@@ -1,5 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useAuth } from '../store/auth'
 
 export const Route = createFileRoute('/')({
-  component: () => <div data-testid='home'>Meisterfy React — scaffold OK</div>,
+  beforeLoad: () => {
+    if (!useAuth.getState().isAuthenticated()) {
+      throw redirect({ to: '/login' })
+    }
+  },
+  component: () => <div data-testid='home'>home</div>,
 })
