@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.170.15",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -19,6 +20,7 @@
     "@eslint/js": "^10.0.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.0",
+    "@tanstack/router-plugin": "^1.168.18",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
