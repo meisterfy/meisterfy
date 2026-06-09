@@ -72,6 +72,19 @@ export interface IntegrationManagerState {
 }
 
 // ---------------------------------------------------------------------------
+// Module-level constants (stable reference — no deps, no useMemo needed)
+// ---------------------------------------------------------------------------
+
+const GROUP_ORDER = [
+  'ads',
+  'social_media',
+  'media',
+  'llm',
+  'email',
+  'monitoring',
+]
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
@@ -82,15 +95,6 @@ export function useIntegrationManager(): IntegrationManagerState {
   const search = useSearch({ strict: false }) as Record<string, unknown>
 
   // ------- constants -------------------------------------------------------
-
-  const GROUP_ORDER = [
-    'ads',
-    'social_media',
-    'media',
-    'llm',
-    'email',
-    'monitoring',
-  ]
 
   const GROUP_LABELS = useMemo<Record<string, string>>(
     () => ({

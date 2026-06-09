@@ -1,7 +1,8 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Ensure i18n is initialised before the hook runs
 import '@/lib/i18n/index'
+import { useSearch } from '@tanstack/react-router'
 import { useIntegrationManager } from './use-integration-manager'
 import type { Integration, ProviderSchema } from '@/lib/api/integrations'
 import type { Tenant } from '@/lib/api/tenants'
@@ -21,11 +22,13 @@ vi.mock('@/lib/api/integrations', async (importOriginal) => {
   }
 })
 
+// Mutable search-params so individual tests can override via
+// vi.mocked(useSearch).mockReturnValue(...)
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>()
   return {
     ...actual,
-    useSearch: () => ({}),
+    useSearch: vi.fn(() => ({})),
   }
 })
 
@@ -626,5 +629,139 @@ describe('useIntegrationManager', () => {
     expect(result.current.connectedMessage).toBe(
       'Integration connected successfully. It is now active.',
     )
+  })
+
+  it('justConnected is true when search.connected is "1"', () => {
+    vi.mocked(useSearch).mockReturnValue({ connected: '1' })
+    const { result } = renderHook(() => useIntegrationManager())
+    expect(result.current.justConnected).toBe(true)
+  })
+
+  it('connectedMessage includes provider_name when present', () => {
+    vi.mocked(useSearch).mockReturnValue({ connected: '1', provider_name: 'Stripe' })
+    const { result } = renderHook(() => useIntegrationManager())
+    expect(result.current.connectedMessage).toBe(
+      'Stripe connected successfully. The integration is now active.',
+    )
+  })
+
+  // ---- handleSave — oauth redirect branch ---------------------------------
+
+  it('handleSave redirects to oauth_start_path and skips toast_added when oauth_flow is true', async () => {
+    const { createIntegration: mockCreate } = await import('@/lib/api/integrations')
+    const { toast: mockToast } = await import('sonner')
+
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { href: '' },
+    })
+
+    const newIg = makeIntegration({ id: 'new1' })
+    vi.mocked(mockCreate).mockResolvedValueOnce(newIg)
+
+    const provider = makeProvider({
+      oauth_flow: true,
+      oauth_start_path: '/auth/oauth/stripe',
+    })
+    const { result } = renderHook(() => useIntegrationManager())
+
+    act(() => {
+      result.current.openCreate(provider)
+    })
+    act(() => {
+      result.current.setFormName('Stripe Integration')
+    })
+
+    await act(async () => {
+      await result.current.handleSave()
+    })
+
+    expect(mockCreate).toHaveBeenCalledOnce()
+    expect(result.current.integrations).toContainEqual(newIg)
+    expect(window.location.href).toBe('/auth/oauth/stripe?integration_id=new1')
+    expect(mockToast.success).not.toHaveBeenCalled()
+
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: originalLocation,
+    })
+  })
+
+  // ---- handleSave — catch path --------------------------------------------
+
+  it('handleSave catches errors, calls toast.error, and resets isSubmitting', async () => {
+    const { createIntegration: mockCreate } = await import('@/lib/api/integrations')
+    const { toast: mockToast } = await import('sonner')
+
+    vi.mocked(mockCreate).mockRejectedValueOnce(new Error('boom'))
+
+    const provider = makeProvider({ oauth_flow: false })
+    const { result } = renderHook(() => useIntegrationManager())
+
+    act(() => {
+      result.current.openCreate(provider)
+    })
+    act(() => {
+      result.current.setFormName('Failing Integration')
+    })
+
+    await act(async () => {
+      await result.current.handleSave()
+    })
+
+    expect(mockToast.error).toHaveBeenCalledWith('boom')
+    expect(result.current.isSubmitting).toBe(false)
+  })
+
+  // ---- handleDelete — catch path ------------------------------------------
+
+  it('handleDelete catches errors, calls toast.error, and resets isDeleting', async () => {
+    const { deleteIntegration: mockDelete } = await import('@/lib/api/integrations')
+    const { toast: mockToast } = await import('sonner')
+
+    vi.mocked(mockDelete).mockRejectedValueOnce(new Error('delete failed'))
+
+    const ig = makeIntegration({ id: 'del-err' })
+    const { result } = renderHook(() => useIntegrationManager())
+
+    await act(async () => {
+      await result.current.init(makeInitData([ig]))
+    })
+
+    act(() => {
+      result.current.confirmDelete('del-err')
+    })
+
+    await act(async () => {
+      await result.current.handleDelete()
+    })
+
+    expect(mockToast.error).toHaveBeenCalledWith('delete failed')
+    expect(result.current.isDeleting).toBe(false)
+  })
+
+  // ---- handleTest — catch path --------------------------------------------
+
+  it('handleTest catches errors, calls toast.error("Test request failed."), and resets isTesting', async () => {
+    const { testIntegration: mockTest } = await import('@/lib/api/integrations')
+    const { toast: mockToast } = await import('sonner')
+
+    vi.mocked(mockTest).mockRejectedValueOnce(new Error('network error'))
+
+    const ig = makeIntegration()
+    const provider = makeProvider()
+    const { result } = renderHook(() => useIntegrationManager())
+
+    act(() => {
+      result.current.openEdit(ig, provider)
+    })
+
+    await act(async () => {
+      await result.current.handleTest()
+    })
+
+    expect(mockToast.error).toHaveBeenCalledWith('Test request failed.')
+    expect(result.current.isTesting).toBe(false)
   })
 })
