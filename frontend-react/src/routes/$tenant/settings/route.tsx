@@ -66,8 +66,7 @@ export function TenantSettingsLayout() {
       section: 'mcp',
       label: t('nav_mcp'),
       icon: KeyRound,
-      // TODO(B8–B13): typed Link once route exists
-      typed: false,
+      typed: true,
       show: canManageUsers,
     },
   ]
@@ -136,6 +135,20 @@ export function TenantSettingsLayout() {
                 <Link
                   key={section}
                   to='/$tenant/settings/audit'
+                  params={{ tenant }}
+                  className={linkClass}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
+
+            if (typed && section === 'mcp') {
+              return (
+                <Link
+                  key={section}
+                  to='/$tenant/settings/mcp'
                   params={{ tenant }}
                   className={linkClass}
                 >
