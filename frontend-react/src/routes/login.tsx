@@ -51,8 +51,7 @@ export function LoginRoute() {
           permissions: data.permissions ?? data.user.permissions ?? [],
         })
       }
-      // TODO(phase-3): redirect to /tenants/new once that route exists
-      navigate({ to: '/' })
+      navigate({ to: data.needs_tenant ? '/tenants/new' : '/' })
     } catch {
       setError(t('network_error'))
     } finally {

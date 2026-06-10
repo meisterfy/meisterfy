@@ -8,5 +8,7 @@
 	"create_field_name_placeholder": "Acme Corp",
 	"create_field_id": "Identifier",
 	"create_field_id_hint": "(URL slug, cannot be changed)",
-	"create_field_id_placeholder": "acme-corp"
+	"create_field_id_placeholder": "acme-corp",
+	"creating": "Creating…",
+	"create_error": "Failed to create client."
 }

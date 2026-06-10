@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, Share2, Target, Bell, Menu, X, CircleUser, Settings } from 'lucide-react'
 import { BrandIcon } from '@/components/brand-icon'
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
 
 export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps) {
   const { t } = useTranslation('settings')
+  const { t: tGlobals } = useTranslation('globals')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -99,14 +101,13 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                   <Settings className='h-4 w-4' />
                   Client Settings
                 </a>
-                {/* inert placeholder — target route lands in Phase 3 */}
-                <a
-                  href='/tenants/new'
+                <Link
+                  to='/tenants/new'
                   className='flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                   onClick={() => setDropdownOpen(false)}
                 >
-                  Create Client
-                </a>
+                  {tGlobals('create_client')}
+                </Link>
                 <a
                   href='/'
                   className='flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'

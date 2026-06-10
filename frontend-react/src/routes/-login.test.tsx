@@ -4,17 +4,20 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useAuth } from '../store/auth'
 import { LoginRoute } from './login'
 
+const mockNavigate = vi.fn()
+
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const original = await importOriginal<typeof import('@tanstack/react-router')>()
   return {
     ...original,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
   }
 })
 
 beforeEach(() => {
   useAuth.getState().clear()
   sessionStorage.clear()
+  mockNavigate.mockReset()
 })
 
 afterEach(() => {
@@ -154,6 +157,58 @@ describe('LoginRoute', () => {
     resolveResponse!(undefined)
     await waitFor(() => {
       expect(useAuth.getState().isAuthenticated()).toBe(true)
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('navigates to / when needs_tenant is false', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          access_token: 'T',
+          user: { id: 'u1', name: 'A', email: 'a@b.c', locale: 'en', system_role: 'user' },
+          needs_tenant: false,
+        }),
+      }),
+    )
+
+    render(<LoginRoute />)
+    await user.type(screen.getByRole('textbox', { name: /email/i }), 'a@b.c')
+    await user.type(screen.getByLabelText(/password/i), 'pass')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/' })
+    })
+
+    vi.unstubAllGlobals()
+  })
+
+  it('navigates to /tenants/new when needs_tenant is true', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          access_token: 'T',
+          user: { id: 'u1', name: 'A', email: 'a@b.c', locale: 'en', system_role: 'user' },
+          needs_tenant: true,
+        }),
+      }),
+    )
+
+    render(<LoginRoute />)
+    await user.type(screen.getByRole('textbox', { name: /email/i }), 'a@b.c')
+    await user.type(screen.getByLabelText(/password/i), 'pass')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/tenants/new' })
     })
 
     vi.unstubAllGlobals()
