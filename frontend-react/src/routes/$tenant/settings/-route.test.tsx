@@ -118,12 +118,22 @@ describe('TenantSettingsLayout — users link', () => {
     expect(usersLink!.getAttribute('href')).toBe('/acme/settings/users')
   })
 
+  it('general Link is typed and resolves to the correct path for the tenant', () => {
+    setUser(['view-any:user'])
+    mockParams.tenant = 'acme'
+    render(<TenantSettingsLayout />)
+
+    const generalLink = screen.getByText('nav_general').closest('a')
+    expect(generalLink!.getAttribute('data-typed-link')).toBe('true')
+    expect(generalLink!.getAttribute('href')).toBe('/acme/settings/general')
+  })
+
   it('unimplemented section links are plain anchors (not data-typed-link)', () => {
     setUser(['view-any:user'])
     render(<TenantSettingsLayout />)
 
-    const generalLink = screen.getByText('nav_general').closest('a')
-    expect(generalLink!.getAttribute('data-typed-link')).toBeNull()
+    const socialLink = screen.getByText('nav_social').closest('a')
+    expect(socialLink!.getAttribute('data-typed-link')).toBeNull()
   })
 })
 

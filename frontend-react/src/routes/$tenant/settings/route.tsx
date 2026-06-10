@@ -26,8 +26,7 @@ export function TenantSettingsLayout() {
       section: 'general',
       label: t('nav_general'),
       icon: Settings,
-      // TODO(B8–B13): typed Link once route exists
-      typed: false,
+      typed: true,
     },
     {
       section: 'google-ads',
@@ -91,6 +90,20 @@ export function TenantSettingsLayout() {
                 ? 'bg-primary/10 text-primary dark:bg-primary/20'
                 : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
             )
+
+            if (typed && section === 'general') {
+              return (
+                <Link
+                  key={section}
+                  to='/$tenant/settings/general'
+                  params={{ tenant }}
+                  className={linkClass}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
 
             if (typed && section === 'users') {
               return (
