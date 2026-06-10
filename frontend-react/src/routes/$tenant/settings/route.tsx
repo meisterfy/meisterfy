@@ -39,8 +39,7 @@ export function TenantSettingsLayout() {
       section: 'social',
       label: t('nav_social'),
       icon: Share2,
-      // TODO(B8–B13): typed Link once route exists
-      typed: false,
+      typed: true,
     },
     {
       section: 'audit',
@@ -149,6 +148,20 @@ export function TenantSettingsLayout() {
                 <Link
                   key={section}
                   to='/$tenant/settings/mcp'
+                  params={{ tenant }}
+                  className={linkClass}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
+
+            if (typed && section === 'social') {
+              return (
+                <Link
+                  key={section}
+                  to='/$tenant/settings/social'
                   params={{ tenant }}
                   className={linkClass}
                 >

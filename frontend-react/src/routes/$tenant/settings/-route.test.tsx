@@ -128,12 +128,23 @@ describe('TenantSettingsLayout — users link', () => {
     expect(generalLink!.getAttribute('href')).toBe('/acme/settings/general')
   })
 
+  it('social Link is typed and resolves to the correct path for the tenant', () => {
+    setUser(['view-any:user'])
+    mockParams.tenant = 'acme'
+    render(<TenantSettingsLayout />)
+
+    const socialLink = screen.getByText('nav_social').closest('a')
+    expect(socialLink!.getAttribute('data-typed-link')).toBe('true')
+    expect(socialLink!.getAttribute('href')).toBe('/acme/settings/social')
+  })
+
   it('unimplemented section links are plain anchors (not data-typed-link)', () => {
     setUser(['view-any:user'])
     render(<TenantSettingsLayout />)
 
-    const socialLink = screen.getByText('nav_social').closest('a')
-    expect(socialLink!.getAttribute('data-typed-link')).toBeNull()
+    // google-ads is the last section still pending its route (lands in B13)
+    const googleAdsLink = screen.getByText('nav_google_ads').closest('a')
+    expect(googleAdsLink!.getAttribute('data-typed-link')).toBeNull()
   })
 })
 
