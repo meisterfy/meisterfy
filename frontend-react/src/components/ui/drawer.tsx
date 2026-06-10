@@ -10,15 +10,18 @@ interface DrawerProps {
   onOpenChange?: (open: boolean) => void
   title: string
   children: React.ReactNode
+  /**
+   * When true, the default header bar (title + close button) is not rendered.
+   * The consumer owns the entire chrome. An sr-only <DialogPrimitive.Title>
+   * is still rendered so the dialog has an accessible name.
+   * Defaults to false.
+   */
+  headerless?: boolean
 }
 
-function Drawer({ open, onOpenChange, title, children }: DrawerProps) {
+function Drawer({ open, onOpenChange, title, children, headerless = false }: DrawerProps) {
   return (
-    <DialogPrimitive.Root
-      data-slot="drawer"
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <DialogPrimitive.Root data-slot="drawer" open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           data-slot="drawer-overlay"
@@ -38,29 +41,39 @@ function Drawer({ open, onOpenChange, title, children }: DrawerProps) {
             'max-md:data-open:slide-in-from-bottom max-md:data-closed:slide-out-to-bottom',
           )}
         >
-          <div
-            data-slot="drawer-header"
-            className="flex shrink-0 items-center justify-between border-b px-4 py-3"
-          >
-            <DialogPrimitive.Title
-              data-slot="drawer-title"
-              className="font-heading text-base leading-none font-medium"
-            >
-              {title}
-            </DialogPrimitive.Title>
-            <DialogPrimitive.Close
-              data-slot="drawer-close"
-              render={
-                <Button variant="ghost" size="icon-sm" />
-              }
-            >
-              <XIcon />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          </div>
-          <div data-slot="drawer-body" className="flex-1 overflow-y-auto p-4">
-            {children}
-          </div>
+          {headerless ? (
+            <>
+              {/* sr-only title keeps the dialog accessible even with custom chrome */}
+              <DialogPrimitive.Title data-slot="drawer-title" className="sr-only">
+                {title}
+              </DialogPrimitive.Title>
+              {children}
+            </>
+          ) : (
+            <>
+              <div
+                data-slot="drawer-header"
+                className="flex shrink-0 items-center justify-between border-b px-4 py-3"
+              >
+                <DialogPrimitive.Title
+                  data-slot="drawer-title"
+                  className="font-heading text-base leading-none font-medium"
+                >
+                  {title}
+                </DialogPrimitive.Title>
+                <DialogPrimitive.Close
+                  data-slot="drawer-close"
+                  render={<Button variant="ghost" size="icon-sm" />}
+                >
+                  <XIcon />
+                  <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+              </div>
+              <div data-slot="drawer-body" className="flex-1 overflow-y-auto p-4">
+                {children}
+              </div>
+            </>
+          )}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
