@@ -92,15 +92,15 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                   </a>
                 ))}
                 <div className='my-1 border-t border-slate-200 dark:border-slate-700' />
-                {/* inert placeholder — target route lands in Phase 3 */}
-                <a
-                  href={`/${tenant}/settings`}
+                <Link
+                  to='/$tenant/settings'
+                  params={{ tenant }}
                   className='flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                   onClick={() => setDropdownOpen(false)}
                 >
                   <Settings className='h-4 w-4' />
                   Client Settings
-                </a>
+                </Link>
                 <Link
                   to='/tenants/new'
                   className='flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
@@ -184,19 +184,15 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                 {label}
               </a>
             ))}
-            {/*
-             * Settings link points toward /$tenant/settings/users (the T22 route).
-             * Plain <a> anchor — NOT typed Link — to avoid compile dependency on a
-             * route that doesn't exist until T22 lands.
-             */}
-            <a
-              href={`/${tenant}/settings/users`}
+            <Link
+              to='/$tenant/settings'
+              params={{ tenant }}
               className='flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
               onClick={() => setMobileOpen(false)}
             >
               <Settings className='h-4 w-4' />
               {t('title')}
-            </a>
+            </Link>
           </nav>
         </div>
       )}
