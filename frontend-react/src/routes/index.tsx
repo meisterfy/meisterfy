@@ -87,14 +87,14 @@ export function HomeRoute() {
               </a>
             )}
 
-            {/* Profile — minimal placeholder; full ProfileLink deferred to the profile-route task */}
-            <a
-              href='/profile'
+            {/* Profile link */}
+            <Link
+              to='/profile'
               className='flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
               aria-label={t('profile_title')}
             >
               <CircleUser className='h-5 w-5' />
-            </a>
+            </Link>
           </div>
         </div>
       </header>

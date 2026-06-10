@@ -143,15 +143,14 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
         {/* Spacer */}
         <div className='flex-1' />
 
-        {/* Profile link — minimal inert anchor; full ProfileLink component deferred to Phase 3 */}
-        {/* inert placeholder — target route lands in Phase 3 */}
-        <a
-          href={`/${tenant}/settings/profile`}
+        {/* Profile link */}
+        <Link
+          to='/profile'
           className='hidden items-center rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 md:flex'
           aria-label='Profile'
         >
           <CircleUser className='h-6 w-6' />
-        </a>
+        </Link>
 
         {/* Mobile menu toggle */}
         <button
