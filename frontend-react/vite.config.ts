@@ -26,5 +26,8 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     expect: { requireAssertions: true },
     exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+    // WSL2 + @base-ui interaction tests (user-event over Select/Popover/Dialog)
+    // run slower than the 5s default; give them headroom to avoid flakes.
+    testTimeout: 15000,
   },
 })
