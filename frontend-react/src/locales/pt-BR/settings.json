@@ -86,6 +86,8 @@
 	"audit_col_entity": "Entidade",
 	"audit_empty": "Nenhum evento de auditoria encontrado.",
 	"audit_pagination": "Página {page} de {total}",
+	"audit_details_title": "Detalhes da Auditoria",
+	"audit_details_no_changes": "Nenhuma alteração detectada",
 
 	"users_title": "Membros da Equipe",
 	"users_invite": "Convidar Usuário",
