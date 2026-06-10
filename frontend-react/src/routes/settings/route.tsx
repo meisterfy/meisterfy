@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, redirect, useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Link2, ScrollText } from 'lucide-react'
 import { useAuth } from '@/store/auth'
@@ -73,10 +73,8 @@ export function SettingsLayout() {
             {tIntegrations('title')}
           </a>
 
-          {/* TODO(B6): /settings/legal route doesn't exist yet — using plain anchor to avoid
-              typed-Link compile failure on an ungenerated route segment. */}
-          <a
-            href='/settings/legal'
+          <Link
+            to='/settings/legal'
             className={cn(
               'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
               legalActive
@@ -86,7 +84,7 @@ export function SettingsLayout() {
           >
             <ScrollText className='h-4 w-4' />
             {t('nav_legal')}
-          </a>
+          </Link>
         </div>
       </div>
 
