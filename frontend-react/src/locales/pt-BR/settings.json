@@ -167,6 +167,8 @@
 	"auto_adj_days_suffix": "dias",
 	"auto_adj_aggressive_warning": "Configurações agressivas podem interferir no período de aprendizado do Google Ads.",
 
+	"nav_back_aria": "Voltar ao app",
+
 	"nav_mcp": "Chaves MCP",
 	"mcp_title": "Chaves de API MCP",
 	"mcp_desc": "Crie chaves para conectar agentes de IA a este tenant via Model Context Protocol.",
