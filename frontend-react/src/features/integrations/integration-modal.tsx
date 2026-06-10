@@ -18,19 +18,11 @@ import { ProviderIcon } from '@/components/provider-icon'
 import type { FieldSchema } from '@/lib/api/integrations'
 import type { useIntegrationManager } from './use-integration-manager'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface IntegrationModalProps {
   manager: ReturnType<typeof useIntegrationManager>
   onSave: (e: React.FormEvent<HTMLFormElement>) => void
   onTest: () => void
 }
-
-// ---------------------------------------------------------------------------
-// FieldGroup sub-component
-// ---------------------------------------------------------------------------
 
 interface FieldGroupProps {
   fields: FieldSchema[] | undefined
