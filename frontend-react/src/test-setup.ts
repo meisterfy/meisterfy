@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
   Element.prototype.setPointerCapture = vi.fn()
   Element.prototype.releasePointerCapture = vi.fn()
 
-  if (!('ResizeObserver' in window)) {
+  if (!window.ResizeObserver) {
     window.ResizeObserver = class {
       observe() {}
       unobserve() {}
