@@ -1,6 +1,6 @@
 // Minimal translator signature — accepts the full react-i18next TFunction
 // shape but also works with any (key, opts?) => string stub in tests.
-type TFn = (key: string, opts?: { defaultValue?: string }) => string
+export type TFn = (key: string, opts?: { defaultValue?: string }) => string
 
 // ---------------------------------------------------------------------------
 // avatarColor
