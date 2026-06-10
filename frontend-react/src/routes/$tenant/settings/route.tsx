@@ -60,8 +60,7 @@ export function TenantSettingsLayout() {
       section: 'roles',
       label: t('nav_roles'),
       icon: ShieldCheck,
-      // TODO(B8–B13): typed Link once route exists
-      typed: false,
+      typed: true,
       show: canManageUsers,
     },
     {
@@ -110,6 +109,20 @@ export function TenantSettingsLayout() {
                 <Link
                   key={section}
                   to='/$tenant/settings/users'
+                  params={{ tenant }}
+                  className={linkClass}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
+
+            if (typed && section === 'roles') {
+              return (
+                <Link
+                  key={section}
+                  to='/$tenant/settings/roles'
                   params={{ tenant }}
                   className={linkClass}
                 >
