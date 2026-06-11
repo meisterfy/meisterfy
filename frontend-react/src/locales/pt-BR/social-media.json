@@ -21,6 +21,15 @@
 	"publish_no_accounts": "Nenhuma conta Meta encontrada",
 	"publish_no_accounts_hint": "Conecte uma integração Meta em Configurações → Integrações e autorize-a para descobrir páginas.",
 	"publish_account_label": "Conta",
+	"ai_generate_title": "Gerar Rascunhos com IA",
+	"ai_no_provider_pre": "Nenhum provedor de IA conectado para este cliente. Acesse",
+	"ai_no_provider_link": "Configurações → Integrações",
+	"ai_no_provider_post": "e adicione uma chave Claude, OpenAI, Gemini, Groq ou Kimi.",
+	"ai_provider_label": "Provedor de IA",
+	"ai_topic_label": "Tópico / Contexto",
+	"ai_topic_placeholder": "Descreva sobre o que os posts devem falar. Inclua informações do produto, contexto da campanha, mensagens-chave…",
+	"ai_num_drafts_label": "Número de rascunhos",
+	"ai_generating": "Gerando…",
 	"post_media_label": "Mídia do Post",
 	"calendar_new_post": "Novo post"
 }
