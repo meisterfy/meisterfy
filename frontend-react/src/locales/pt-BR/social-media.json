@@ -1,5 +1,13 @@
 {
 	"social_media": {},
+	"post_new_title": "Novo Post",
+	"post_title_placeholder": "Título do post",
+	"post_copy_placeholder": "Texto do post…",
+	"hashtags_hint": "(separadas por espaço)",
+	"hashtag_placeholder": "#hashtag1 #hashtag2",
+	"meta_account_label": "Conta Meta",
+	"meta_account_none": "— Nenhuma conta específica —",
+	"meta_connect_hint": "Conecte uma conta Meta em Configurações → Social para publicar automaticamente.",
 	"post_media_label": "Mídia do Post",
 	"calendar_new_post": "Novo post"
 }
