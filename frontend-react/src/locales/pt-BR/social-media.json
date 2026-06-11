@@ -17,6 +17,10 @@
 	"meta_account_none": "— Nenhuma conta específica —",
 	"meta_connect_hint": "Conecte uma conta Meta em Configurações → Social para publicar automaticamente.",
 	"schedule_title": "Agendar Post",
+	"publish_to_meta": "Publicar no Meta",
+	"publish_no_accounts": "Nenhuma conta Meta encontrada",
+	"publish_no_accounts_hint": "Conecte uma integração Meta em Configurações → Integrações e autorize-a para descobrir páginas.",
+	"publish_account_label": "Conta",
 	"post_media_label": "Mídia do Post",
 	"calendar_new_post": "Novo post"
 }
