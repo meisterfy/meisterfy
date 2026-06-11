@@ -146,7 +146,11 @@
 		"ai_copy": "Copiar",
 		"ai_analyzing": "Analisando dados da campanha… Isso pode levar até um minuto para modelos de análise profunda.",
 		"ai_title": "Análise de Campanha com IA",
-		"ai_description": "Gere um relatório com IA baseado nos dados ao vivo desta campanha, palavras-chave e termos de pesquisa."
+		"ai_description": "Gere um relatório com IA baseado nos dados ao vivo desta campanha, palavras-chave e termos de pesquisa.",
+		"search_term": "Termo de Pesquisa",
+		"conv_abbrev": "conv.",
+		"landing_page": "Página de Destino",
+		"pred_ctr": "CTR Prev."
 	},
 	"chart_avg_cost": "Custo Médio (R$)",
 	"chart_avg_cpa": "CPA Médio (R$)",
@@ -186,5 +190,6 @@
 		"ignore_confirm_title": "Ignorar esta sugestão?",
 		"ignore_confirm_desc": "A sugestão será marcada como rejeitada e removida da lista.",
 		"error_load": "Falha ao carregar sugestões pendentes. O restante da página não foi afetado."
-	}
+	},
+	"vs_prev_week": "vs sem. ant."
 }

@@ -12,7 +12,7 @@ const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export function createPerformanceTimelineConfig(
   history: HistoryEntry[],
   t: T,
-): ChartConfiguration {
+): ChartConfiguration<'line'> {
   return {
     type: 'line',
     data: {
@@ -55,7 +55,7 @@ export function createPerformanceTimelineConfig(
   }
 }
 
-export function createDayOfWeekCostConfig(avgCosts: number[], t: T): ChartConfiguration {
+export function createDayOfWeekCostConfig(avgCosts: number[], t: T): ChartConfiguration<'bar'> {
   return {
     type: 'bar',
     data: {
@@ -87,7 +87,10 @@ export function createDayOfWeekCostConfig(avgCosts: number[], t: T): ChartConfig
   }
 }
 
-export function createDayOfWeekCpaConfig(avgCpas: (number | null)[], t: T): ChartConfiguration {
+export function createDayOfWeekCpaConfig(
+  avgCpas: (number | null)[],
+  t: T,
+): ChartConfiguration<'bar'> {
   return {
     type: 'bar',
     data: {
