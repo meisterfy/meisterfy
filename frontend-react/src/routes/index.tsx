@@ -144,10 +144,9 @@ export function HomeRoute() {
           ) : (
             <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
               {tenants.map((tenant) => (
-                // TODO(C3): point to /$tenant/social once that route is generated
                 <Link
                   key={tenant.id}
-                  to='/$tenant'
+                  to='/$tenant/social'
                   params={{ tenant: tenant.id }}
                   className='group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-primary/50'
                 >

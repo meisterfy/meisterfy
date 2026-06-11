@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, Share2, Target, Bell, Menu, X, CircleUser, Settings } from 'lucide-react'
 import { BrandIcon } from '@/components/brand-icon'
@@ -38,10 +38,12 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
   const { t: tGlobals } = useTranslation('globals')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = useLocation().pathname
 
-  // Simple active check — "always false" for inert Phase 3 links is fine; keeping the hook
-  // so the markup mirrors Svelte's active-class logic without a real router dep here.
-  const isActive = (_key: string) => false
+  // Active by path for wired routes; still false for the inert ads/alerts links
+  // whose target routes land later in Phase 3.
+  const isActive = (key: string) =>
+    key === 'social' ? pathname.startsWith(`/${tenant}/social`) : false
 
   return (
     <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90'>
@@ -122,22 +124,29 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
 
         {/* Desktop nav — inert placeholders; target routes land in Phase 3 */}
         <nav className='hidden items-center gap-1 md:flex' aria-label='Primary navigation'>
-          {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => (
+          {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => {
+            const linkClass = cn(
+              'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              isActive(key)
+                ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
+            )
+            if (key === 'social') {
+              return (
+                <Link key={key} to='/$tenant/social' params={{ tenant }} className={linkClass}>
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
             // inert placeholder — target route lands in Phase 3
-            <a
-              key={key}
-              href={href(tenant)}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                isActive(key)
-                  ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
-              )}
-            >
-              <Icon className='h-4 w-4' />
-              {label}
-            </a>
-          ))}
+            return (
+              <a key={key} href={href(tenant)} className={linkClass}>
+                <Icon className='h-4 w-4' />
+                {label}
+              </a>
+            )
+          })}
         </nav>
 
         {/* Spacer */}
@@ -167,23 +176,40 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
       {mobileOpen && (
         <div className='border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 md:hidden'>
           <nav className='flex flex-col gap-1' aria-label='Mobile navigation'>
-            {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => (
+            {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => {
+              const linkClass = cn(
+                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                isActive(key)
+                  ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
+              )
+              if (key === 'social') {
+                return (
+                  <Link
+                    key={key}
+                    to='/$tenant/social'
+                    params={{ tenant }}
+                    className={linkClass}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Icon className='h-4 w-4' />
+                    {label}
+                  </Link>
+                )
+              }
               // inert placeholder — target route lands in Phase 3
-              <a
-                key={key}
-                href={href(tenant)}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive(key)
-                    ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
-                )}
-                onClick={() => setMobileOpen(false)}
-              >
-                <Icon className='h-4 w-4' />
-                {label}
-              </a>
-            ))}
+              return (
+                <a
+                  key={key}
+                  href={href(tenant)}
+                  className={linkClass}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </a>
+              )
+            })}
             <Link
               to='/$tenant/settings'
               params={{ tenant }}
