@@ -16,7 +16,7 @@ interface TenantToolbarProps {
   clients: Client[]
 }
 
-// inert nav items — target routes land in Phase 3
+// social + alerts are wired (see WIRED_ROUTES); ads target route lands in C7
 const NAV_ITEMS = [
   { key: 'social', label: 'Social', icon: Share2, href: (tenant: string) => `/${tenant}/social` },
   {
@@ -33,6 +33,12 @@ const NAV_ITEMS = [
   },
 ]
 
+// Keys whose target route exists — rendered as typed <Link>. Others stay inert <a>.
+const WIRED_ROUTES = {
+  social: '/$tenant/social',
+  alerts: '/$tenant/alerts',
+} as const
+
 export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps) {
   const { t } = useTranslation('settings')
   const { t: tGlobals } = useTranslation('globals')
@@ -40,10 +46,14 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = useLocation().pathname
 
-  // Active by path for wired routes; still false for the inert ads/alerts links
-  // whose target routes land later in Phase 3.
+  // Active by path for wired routes; still false for the inert ads link
+  // whose target route lands in C7.
   const isActive = (key: string) =>
-    key === 'social' ? pathname.startsWith(`/${tenant}/social`) : false
+    key === 'social'
+      ? pathname.startsWith(`/${tenant}/social`)
+      : key === 'alerts'
+        ? pathname.startsWith(`/${tenant}/alerts`)
+        : false
 
   return (
     <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90'>
@@ -131,15 +141,16 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                 ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
                 : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
             )
-            if (key === 'social') {
+            const wired = WIRED_ROUTES[key as keyof typeof WIRED_ROUTES]
+            if (wired) {
               return (
-                <Link key={key} to='/$tenant/social' params={{ tenant }} className={linkClass}>
+                <Link key={key} to={wired} params={{ tenant }} className={linkClass}>
                   <Icon className='h-4 w-4' />
                   {label}
                 </Link>
               )
             }
-            // inert placeholder — target route lands in Phase 3
+            // inert placeholder — target route lands in C7
             return (
               <a key={key} href={href(tenant)} className={linkClass}>
                 <Icon className='h-4 w-4' />
@@ -183,11 +194,12 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                   ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
                   : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
               )
-              if (key === 'social') {
+              const wired = WIRED_ROUTES[key as keyof typeof WIRED_ROUTES]
+              if (wired) {
                 return (
                   <Link
                     key={key}
-                    to='/$tenant/social'
+                    to={wired}
                     params={{ tenant }}
                     className={linkClass}
                     onClick={() => setMobileOpen(false)}
@@ -197,7 +209,7 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
                   </Link>
                 )
               }
-              // inert placeholder — target route lands in Phase 3
+              // inert placeholder — target route lands in C7
               return (
                 <a
                   key={key}
