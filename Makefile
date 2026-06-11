@@ -1,4 +1,5 @@
-.PHONY: dev/backend dev/frontend build migrate/up migrate/down migrate/status \
+.PHONY: dev/backend dev/frontend dev/backend/react dev/frontend/react build \
+        migrate/up migrate/down migrate/status \
         migrate/create test/backend test/backend/unit test/backend/integration \
         test/backend/cover test/frontend test/e2e test/e2e/ui test/e2e/report \
         lint sqlc smoke smoke/remote
@@ -10,6 +11,15 @@ dev/backend:
 
 dev/frontend:
 	cd frontend && bun run dev
+
+# React-migration dev (frontend-react on :5174). Access the app at
+# http://localhost:8181 — the backend proxies non-API routes to the Vite dev
+# server, so OAuth's same-origin redirect back to /settings/integrations works.
+dev/backend/react:
+	cd backend && DEV_FRONTEND_URL=http://localhost:5174 $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || DEV_FRONTEND_URL=http://localhost:5174 go run ./cmd/server
+
+dev/frontend/react:
+	cd frontend-react && bun run dev
 
 dev/bundle:
 	@bunx concurrently -k -n "go,svelte,locale,aipim" -c "blue,magenta,yellow,cyan" \
