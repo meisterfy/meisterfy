@@ -1,6 +1,8 @@
 {
 	"social_media": {},
 	"draft_new_title": "Novo Rascunho",
+	"delete_draft_title": "Excluir rascunho?",
+	"strategy_reasoning": "Raciocínio da Estratégia",
 	"edit_post": "Editar Post",
 	"delete_post_title": "Excluir post?",
 	"media_remove_all": "Remover tudo",
