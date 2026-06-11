@@ -68,35 +68,39 @@ async function seedSession(page: import('@playwright/test').Page) {
     }),
   )
 
-  // 3. Mock the two API endpoints that useRolesData fires.
+  // 3. Mock the two API endpoints that useRolesData fires. getRoles/
+  //    getPermissions call apiFetchData (which unwraps `.data`), so the bodies
+  //    use the `{data:...}` envelope — a bare array resolves to undefined.
   await page.route('**/admin/roles*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(ROLES_FIXTURE),
+      body: JSON.stringify({ data: ROLES_FIXTURE }),
     }),
   )
   await page.route('**/admin/permissions*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(PERMISSIONS_FIXTURE),
+      body: JSON.stringify({ data: PERMISSIONS_FIXTURE }),
     }),
   )
 
-  // 4. Stub the tenant + tenants calls made by the $tenant layout.
-  await page.route('**/tenants/*', (route) =>
+  // 4. Stub the tenant + tenants calls made by the $tenant layout. Scoped to
+  //    the real `/admin/` path so they never intercept Vite's dev module
+  //    scripts (a bare `**/tenants/*` matches /src/routes/tenants/new.tsx).
+  await page.route('**/admin/tenants/*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ id: TENANT, name: 'Test Tenant' }),
+      body: JSON.stringify({ data: { id: TENANT, name: 'Test Tenant' } }),
     }),
   )
-  await page.route('**/tenants', (route) =>
+  await page.route('**/admin/tenants', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([]),
+      body: JSON.stringify({ data: [] }),
     }),
   )
 }
@@ -120,14 +124,13 @@ test('roles page auto-selects first role and shows its permissions', async ({ pa
 
   await page.goto(`/${TENANT}/settings/roles`)
 
-  // The "owner" role name (first in fixture) should be visible in the list
-  // after data loads.
-  // Note: roleLabel falls back to the raw name when no i18n key exists for
-  // the default backend name, so "owner" is the displayed text.
-  // Backend-gated: if i18n loads "Owner" instead, this would need adjustment.
-  await expect(page.getByText('Owner').or(page.getByText('owner'))).toBeVisible({
-    timeout: 10_000,
-  })
+  // The "owner" role name (first in fixture) should be visible after data
+  // loads. roleLabel maps the default backend name to "Owner" via i18n. It
+  // appears twice — once in the role list and once in the auto-selected
+  // detail panel heading — so scope to the first match to avoid strict-mode.
+  await expect(
+    page.getByText('Owner').or(page.getByText('owner')).first(),
+  ).toBeVisible({ timeout: 10_000 })
 })
 
 test('roles page shows New Role button when create:role permission present', async ({ page }) => {

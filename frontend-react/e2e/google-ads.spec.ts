@@ -40,37 +40,45 @@ async function seedSession(page: import('@playwright/test').Page) {
     }),
   )
 
-  const emptyArray = JSON.stringify([])
+  const emptyData = JSON.stringify({ data: [] })
 
-  // Mock Google Ads status — not connected (the simplest stable backend-independent state)
-  await page.route('**/google-ads/status', (route) =>
+  // Mock Google Ads status — not connected (the simplest stable
+  // backend-independent state). Scoped to the real nested `/admin/tenants/*/
+  // google-ads/status` path; getGoogleAdsStatus calls apiFetchData, so the body
+  // uses the `{data:...}` envelope.
+  await page.route('**/admin/tenants/*/google-ads/status*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ connected: false }),
+      body: JSON.stringify({ data: { connected: false } }),
     }),
   )
 
-  // Mock AI providers — none configured
-  await page.route('**/ai/providers', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: emptyArray }),
+  // Mock AI providers — none configured (apiFetchData → `{data:...}` envelope).
+  await page.route('**/admin/tenants/*/ai/providers*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: emptyData }),
   )
 
-  // The $tenant layout loads the tenant + tenants list.
-  await page.route('**/tenants/*', (route) =>
+  // The $tenant layout (+ this route) loads the tenant + tenants list. Scoped to
+  // the real `/admin/` path so they never intercept Vite's dev module scripts
+  // (a bare `**/tenants/*` matches /src/routes/tenants/new.tsx). getTenant calls
+  // apiFetchData → `{data:...}` envelope.
+  await page.route('**/admin/tenants/*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        id: TENANT,
-        name: 'Test Tenant',
-        ads_monitoring: null,
-        report_prompts: null,
+        data: {
+          id: TENANT,
+          name: 'Test Tenant',
+          ads_monitoring: null,
+          report_prompts: null,
+        },
       }),
     }),
   )
-  await page.route('**/tenants', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: emptyArray }),
+  await page.route('**/admin/tenants', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: emptyData }),
   )
 }
 

@@ -42,28 +42,33 @@ async function seedSession(page: import('@playwright/test').Page) {
     }),
   )
 
-  // 3. Mock the MCP keys endpoint to an empty array so the empty state renders.
-  await page.route('**/mcp-keys**', (route) =>
+  // 3. Mock the MCP keys endpoint so the empty state renders. Scoped to the
+  //    real `/admin/tenants/*/mcp-keys` path (a bare `**/mcp-keys**` could
+  //    match Vite dev module URLs). getMcpKeys calls apiFetchData, so the body
+  //    uses the `{data:...}` envelope — a bare [] resolves to undefined.
+  await page.route('**/admin/tenants/*/mcp-keys*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([]),
+      body: JSON.stringify({ data: [] }),
     }),
   )
 
-  // 4. Stub the tenant + tenants calls made by the $tenant layout.
-  await page.route('**/tenants/*', (route) =>
+  // 4. Stub the tenant + tenants calls made by the $tenant layout. Scoped to
+  //    the real `/admin/` path so they never intercept Vite's dev module
+  //    scripts (a bare `**/tenants/*` matches /src/routes/tenants/new.tsx).
+  await page.route('**/admin/tenants/*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ id: TENANT, name: 'Test Tenant' }),
+      body: JSON.stringify({ data: { id: TENANT, name: 'Test Tenant' } }),
     }),
   )
-  await page.route('**/tenants', (route) =>
+  await page.route('**/admin/tenants', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([]),
+      body: JSON.stringify({ data: [] }),
     }),
   )
 }

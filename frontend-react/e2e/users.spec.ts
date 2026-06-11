@@ -47,25 +47,31 @@ async function seedSession(page: import('@playwright/test').Page) {
     }),
   )
 
-  // 3. Mock the three API endpoints that useUsersData fires so the loading
-  //    state resolves instantly (empty arrays) rather than timing out.
-  const emptyArray = JSON.stringify([])
-  await page.route('**/tenants/*/users*', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: emptyArray }),
+  // 3. Mock the API endpoints that useUsersData fires so the loading state
+  //    resolves instantly rather than timing out. Globs are scoped to the real
+  //    `/admin/` API paths: a bare `**/roles*` / `**/tenants/*` also matches
+  //    Vite's eagerly-imported dev module scripts (e.g. /src/routes/tenants/
+  //    new.tsx), which would be served as JSON and break app boot. Bodies use
+  //    the `{data:...}` envelope because getUsers/getRoles call apiFetchData
+  //    (which unwraps `.data`) — a bare [] resolves to undefined and crashes
+  //    on `.length`.
+  const emptyData = JSON.stringify({ data: [] })
+  await page.route('**/admin/users*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: emptyData }),
   )
-  await page.route('**/roles*', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: emptyArray }),
+  await page.route('**/admin/roles*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: emptyData }),
   )
-  // Also stub the tenant + tenants calls made by the $tenant layout.
-  await page.route('**/tenants/*', (route) =>
+  // Stub the tenant + tenants calls made by the $tenant layout.
+  await page.route('**/admin/tenants/*', (route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ id: TENANT, name: 'Test Tenant' }),
+      body: JSON.stringify({ data: { id: TENANT, name: 'Test Tenant' } }),
     }),
   )
-  await page.route('**/tenants', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: emptyArray }),
+  await page.route('**/admin/tenants', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: emptyData }),
   )
 }
 

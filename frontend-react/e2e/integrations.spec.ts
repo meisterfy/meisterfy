@@ -4,6 +4,9 @@ const SESSION_KEY = 'meisterfy_session'
 
 // Shape mirrors CachedSession in src/store/auth.ts:
 //   { user: AuthUser, token: string, expiresAt: number }
+// system_role MUST be platform_admin: the /settings/* layout beforeLoad calls
+// requirePlatformAdmin(), which redirects a plain 'user' to '/' (the home/
+// tenant-selection page) — so the integrations route would never mount.
 const SESSION_FIXTURE = {
   user: {
     id: 'test-user-id',
@@ -12,7 +15,7 @@ const SESSION_FIXTURE = {
     tenant_id: 'test-tenant-id',
     permissions: [],
     locale: 'en',
-    system_role: 'user',
+    system_role: 'platform_admin',
   },
   token: 'test-token',
   expiresAt: Date.now() + 60 * 60 * 1000, // 1 hour in the future
@@ -39,6 +42,21 @@ async function seedSession(page: import('@playwright/test').Page) {
         permissions: [],
       }),
     }),
+  )
+
+  // Mock the page endpoints so the empty state renders instantly rather than
+  // waiting on the down backend through the dev proxy. getIntegrations calls
+  // apiFetch (raw) → return the bare IntegrationsPageData shape; getTenants
+  // calls apiFetchData → `{data:...}` envelope.
+  await page.route('**/admin/integrations', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ integrations: [], providers: [] }),
+    }),
+  )
+  await page.route('**/admin/tenants*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }),
   )
 }
 

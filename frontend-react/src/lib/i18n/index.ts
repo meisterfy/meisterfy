@@ -47,7 +47,13 @@ i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   defaultNS: 'globals',
-  interpolation: { escapeValue: false }
+  // The locale strings use single-brace `{var}` placeholders (carried over from
+  // the Svelte/paraglide source), not i18next's default `{{var}}`. Match that
+  // syntax so interpolation actually runs — otherwise every parameterized string
+  // (e.g. "Go to {link} to connect…", "Page {page} of {total}") renders the raw
+  // placeholder. escapeValue stays false because some strings interpolate HTML
+  // (the gads no-integration notice injects an <a> via dangerouslySetInnerHTML).
+  interpolation: { escapeValue: false, prefix: '{', suffix: '}' }
 })
 
 export default i18n
