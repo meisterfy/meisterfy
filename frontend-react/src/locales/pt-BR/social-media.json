@@ -1,5 +1,10 @@
 {
 	"social_media": {},
+	"edit_post": "Editar Post",
+	"delete_post_title": "Excluir post?",
+	"media_remove_all": "Remover tudo",
+	"no_image_attached": "Nenhuma imagem anexada",
+	"media_uploading": "Enviando…",
 	"post_new_title": "Novo Post",
 	"post_title_placeholder": "Título do post",
 	"post_copy_placeholder": "Texto do post…",
