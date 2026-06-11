@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type React from 'react'
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const original = await importOriginal<typeof import('@tanstack/react-router')>()
@@ -11,6 +12,8 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
       useParams: () => ({ tenant: 'acme' }),
     }),
     redirect: original.redirect,
+    // the table cells (columns) render typed <Link>s to the detail/live routes
+    Link: ({ children, ...props }: { children: React.ReactNode }) => <a {...props}>{children}</a>,
   }
 })
 

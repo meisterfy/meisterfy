@@ -1,4 +1,5 @@
 import { Activity, CircleAlert, CircleCheck, Search, SquarePen, Trash2, Send } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 // Row shape shared by the table, its cells and the list route. Mirrors the
@@ -16,9 +17,8 @@ export interface UnifiedCampaign {
   tenant: string
 }
 
-// Detail (C8: /$tenant/ads/google/$slug) and live (C9: .../live/$campaign_id)
-// routes don't exist yet — use plain <a href> + TODO until they land (a typed
-// <Link> to an ungenerated route fails tsc).
+// Live (C9: .../live/$campaign_id) and detail (C8: .../$slug) routes now exist
+// → typed <Link>s.
 export function CampaignNameCell({
   name,
   id,
@@ -28,10 +28,8 @@ export function CampaignNameCell({
   tenant,
 }: Pick<UnifiedCampaign, 'name' | 'id' | 'slug' | 'type' | 'objective' | 'tenant'>) {
   const { t } = useTranslation('ads')
-  const href =
-    type === 'live'
-      ? `/${tenant}/ads/google/live/${id}` // TODO(C9)
-      : `/${tenant}/ads/google/${slug}` // TODO(C8)
+  const linkClass =
+    'block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white'
   return (
     <div className="flex items-center gap-3">
       {type === 'local' && (
@@ -40,12 +38,23 @@ export function CampaignNameCell({
         </div>
       )}
       <div>
-        <a
-          href={href}
-          className="block font-bold text-slate-900 transition-colors hover:text-indigo-600 dark:text-white"
-        >
-          {type === 'live' ? name : id}
-        </a>
+        {type === 'live' ? (
+          <Link
+            to="/$tenant/ads/google/live/$campaign_id"
+            params={{ tenant, campaign_id: id }}
+            className={linkClass}
+          >
+            {name}
+          </Link>
+        ) : (
+          <Link
+            to="/$tenant/ads/google/$slug"
+            params={{ tenant, slug: slug ?? '' }}
+            className={linkClass}
+          >
+            {id}
+          </Link>
+        )}
         {type === 'local' && objective ? (
           <span className="text-xs text-slate-500">{objective}</span>
         ) : type === 'live' ? (
@@ -117,13 +126,14 @@ export function CampaignActions({
   return (
     <div className="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
       {campaign.type === 'live' ? (
-        <a
-          href={`/${campaign.tenant}/ads/google/live/${campaign.id}`} // TODO(C9)
+        <Link
+          to="/$tenant/ads/google/live/$campaign_id"
+          params={{ tenant: campaign.tenant, campaign_id: campaign.id }}
           className="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
           title={t('view_detailed_report')}
         >
           <Activity className="h-4 w-4" />
-        </a>
+        </Link>
       ) : (
         <>
           {campaign.status === 'approved' && onDeploy && (
@@ -136,13 +146,14 @@ export function CampaignActions({
               <Send className="h-4 w-4" />
             </button>
           )}
-          <a
-            href={`/${campaign.tenant}/ads/google/${campaign.slug}`} // TODO(C8)
+          <Link
+            to="/$tenant/ads/google/$slug"
+            params={{ tenant: campaign.tenant, slug: campaign.slug ?? '' }}
             className="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-indigo-900/30"
             title="Edit"
           >
             <SquarePen className="h-4 w-4" />
-          </a>
+          </Link>
           <button
             type="button"
             className="rounded border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition-colors hover:bg-red-50 hover:text-red-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-red-900/30"
