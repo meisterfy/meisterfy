@@ -148,6 +148,10 @@
 		"ai_title": "Análise de Campanha com IA",
 		"ai_description": "Gere um relatório com IA baseado nos dados ao vivo desta campanha, palavras-chave e termos de pesquisa."
 	},
+	"chart_avg_cost": "Custo Médio (R$)",
+	"chart_avg_cpa": "CPA Médio (R$)",
+	"chart_cost": "Custo (R$)",
+	"chart_cpa": "CPA (R$)",
 	"campaign_manager": "Gerenciador de Campanhas",
 	"new_campaign": "Nova Campanha",
 	"search_campaigns_placeholder": "Buscar campanhas...",
