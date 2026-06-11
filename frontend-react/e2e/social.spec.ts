@@ -204,6 +204,70 @@ test('social drafts page renders the empty state with backend down', async ({ pa
   await expect(page.getByText('No drafts yet.')).toBeVisible()
 })
 
+// ── Social post editor (/$tenant/social/$post_id) ────────────────────────────
+
+async function seedEditor(page: import('@playwright/test').Page, post: Record<string, unknown>) {
+  await page.addInitScript(
+    (args: { key: string; value: string }) => {
+      sessionStorage.setItem(args.key, args.value)
+    },
+    { key: SESSION_KEY, value: JSON.stringify(SESSION_FIXTURE) },
+  )
+  await page.route('**/auth/refresh', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        access_token: 'test-token',
+        user: SESSION_FIXTURE.user,
+        tenant_id: SESSION_FIXTURE.user.tenant_id,
+        permissions: [],
+      }),
+    }),
+  )
+  // publish results (more specific) registered before the single-post route
+  await page.route('**/admin/tenants/*/posts/*/results*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }),
+  )
+  await page.route('**/admin/tenants/*/posts/*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: post }) }),
+  )
+  await page.route('**/admin/tenants/*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { id: TENANT, name: 'Test Tenant' } }),
+    }),
+  )
+}
+
+test('social post editor loads a post into the editor fields', async ({ page }) => {
+  await seedEditor(page, {
+    id: 'p-e2e',
+    tenant_id: TENANT,
+    status: 'draft',
+    title: 'Editor title',
+    content: 'Editor content',
+    hashtags: ['x'],
+    platforms: ['instagram_feed'],
+    media_path: null,
+    media_type: 'image',
+    connector_resource_id: null,
+    workflow: null,
+    scheduled_date: null,
+    scheduled_time: null,
+    published_at: null,
+    created_at: '2026-06-01T00:00:00Z',
+    updated_at: '2026-06-01T00:00:00Z',
+  })
+
+  await page.goto(`/${TENANT}/social/p-e2e`)
+
+  await expect(page.getByRole('heading', { name: 'Edit Post' })).toBeVisible()
+  await expect(page.getByLabel('Title (Internal)')).toHaveValue('Editor title')
+  await expect(page.getByRole('button', { name: 'Save Changes' })).toBeVisible()
+})
+
 test('social drafts page lists a draft and its actions', async ({ page }) => {
   await seedDrafts(page, [
     {
