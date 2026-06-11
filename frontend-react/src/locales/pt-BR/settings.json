@@ -48,6 +48,7 @@
 	"gads_no_integration": "Nenhuma integração com Google Ads conectada.",
 	"gads_no_integration_desc": "Acesse {link} para conectar sua conta do Google Ads antes de configurar estas opções.",
 	"gads_integrations_link": "Integrações",
+	"gads_enable_to_edit": "Ative para editar.",
 
 	"data_sync_title": "Sincronização de Dados",
 	"data_sync_desc": "Configure como os dados de campanha são importados do Google Ads. A sincronização diária é obrigatória para os relatórios de IA.",

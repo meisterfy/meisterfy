@@ -32,8 +32,7 @@ export function TenantSettingsLayout() {
       section: 'google-ads',
       label: t('nav_google_ads'),
       icon: BarChart2,
-      // TODO(B8–B13): typed Link once route exists
-      typed: false,
+      typed: true,
     },
     {
       section: 'social',
@@ -162,6 +161,20 @@ export function TenantSettingsLayout() {
                 <Link
                   key={section}
                   to='/$tenant/settings/social'
+                  params={{ tenant }}
+                  className={linkClass}
+                >
+                  <Icon className='h-4 w-4' />
+                  {label}
+                </Link>
+              )
+            }
+
+            if (typed && section === 'google-ads') {
+              return (
+                <Link
+                  key={section}
+                  to='/$tenant/settings/google-ads'
                   params={{ tenant }}
                   className={linkClass}
                 >
