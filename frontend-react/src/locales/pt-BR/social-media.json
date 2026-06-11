@@ -48,5 +48,12 @@
 	"ai_num_drafts_label": "Número de rascunhos",
 	"ai_generating": "Gerando…",
 	"post_media_label": "Mídia do Post",
-	"calendar_new_post": "Novo post"
+	"calendar_new_post": "Novo post",
+	"approve_post": "Aprovar Post",
+	"back_to_draft": "Voltar para rascunho",
+	"back_to_draft_action": "Voltar para Rascunho",
+	"attach_media": "Anexar Mídia",
+	"missing_media": "Mídia Ausente",
+	"publish_failed": "Falha na publicação",
+	"partially_published": "Publicado parcialmente"
 }
