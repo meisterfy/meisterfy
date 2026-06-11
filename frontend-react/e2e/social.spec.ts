@@ -153,3 +153,81 @@ test('new-post drawer opens from a calendar cell', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'New Post' }).last()).toBeVisible()
   await expect(page.getByRole('button', { name: /Add to Planner/ })).toBeVisible()
 })
+
+// ── Social drafts (/$tenant/social/drafts) ───────────────────────────────────
+
+// The drafts route loads getPosts (all) + getConnectorResources, both via
+// apiFetchData (which unwraps `.data`), so bodies use the {data:...} envelope.
+async function seedDrafts(page: import('@playwright/test').Page, posts: unknown[] = []) {
+  await page.addInitScript(
+    (args: { key: string; value: string }) => {
+      sessionStorage.setItem(args.key, args.value)
+    },
+    { key: SESSION_KEY, value: JSON.stringify(SESSION_FIXTURE) },
+  )
+  await page.route('**/auth/refresh', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        access_token: 'test-token',
+        user: SESSION_FIXTURE.user,
+        tenant_id: SESSION_FIXTURE.user.tenant_id,
+        permissions: [],
+      }),
+    }),
+  )
+  await page.route('**/admin/tenants/*/connectors*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }),
+  )
+  await page.route('**/admin/tenants/*/posts*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: posts }) }),
+  )
+  await page.route('**/admin/tenants/*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { id: TENANT, name: 'Test Tenant' } }),
+    }),
+  )
+  await page.route('**/admin/tenants', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [] }) }),
+  )
+}
+
+test('social drafts page renders the empty state with backend down', async ({ page }) => {
+  await seedDrafts(page, [])
+
+  await page.goto(`/${TENANT}/social/drafts`)
+
+  await expect(page.getByRole('link', { name: 'Drafts' })).toBeVisible()
+  await expect(page.getByText('No drafts yet.')).toBeVisible()
+})
+
+test('social drafts page lists a draft and its actions', async ({ page }) => {
+  await seedDrafts(page, [
+    {
+      id: 'draft-e2e',
+      tenant_id: TENANT,
+      status: 'draft',
+      title: 'My e2e draft',
+      content: 'Draft body',
+      hashtags: [],
+      platforms: ['instagram_feed'],
+      media_path: null,
+      media_type: null,
+      connector_resource_id: null,
+      workflow: null,
+      scheduled_date: null,
+      scheduled_time: null,
+      published_at: null,
+      created_at: '2026-06-01T00:00:00Z',
+      updated_at: '2026-06-01T00:00:00Z',
+    },
+  ])
+
+  await page.goto(`/${TENANT}/social/drafts`)
+
+  await expect(page.getByText('My e2e draft')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible()
+})

@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, redirect, useLocation } from '@tanstack/
 import { CalendarDays, File } from 'lucide-react'
 import { useAuth } from '@/store/auth'
 import { SubToolbar } from '@/components/sub-toolbar'
-import { SubToolbarLink, subToolbarLinkClass } from '@/components/sub-toolbar-link'
+import { subToolbarLinkClass } from '@/components/sub-toolbar-link'
 
 export const Route = createFileRoute('/$tenant/social')({
   beforeLoad: () => {
@@ -25,13 +25,14 @@ function SocialLayout() {
             <CalendarDays className="h-4 w-4" />
             Planner
           </Link>
-          {/* TODO(C4): typed <Link> once the drafts route is generated */}
-          <SubToolbarLink
-            href={`/${tenant}/social/drafts`}
-            label="Drafts"
-            icon={File}
-            active={isDrafts}
-          />
+          <Link
+            to="/$tenant/social/drafts"
+            params={{ tenant }}
+            className={subToolbarLinkClass(isDrafts)}
+          >
+            <File className="h-4 w-4" />
+            Drafts
+          </Link>
         </div>
       </SubToolbar>
 

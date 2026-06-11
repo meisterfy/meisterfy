@@ -1,6 +1,10 @@
 {
 	"social_media": {},
 	"draft_new_title": "Novo Rascunho",
+	"drafts_subtitle": "Posts sem data agendada. Aprove e agende para adicionar ao planner.",
+	"generate_with_ai": "Gerar com IA",
+	"no_drafts_yet": "Nenhum rascunho ainda.",
+	"create_first_draft": "Crie seu primeiro rascunho",
 	"delete_draft_title": "Excluir rascunho?",
 	"strategy_reasoning": "Raciocínio da Estratégia",
 	"edit_post": "Editar Post",
