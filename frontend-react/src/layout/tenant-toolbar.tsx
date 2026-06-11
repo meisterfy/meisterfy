@@ -16,14 +16,14 @@ interface TenantToolbarProps {
   clients: Client[]
 }
 
-// social + alerts are wired (see WIRED_ROUTES); ads target route lands in C7
+// All three nav targets now have routes (see WIRED_ROUTES) → typed <Link>s.
 const NAV_ITEMS = [
   { key: 'social', label: 'Social', icon: Share2, href: (tenant: string) => `/${tenant}/social` },
   {
     key: 'ads',
     label: 'Google Ads',
     icon: Target,
-    href: (tenant: string) => `/${tenant}/google-ads`,
+    href: (tenant: string) => `/${tenant}/ads/google`,
   },
   {
     key: 'alerts',
@@ -36,6 +36,7 @@ const NAV_ITEMS = [
 // Keys whose target route exists — rendered as typed <Link>. Others stay inert <a>.
 const WIRED_ROUTES = {
   social: '/$tenant/social',
+  ads: '/$tenant/ads/google',
   alerts: '/$tenant/alerts',
 } as const
 
@@ -46,14 +47,15 @@ export function TenantToolbar({ tenant, brandName, clients }: TenantToolbarProps
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = useLocation().pathname
 
-  // Active by path for wired routes; still false for the inert ads link
-  // whose target route lands in C7.
+  // Active by path for each wired route.
   const isActive = (key: string) =>
     key === 'social'
       ? pathname.startsWith(`/${tenant}/social`)
-      : key === 'alerts'
-        ? pathname.startsWith(`/${tenant}/alerts`)
-        : false
+      : key === 'ads'
+        ? pathname.startsWith(`/${tenant}/ads/google`)
+        : key === 'alerts'
+          ? pathname.startsWith(`/${tenant}/alerts`)
+          : false
 
   return (
     <header className='sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90'>

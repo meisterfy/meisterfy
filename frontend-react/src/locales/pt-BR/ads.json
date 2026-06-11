@@ -148,6 +148,18 @@
 		"ai_title": "Análise de Campanha com IA",
 		"ai_description": "Gere um relatório com IA baseado nos dados ao vivo desta campanha, palavras-chave e termos de pesquisa."
 	},
+	"campaign_manager": "Gerenciador de Campanhas",
+	"new_campaign": "Nova Campanha",
+	"search_campaigns_placeholder": "Buscar campanhas...",
+	"import_title": "Importar Campanha do Google Ads",
+	"import_instructions": "Cole o JSON da campanha gerado pelo agente. Deve incluir",
+	"import_platform_hint": "result.platform = \"google_search\"",
+	"importing": "Importando...",
+	"import_submit": "Importar Campanha",
+	"campaign_name": "Nome da Campanha",
+	"live_in_google_ads": "Ativa no Google Ads",
+	"view_detailed_report": "Ver Relatório Detalhado",
+	"deploy_to_google_ads": "Publicar no Google Ads",
 	"alerts": {
 		"page_title": "Alertas",
 		"title": "Sugestões Pendentes",
