@@ -34,7 +34,7 @@ import {
   rejectPendingAdjustment,
 } from '@/lib/api/pending-adjustments'
 import type { PendingAdjustment } from '@/lib/api/pending-adjustments'
-import { AlertsRoute } from './alerts'
+import { AlertsRoute } from './-alerts'
 
 const makeAdj = (overrides: Partial<PendingAdjustment> = {}): PendingAdjustment => ({
   id: 'a1',

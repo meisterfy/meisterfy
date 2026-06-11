@@ -64,7 +64,7 @@ import React from 'react'
 import { listMcpKeys, createMcpKey, revokeMcpKey } from '@/lib/api/mcp-keys'
 import type { McpApiKey, CreateMcpKeyResponse } from '@/lib/api/mcp-keys'
 import { toast } from 'sonner'
-import { McpRoute } from './mcp'
+import { McpRoute } from './-mcp'
 
 const mockListMcpKeys = vi.mocked(listMcpKeys)
 const mockCreateMcpKey = vi.mocked(createMcpKey)

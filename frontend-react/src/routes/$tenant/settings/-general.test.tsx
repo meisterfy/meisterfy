@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuth } from '../../../store/auth'
-import { GeneralSettingsRoute } from './general'
+import { GeneralSettingsRoute } from './-general'
 
 // ── Route mock — provide useParams ────────────────────────────────────────────
 vi.mock('./general', async (importOriginal) => {

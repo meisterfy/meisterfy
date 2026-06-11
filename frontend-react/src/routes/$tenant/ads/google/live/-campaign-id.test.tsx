@@ -72,7 +72,7 @@ import {
   getKeywordPerformance,
 } from '@/lib/api/campaigns'
 import { getTenant } from '@/lib/api/tenants'
-import { LiveCampaignRoute } from './$campaign_id'
+import { LiveCampaignRoute } from './-campaign_id'
 
 const detail = {
   campaign: {

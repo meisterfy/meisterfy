@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useAuth } from '../../store/auth'
-import { SettingsLayout } from './route'
+import { SettingsLayout } from './-route'
 
 // ── Router mock ───────────────────────────────────────────────────────────────
 const mockLocation = { pathname: '/settings/integrations' }

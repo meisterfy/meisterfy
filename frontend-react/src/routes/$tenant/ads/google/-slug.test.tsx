@@ -34,7 +34,7 @@ vi.mock('@/lib/api/campaigns', () => ({
 
 import { getCampaign, updateCampaign } from '@/lib/api/campaigns'
 import type { Campaign } from '@/lib/api/campaigns'
-import { CampaignDetailRoute } from './$slug'
+import { CampaignDetailRoute } from './-slug'
 
 const makeCampaign = (): Campaign => ({
   id: '2026-01-01_promo',

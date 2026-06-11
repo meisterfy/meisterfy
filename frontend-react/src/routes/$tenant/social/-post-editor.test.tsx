@@ -40,7 +40,7 @@ vi.mock('@/lib/api/media', () => ({ uploadMedia: vi.fn() }))
 import { getPost, getPublishResults, updatePost, updatePostStatus } from '@/lib/api/posts'
 import { getTenant } from '@/lib/api/tenants'
 import type { Post } from '@/lib/api/posts'
-import { PostEditorRoute } from './$post_id'
+import { PostEditorRoute } from './-post_id'
 
 const makePost = (overrides: Partial<Post> = {}): Post => ({
   id: 'p1',

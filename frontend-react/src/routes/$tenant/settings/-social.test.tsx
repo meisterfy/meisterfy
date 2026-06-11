@@ -50,7 +50,7 @@ import { getConnectorResources } from '@/lib/api/connector-resources'
 import type { ConnectorResource } from '@/lib/api/connector-resources'
 import { removeMetaPage, getAvailableMetaPages, activateMetaPage } from '@/lib/api/social-accounts'
 import type { MetaPage } from '@/lib/api/social-accounts'
-import { SocialRoute } from './social'
+import { SocialRoute } from './-social'
 
 const mockGetConnectorResources = vi.mocked(getConnectorResources)
 const mockRemoveMetaPage = vi.mocked(removeMetaPage)

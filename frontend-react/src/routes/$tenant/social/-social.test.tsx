@@ -39,7 +39,7 @@ vi.mock('@/lib/api/social-accounts', () => ({ getConnectedMetaPages: vi.fn() }))
 import { getPosts } from '@/lib/api/posts'
 import { getConnectedMetaPages } from '@/lib/api/social-accounts'
 import type { Post } from '@/lib/api/posts'
-import { SocialPlannerRoute } from './index'
+import { SocialPlannerRoute } from './-index'
 
 // today (currentDate fixture) is 2026-06, so schedule a post in the default view month
 const makePost = (overrides: Partial<Post> = {}): Post => ({

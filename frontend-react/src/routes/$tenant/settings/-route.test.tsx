@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useAuth } from '../../../store/auth'
-import { TenantSettingsLayout } from './route'
+import { TenantSettingsLayout } from './-route'
 
 // ── Router mock ───────────────────────────────────────────────────────────────
 const mockLocation = { pathname: '/acme/settings/users' }

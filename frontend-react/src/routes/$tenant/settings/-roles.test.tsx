@@ -57,7 +57,7 @@ import React from 'react'
 import { listRoles, listPermissions, createRole, updateRole, deleteRole } from '@/lib/api/admin-users'
 import type { AdminRole, AdminPermission } from '@/lib/api/admin-users'
 import { toast } from 'sonner'
-import { RolesRoute } from './roles'
+import { RolesRoute } from './-roles'
 
 const mockListRoles = vi.mocked(listRoles)
 const mockListPermissions = vi.mocked(listPermissions)

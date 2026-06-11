@@ -40,7 +40,7 @@ vi.mock('@/lib/api/ai', () => ({ getAIProviders: vi.fn(), streamGenerate: vi.fn(
 import { getPosts, updatePostStatus } from '@/lib/api/posts'
 import { getConnectorResources } from '@/lib/api/connector-resources'
 import type { Post } from '@/lib/api/posts'
-import { DraftsRoute } from './drafts'
+import { DraftsRoute } from './-drafts'
 
 const makePost = (overrides: Partial<Post> = {}): Post => ({
   id: 'd1',

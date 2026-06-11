@@ -43,7 +43,7 @@ vi.mock('@/lib/api/audit-log', () => ({
 // ── Imports after mocks ───────────────────────────────────────────────────────
 import React from 'react'
 import { getAuditLog } from '@/lib/api/audit-log'
-import { AuditRoute } from './audit'
+import { AuditRoute } from './-audit'
 
 const mockGetAuditLog = vi.mocked(getAuditLog)
 

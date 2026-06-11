@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuth } from '../store/auth'
-import { HomeRoute } from './index'
+import { HomeRoute } from './-index'
 import { isPlatformAdmin } from '../lib/utils/platform-access'
 import { hasPermission } from '../lib/utils/permissions'
 

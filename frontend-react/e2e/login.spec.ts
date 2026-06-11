@@ -16,10 +16,15 @@ test('login page renders the form', async ({ page }) => {
   await expect(submitBtn).toBeVisible()
 })
 
-test('submitting the login form with backend down shows a network error', async ({ page }) => {
+test('submitting the login form with a failed request shows a network error', async ({ page }) => {
+  // Force the /auth/login request to fail so the error path is exercised
+  // deterministically — independent of whether a dev backend happens to be up
+  // (a live backend returns 401 "invalid credentials" instead of a net error).
+  await page.route('**/auth/login', (route) => route.abort())
+
   await page.goto('/login')
 
-  // fill and submit — the /auth/login fetch will fail because the backend is down
+  // fill and submit — the /auth/login fetch rejects, hitting the catch branch
   await page.locator('input[type="email"]').fill('user@example.com')
   await page.locator('input[type="password"]').fill('password')
   await page.getByRole('button', { name: /sign in/i }).click()

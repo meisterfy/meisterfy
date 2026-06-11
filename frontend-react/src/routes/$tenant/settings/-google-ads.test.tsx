@@ -60,7 +60,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getTenant, updateTenant, getGoogleAdsStatus } from '@/lib/api/tenants'
 import type { Tenant, AdsMonitoringConfig } from '@/lib/api/tenants'
 import { getAIProviders } from '@/lib/api/ai'
-import { GoogleAdsRoute } from './google-ads'
+import { GoogleAdsRoute } from './-google-ads'
 
 const mockUseQuery = vi.mocked(useQuery)
 const mockGetTenant = vi.mocked(getTenant)

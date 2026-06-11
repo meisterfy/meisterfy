@@ -52,7 +52,7 @@ vi.mock('react-i18next', async (importOriginal) => {
 import React from 'react'
 import { getLegalVersions, createLegalVersion, updateLegalVersion } from '@/lib/api/legal'
 import { toast } from 'sonner'
-import { LegalRoute } from './legal'
+import { LegalRoute } from './-legal'
 
 const mockGetLegalVersions = vi.mocked(getLegalVersions)
 const mockCreateLegalVersion = vi.mocked(createLegalVersion)

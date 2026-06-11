@@ -33,7 +33,7 @@ vi.mock('@/lib/api/campaigns', () => ({
 
 import { getCampaigns, getLiveCampaigns, createCampaign } from '@/lib/api/campaigns'
 import type { Campaign, LiveCampaign } from '@/lib/api/campaigns'
-import { GoogleAdsRoute } from './index'
+import { GoogleAdsRoute } from './-index'
 
 const localCampaign = (): Campaign => ({
   id: '2026-01-01_promo',

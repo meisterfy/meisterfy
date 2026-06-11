@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useAuth } from '../store/auth'
-import { ProfileRoute } from './profile'
+import { ProfileRoute } from './-profile'
 
 // ── API mock ──────────────────────────────────────────────────────────────────
 vi.mock('@/lib/api/users', () => ({
