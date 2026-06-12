@@ -54,7 +54,11 @@ export function AiDraftGenerator({
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState('')
 
-  useEffect(() => {
+  // Reset the form the moment the dialog opens (adjusting state during render —
+  // see react.dev "You Might Not Need an Effect"); provider loading stays an effect.
+  const [prevOpen, setPrevOpen] = useState<boolean | null>(null)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setTopic('')
       setPlatforms(['instagram_feed'])
@@ -62,24 +66,25 @@ export function AiDraftGenerator({
       setTone('engaging')
       setError(null)
       setProgress('')
-      void loadProviders()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
-  async function loadProviders() {
-    setIsLoadingProviders(true)
-    try {
-      const providers = await getAIProviders(tenant)
-      setAvailableProviders(providers)
-      setSelectedProvider(providers.length > 0 ? providers[0].name : null)
-    } catch {
-      setAvailableProviders([])
-      setSelectedProvider(null)
-    } finally {
-      setIsLoadingProviders(false)
+      setIsLoadingProviders(true)
     }
   }
+
+  useEffect(() => {
+    if (!open) return
+    getAIProviders(tenant)
+      .then((providers) => {
+        setAvailableProviders(providers)
+        setSelectedProvider(providers.length > 0 ? providers[0].name : null)
+      })
+      .catch(() => {
+        setAvailableProviders([])
+        setSelectedProvider(null)
+      })
+      .finally(() => {
+        setIsLoadingProviders(false)
+      })
+  }, [open, tenant])
 
   function buildSystemPrompt(): string {
     return `You are an expert social media copywriter. Generate exactly ${count} distinct social media post drafts.

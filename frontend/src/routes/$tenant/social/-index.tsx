@@ -13,9 +13,15 @@ export function SocialPlannerRoute() {
   const [scheduled, setScheduled] = useState<PostShape[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Flip to loading the moment the tenant changes (adjust state during render)
+  const [prevTenant, setPrevTenant] = useState(tenant)
+  if (tenant !== prevTenant) {
+    setPrevTenant(tenant)
+    setIsLoading(true)
+  }
+
   useEffect(() => {
     let active = true
-    setIsLoading(true)
     getPosts(tenant, 'scheduled')
       .then((data) => {
         if (!active) return
@@ -48,9 +54,11 @@ export function SocialPlannerRoute() {
     setShowEditDrawer(true)
   }
 
-  useEffect(() => {
+  const [prevShowEdit, setPrevShowEdit] = useState(showEditDrawer)
+  if (showEditDrawer !== prevShowEdit) {
+    setPrevShowEdit(showEditDrawer)
     if (!showEditDrawer) setSelectedPost(null)
-  }, [showEditDrawer])
+  }
 
   return (
     <>

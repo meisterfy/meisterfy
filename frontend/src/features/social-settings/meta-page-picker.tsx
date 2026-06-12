@@ -23,26 +23,25 @@ function MetaPagePicker({ open, onOpenChange, tenant, onAdded }: MetaPagePickerP
   const [addingId, setAddingId] = useState<string | null>(null)
   const [addError, setAddError] = useState<string | null>(null)
 
-  async function loadPages() {
-    setLoading(true)
-    setError(null)
-    try {
-      setPages(await getAvailableMetaPages(tenant))
-    } catch {
-      setError(t('social_picker_error'))
-    } finally {
-      setLoading(false)
+  // Reset state + flag loading when the drawer opens (adjust state during render)
+  const [prevOpen, setPrevOpen] = useState<boolean | null>(null)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setSearch('')
+      setAddError(null)
+      setError(null)
+      setLoading(true)
     }
   }
 
   useEffect(() => {
-    if (open) {
-      setSearch('')
-      setAddError(null)
-      void loadPages()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+    if (!open) return
+    getAvailableMetaPages(tenant)
+      .then((p) => setPages(p))
+      .catch(() => setError(t('social_picker_error')))
+      .finally(() => setLoading(false))
+  }, [open, tenant, t])
 
   const filtered = useMemo(() => {
     if (search.trim()) {

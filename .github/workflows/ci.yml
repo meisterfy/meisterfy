@@ -128,7 +128,7 @@ jobs:
   # ===================== FRONTEND =====================
 
   frontend-quality:
-    name: Frontend Quality (typecheck)
+    name: Frontend Quality (typecheck + lint)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -141,10 +141,9 @@ jobs:
       - name: Type check
         working-directory: frontend
         run: bunx tsc -b
-      # NOTE: `bun run lint` (eslint) is intentionally not gated yet — the React
-      # codebase carries pre-existing lint debt (react-refresh on TanStack route
-      # files, exhaustive-deps, etc.) accrued during the migration. Tracked for
-      # cleanup before re-enabling here.
+      - name: Lint
+        working-directory: frontend
+        run: bun run lint
 
   frontend-test:
     name: Frontend Unit and Component Tests

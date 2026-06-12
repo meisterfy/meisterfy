@@ -19,25 +19,6 @@ const TENANT = 'tenant-1'
 const CAMPAIGN = 'camp-1'
 const KEY = `chat:${TENANT}:${CAMPAIGN}`
 
-// Drive a streamGenerate mock through a sequence of chunks then resolve
-async function driveStream(
-  mockStream: ReturnType<typeof vi.fn>,
-  chunks: AIChunk[]
-) {
-  const { streamGenerate } = await import('@/lib/api/ai')
-  let capturedCallback: ((chunk: AIChunk) => void) | undefined
-
-  vi.mocked(streamGenerate).mockImplementationOnce(
-    async (_req, onChunk, _signal) => {
-      capturedCallback = onChunk
-    }
-  )
-
-  // Overwrite the mock (already set) — return the capturedCallback after the call
-  // We need to return it so callers can push chunks after the hook fires
-  return { getCallback: () => capturedCallback, mockStream }
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

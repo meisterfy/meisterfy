@@ -51,6 +51,27 @@ export function weeklyLocalSchedule(utcHour: number): string {
   return `Every ${day} at ${time}`
 }
 
+// ── Inline helpers for CardHeader / CardContent (matching social.tsx pattern) ─
+
+function CardHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-text text-sm font-medium lg:text-lg xl:text-xl">
+        {title}
+      </p>
+      <p className="lg:text-md text-primary/70 text-xs">{subtitle}</p>
+    </div>
+  )
+}
+
+function CardContent({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="prose prose-sm prose-indigo dark:prose-invert prose-p:mb-0 prose-headings:m-0">
+      {children}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function GoogleAdsRoute() {
@@ -250,33 +271,6 @@ export function GoogleAdsRoute() {
       set: setPromptMonthly,
     },
   ]
-
-  // ── Inline helpers for CardHeader / CardContent (matching social.tsx pattern) ─
-
-  function CardHeader({
-    title,
-    subtitle,
-  }: {
-    title: string
-    subtitle: string
-  }) {
-    return (
-      <div className="flex flex-col gap-1">
-        <p className="text-text text-sm font-medium lg:text-lg xl:text-xl">
-          {title}
-        </p>
-        <p className="lg:text-md text-primary/70 text-xs">{subtitle}</p>
-      </div>
-    )
-  }
-
-  function CardContent({ children }: { children: React.ReactNode }) {
-    return (
-      <div className="prose prose-sm prose-indigo dark:prose-invert prose-p:mb-0 prose-headings:m-0">
-        {children}
-      </div>
-    )
-  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

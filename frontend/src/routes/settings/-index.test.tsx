@@ -11,7 +11,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 describe('/settings/ index', () => {
   it('redirect() from TanStack throws a Response with status 307', async () => {
     const { redirect } = await import('@tanstack/react-router')
-    let thrown: unknown = null
+    let thrown!: unknown
     try {
       throw redirect({ to: '/settings/integrations' })
     } catch (e) {

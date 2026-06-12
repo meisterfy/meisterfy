@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import type { PostShape } from '@/lib/social'
@@ -33,13 +33,16 @@ export function CreateDraftDrawer({
   const [isCreating, setIsCreating] = useState(false)
   const newMediaInput = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  // Reset fields when the drawer opens (adjust state during render, not an effect)
+  const [prevOpen, setPrevOpen] = useState<boolean | null>(null)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setNewTitle('')
       setNewContent('')
       setNewHashtags('')
     }
-  }, [open])
+  }
 
   async function createDraft() {
     if (!newTitle.trim() || !newContent.trim()) return

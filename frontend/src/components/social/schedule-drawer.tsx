@@ -39,25 +39,37 @@ export function ScheduleDrawer({
   // mirrors Svelte's plain metaPagesLoaded read inside the effect — load once
   const metaPagesLoadedRef = useRef(false)
 
-  useEffect(() => {
+  // Seed schedule fields when the drawer opens / draft changes (during render)
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    draft: typeof draft
+  } | null>(null)
+  if (!prevSync || open !== prevSync.open || draft !== prevSync.draft) {
+    setPrevSync({ open, draft })
     if (open && draft) {
       setSchedDate('')
       setSchedTime('10:00')
       const draftPlatforms = normPlatforms(draft.platform)
-      setSchedPlatforms(draftPlatforms.length > 0 ? draftPlatforms : ['instagram_feed'])
+      setSchedPlatforms(
+        draftPlatforms.length > 0 ? draftPlatforms : ['instagram_feed'],
+      )
       setSelectedResourceId(draft.connector_resource_id ?? '')
-      if (!metaPagesLoadedRef.current) {
-        getConnectedMetaPages(tenant)
-          .then((pages) => {
-            setMetaPages(pages)
-            metaPagesLoadedRef.current = true
-            setMetaPagesLoaded(true)
-          })
-          .catch(() => {
-            metaPagesLoadedRef.current = true
-            setMetaPagesLoaded(true)
-          })
-      }
+    }
+  }
+
+  // Load connected Meta pages once, the first time the drawer is opened
+  useEffect(() => {
+    if (open && draft && !metaPagesLoadedRef.current) {
+      getConnectedMetaPages(tenant)
+        .then((pages) => {
+          setMetaPages(pages)
+          metaPagesLoadedRef.current = true
+          setMetaPagesLoaded(true)
+        })
+        .catch(() => {
+          metaPagesLoadedRef.current = true
+          setMetaPagesLoaded(true)
+        })
     }
   }, [open, draft, tenant])
 

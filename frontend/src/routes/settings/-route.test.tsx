@@ -154,7 +154,7 @@ describe('SettingsLayout — beforeLoad guard logic', () => {
 
   it('redirect throws a Response with status 307 when called', async () => {
     const { redirect } = await import('@tanstack/react-router')
-    let thrown: unknown = null
+    let thrown!: unknown
     try {
       throw redirect({ to: '/login' })
     } catch (e) {

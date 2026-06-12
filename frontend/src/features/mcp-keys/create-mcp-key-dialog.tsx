@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createMcpKey } from '@/lib/api/mcp-keys'
 import type { CreateMcpKeyResponse } from '@/lib/api/mcp-keys'
@@ -50,8 +50,11 @@ export function CreateMcpKeyDialog({
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [copiedJson, setCopiedJson] = useState(false)
 
-  // Reset all state whenever the dialog opens (mirrors Svelte openCreateDialog)
-  useEffect(() => {
+  // Reset all state whenever the dialog opens (adjust state during render,
+  // mirrors Svelte openCreateDialog)
+  const [prevOpen, setPrevOpen] = useState<boolean | null>(null)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setCreateName('')
       setCreateRole('readonly')
@@ -63,7 +66,7 @@ export function CreateMcpKeyDialog({
       setCopiedUrl(false)
       setCopiedJson(false)
     }
-  }, [open])
+  }
 
   // ── handleCreate — faithful port of Svelte lines 62-78 ──────────────────────
   async function handleCreate() {

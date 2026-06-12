@@ -91,9 +91,21 @@ export function AuditRoute() {
     }
   }
 
-  // Initial load — mirrors the Svelte $effect that resolves data.auditLog
+  // Initial load — inline fetch keeps the loading flag out of the effect body
+  // (load() is reused by the filter/pagination handlers, where setState is fine).
   useEffect(() => {
-    void load(0, true)
+    let active = true
+    getAuditLog(tenant, { limit: PAGE_SIZE, offset: 0 })
+      .catch(() => ({ data: [], total: 0 }))
+      .then((res) => {
+        if (!active) return
+        setEntries(res.data)
+        setTotal(res.total)
+        setInitialLoading(false)
+      })
+    return () => {
+      active = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

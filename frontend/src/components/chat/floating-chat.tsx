@@ -162,7 +162,6 @@ export function FloatingChat({ chat, systemPrompt, tenantId }: FloatingChatProps
                           </div>
                         ) : (
                           <>
-                            {/* eslint-disable-next-line react/no-danger */}
                             <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
                             {msg.streaming && (
                               <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-indigo-500 align-text-bottom" />

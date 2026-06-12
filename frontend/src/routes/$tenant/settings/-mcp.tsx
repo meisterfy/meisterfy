@@ -41,8 +41,20 @@ export function McpRoute() {
     setIsLoading(false)
   }
 
+  // Initial load — inline fetch keeps the loading flag out of the effect body
+  // (loadKeys() is reused by the revoke handler, where setState is fine).
   useEffect(() => {
-    void loadKeys()
+    let active = true
+    listMcpKeys(tenant)
+      .catch(() => [])
+      .then((k) => {
+        if (!active) return
+        setKeys(k)
+        setIsLoading(false)
+      })
+    return () => {
+      active = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

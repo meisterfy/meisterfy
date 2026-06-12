@@ -77,9 +77,16 @@ export function GoogleAdsRoute() {
     return [...unifiedLive, ...unifiedLocal]
   }, [tenant])
 
+  // Flip to loading when the tenant changes (adjust state during render);
+  // the initial mount is already covered by isLoading's `true` initial value.
+  const [prevTenant, setPrevTenant] = useState(tenant)
+  if (tenant !== prevTenant) {
+    setPrevTenant(tenant)
+    setIsLoading(true)
+  }
+
   useEffect(() => {
     let active = true
-    setIsLoading(true)
     loadCampaigns()
       .then((campaigns) => {
         if (active) setCombinedCampaigns(campaigns)

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -44,11 +44,15 @@ export function LegalRoute() {
 
   // Local editable copy seeded from query data
   const [versions, setVersions] = useState<LegalVersion[]>([])
-  useEffect(() => {
+  const [prevQueryData, setPrevQueryData] = useState<typeof queryData | null>(
+    null,
+  )
+  if (queryData !== prevQueryData) {
+    setPrevQueryData(queryData)
     if (queryData) {
       setVersions(queryData)
     }
-  }, [queryData])
+  }
 
   // Selection state
   const [selectedId, setSelectedId] = useState<string | null>(null)
