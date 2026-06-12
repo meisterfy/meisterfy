@@ -43,6 +43,9 @@ function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const paginated = pageSize !== undefined
+  // TanStack Table's useReactTable returns functions that can't be memoized,
+  // so React Compiler intentionally skips this component. Accepted + safe here.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
