@@ -140,7 +140,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Type check
         working-directory: frontend
-        run: bunx tsc -b
+        run: bun run typecheck
       - name: Lint
         working-directory: frontend
         run: bun run lint
