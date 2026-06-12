@@ -13,86 +13,28 @@ jobs:
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: testdb
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      # Frontend must be built before the backend starts: main.go embeds ui/dist at
-      # compile time (//go:embed all:ui/dist), so the directory must exist first.
       - name: Install frontend dependencies
         working-directory: frontend
         run: bun install --frozen-lockfile
-
-      - name: Build frontend
-        working-directory: frontend
-        run: bun run build
-
-      - name: Run backend migrations
-        working-directory: backend
-        run: go run ./cmd/migrate up
-        env:
-          DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
-
-      - name: Start backend
-        working-directory: backend
-        run: |
-          DATABASE_URL="postgres://test:test@localhost:5432/testdb?sslmode=disable" \
-          JWT_SECRET="e2e-test-secret-32-bytes-minimum!!" \
-          PORT=8181 \
-          go run ./cmd/server &
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:8181/health && break
-            sleep 1
-          done
-          curl -sf http://localhost:8181/health || { echo "Backend failed to start"; exit 1; }
-        env:
-          DATABASE_URL: postgres://test:test@localhost:5432/testdb?sslmode=disable
-
-      # Create the first admin so health returns setup_required:false.
-      # Uses fixed test credentials; the || guard handles the "already done" 404.
-      - name: Bootstrap first admin
-        run: |
-          curl -f -X POST http://localhost:8181/setup \
-            -H 'Content-Type: application/json' \
-            -d '{"name":"Admin Test","email":"e2e@example.com","password":"testpass123"}' \
-            || echo "Setup already done"
 
       - name: Install Playwright browsers
         working-directory: frontend
         run: bunx playwright install chromium --with-deps
 
+      # The React e2e suite is self-contained: Playwright boots the Vite dev
+      # server (see webServer in playwright.config.ts) and every spec stubs its
+      # backend routes via page.route — no Postgres / backend / migrations
+      # needed (that full-stack setup was for the Svelte auth-against-API specs).
       - name: Run E2E tests
         working-directory: frontend
         run: bunx playwright test
-        env:
-          # Backend at 8181 serves both the API and the embedded SPA — no separate
-          # static server needed, no CORS issues, matches the production setup.
-          E2E_BASE_URL: http://localhost:8181
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -1,43 +1,22 @@
-import path from 'node:path'
-import { includeIgnoreFile } from '@eslint/compat'
 import js from '@eslint/js'
-import svelte from 'eslint-plugin-svelte'
-import { defineConfig } from 'eslint/config'
 import globals from 'globals'
-import ts from 'typescript-eslint'
-import svelteConfig from './svelte.config.js'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
 
-const gitignorePath = path.resolve(import.meta.dirname, '.gitignore')
-
-export default defineConfig(
-	includeIgnoreFile(gitignorePath),
-	{ ignores: ['src/lib/paraglide/**', 'src/paraglide/**'] },
-	js.configs.recommended,
-	ts.configs.recommended,
-	svelte.configs.recommended,
-	{
-		languageOptions: { globals: { ...globals.browser, ...globals.node } },
-		rules: {
-			'no-undef': 'off'
-		}
-	},
-	{
-		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
-		languageOptions: {
-			parserOptions: {
-				projectService: true,
-				extraFileExtensions: ['.svelte'],
-				parser: ts.parser,
-				svelteConfig
-			}
-		}
-	},
-	{
-		rules: {
-			'@typescript-eslint/no-unused-vars': [
-				'error',
-				{ varsIgnorePattern: '^_', argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
-			]
-		}
-	}
-)
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])

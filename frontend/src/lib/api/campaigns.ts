@@ -73,6 +73,9 @@ export interface CampaignMetrics {
 	cost: string
 	conversions: string
 	cpa: string
+	// The backend returns ctr and the live dashboard shows it; the Svelte type
+	// omitted it but accessed it at runtime — declare it here for type safety.
+	ctr: string
 	searchImpressionShare: string
 }
 

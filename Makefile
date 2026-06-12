@@ -1,31 +1,26 @@
-.PHONY: dev/backend dev/frontend dev/backend/react dev/frontend/react build \
+.PHONY: dev/backend dev/frontend build \
         migrate/up migrate/down migrate/status \
         migrate/create test/backend test/backend/unit test/backend/integration \
         test/backend/cover test/frontend test/e2e test/e2e/ui test/e2e/report \
         lint sqlc smoke smoke/remote
 
 # Dev Server
+#
+# The app is served via the backend at http://localhost:8181 (single origin):
+# in dev the backend proxies non-API routes to the Vite dev server (:5174), so
+# OAuth's same-origin callback to /settings/integrations works. Access :8181,
+# not :5174 directly.
 
 dev/backend:
-	cd backend && DEV_FRONTEND_URL=http://localhost:5173 $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || DEV_FRONTEND_URL=http://localhost:5173 go run ./cmd/server
+	cd backend && DEV_FRONTEND_URL=http://localhost:5174 $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || DEV_FRONTEND_URL=http://localhost:5174 go run ./cmd/server
 
 dev/frontend:
 	cd frontend && bun run dev
 
-# React-migration dev (frontend-react on :5174). Access the app at
-# http://localhost:8181 — the backend proxies non-API routes to the Vite dev
-# server, so OAuth's same-origin redirect back to /settings/integrations works.
-dev/backend/react:
-	cd backend && DEV_FRONTEND_URL=http://localhost:5174 $(shell which air 2>/dev/null || echo $(HOME)/go/bin/air) || DEV_FRONTEND_URL=http://localhost:5174 go run ./cmd/server
-
-dev/frontend/react:
-	cd frontend-react && bun run dev
-
 dev/bundle:
-	@bunx concurrently -k -n "go,svelte,locale,aipim" -c "blue,magenta,yellow,cyan" \
+	@bunx concurrently -k -n "go,react,aipim" -c "blue,magenta,cyan" \
 		"make dev/backend" \
 		"make dev/frontend" \
-		"make dev/frontend/locale" \
 		"aipim ui"
 
 # Build
@@ -93,8 +88,3 @@ lint/backend:
 
 sqlc:
 	cd backend && sqlc generate
-
-# Locales
-
-dev/frontend/locale:
-	cd frontend && bun run paraglide:watch

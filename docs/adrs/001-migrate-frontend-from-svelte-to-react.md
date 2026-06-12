@@ -1,10 +1,17 @@
 # ADR 001 — Migrate the frontend from Svelte to React
 
-- **Status:** Accepted
-- **Date:** 2026-06-09
+- **Status:** Accepted — **migration completed & cut over 2026-06-11**
+- **Date:** 2026-06-09 (decided) · 2026-06-11 (cutover)
 - **Deciders:** Rafhael Marsigli (author/operator) + Claude (technical sparring)
 - **Decision context:** technical/business brainstorming session, 2026-06-09
 - **Supersedes / superseded by:** —
+
+> **Cutover note (2026-06-11):** Phases 0–3 delivered on `claude/react-migration`
+> (AIPIM TASK-092..167). The React app (Vite + TanStack Router/Query, React 19)
+> now lives at `frontend/`; the retired SvelteKit app was relocated to
+> `frontend-legacy/` (to be deleted in a follow-up cleanup). Build/CI/dev tooling
+> and the Go embed (`backend/cmd/server/ui/dist`) point at the React build. Full
+> parity reached: unit 693/693, e2e 26/26, tsc/build clean.
 
 ---
 

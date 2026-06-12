@@ -1,4 +1,4 @@
-import type { PostStatus, PostWorkflow, PostPublishResult } from '$lib/api/posts'
+import type { PostStatus, PostWorkflow, PostPublishResult } from '@/lib/api/posts'
 
 export type { PostPublishResult }
 

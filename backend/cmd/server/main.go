@@ -443,7 +443,9 @@ func main() {
 		slog.Info("proxying frontend to Vite", "url", cfg.DevFrontendURL)
 		r.Handle("/*", proxy)
 	} else {
-		// In production: serve embedded ui/dist with SPA fallback to 200.html
+		// In production: serve embedded ui/dist with SPA fallback to index.html
+		// (Vite emits index.html as the SPA entry; the prior Svelte adapter-static
+		// build emitted a 200.html fallback).
 		distFS, err := fs.Sub(uiFS, "ui/dist")
 		if err != nil {
 			slog.Error("ui/dist embed error", "err", err)
@@ -452,7 +454,7 @@ func main() {
 		fileServer := http.FileServer(http.FS(distFS))
 		r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			if _, ferr := distFS.Open(req.URL.Path[1:]); ferr != nil {
-				content, rerr := fs.ReadFile(distFS, "200.html")
+				content, rerr := fs.ReadFile(distFS, "index.html")
 				if rerr != nil {
 					http.NotFound(w, req)
 					return

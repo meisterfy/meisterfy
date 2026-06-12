@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchData } from '$lib/api/client'
+import { apiFetch, apiFetchData } from './client'
 
 export interface LegalBlock {
 	title: string
