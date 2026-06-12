@@ -73,9 +73,6 @@ describe('CalendarWidget', () => {
     const nextMonthIdx = now.getMonth() === 11 ? 0 : now.getMonth() + 1
     const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear()
 
-    // Get all buttons in the header navigation area — ChevronLeft, Today, ChevronRight
-    const buttons = screen.getAllByRole('button')
-    const nextBtn = buttons.find((b) => b.querySelector('svg'))
     // Click the ChevronRight — it's the last icon button before "Today"
     // Use "Today" text button as reference: prev < Today < next in DOM
     const todayBtn = screen.getByText('Today')

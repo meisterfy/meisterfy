@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Trash2, ImagePlus } from 'lucide-react'
 import type { PostShape, PostPlatform } from '@/lib/social'
@@ -50,7 +50,13 @@ export function EditPostDrawer({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
 
-  useEffect(() => {
+  // Sync fields when the drawer opens / post changes (adjust state during render)
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    post: typeof post
+  } | null>(null)
+  if (!prevSync || open !== prevSync.open || post !== prevSync.post) {
+    setPrevSync({ open, post })
     if (open && post) {
       setEditTitle(post.title)
       setEditContent(post.content)
@@ -60,7 +66,7 @@ export function EditPostDrawer({
       setEditTime(post.scheduled_time ?? '')
       setEditMediaFiles([...(post.media_files ?? [])])
     }
-  }, [open, post])
+  }
 
   async function savePost() {
     if (!post || !editTitle.trim() || !editContent.trim()) return

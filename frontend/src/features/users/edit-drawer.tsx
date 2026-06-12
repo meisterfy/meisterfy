@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Drawer } from '@/components/ui/drawer'
@@ -36,8 +36,19 @@ function EditDrawer({ open, onOpenChange, user, roles, tenant, onSaved }: EditDr
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Sync fields when drawer opens or user changes
-  useEffect(() => {
+  // Sync fields when the drawer opens / user / roles change (adjust during render)
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    user: typeof user
+    roles: typeof roles
+  } | null>(null)
+  if (
+    !prevSync ||
+    open !== prevSync.open ||
+    user !== prevSync.user ||
+    roles !== prevSync.roles
+  ) {
+    setPrevSync({ open, user, roles })
     if (open && user) {
       setName(user.name)
       setEmail(user.email)
@@ -45,7 +56,7 @@ function EditDrawer({ open, onOpenChange, user, roles, tenant, onSaved }: EditDr
       setRoleId(user.role?.id ?? roles[0]?.id ?? '')
       setError(null)
     }
-  }, [open, user, roles])
+  }
 
   async function handleEdit() {
     if (!user) return

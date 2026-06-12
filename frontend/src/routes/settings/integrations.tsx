@@ -52,6 +52,9 @@ function IntegrationsRoute() {
         tenants: Promise.resolve(tenantsQuery.data),
       })
     }
+    // `manager` is rebuilt every render (no stable identity), so we key the
+    // (re-)init solely on the query data — including it would loop every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrationsQuery.data, tenantsQuery.data])
 
   useEffect(() => {

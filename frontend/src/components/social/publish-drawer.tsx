@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Send, AlertCircle } from 'lucide-react'
 import type { PostShape } from '@/lib/social'
@@ -33,13 +33,25 @@ export function PublishDrawer({
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Seed publish fields when the drawer opens / draft / accounts change
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    draft: typeof draft
+    metaAccounts: typeof metaAccounts
+  } | null>(null)
+  if (
+    !prevSync ||
+    open !== prevSync.open ||
+    draft !== prevSync.draft ||
+    metaAccounts !== prevSync.metaAccounts
+  ) {
+    setPrevSync({ open, draft, metaAccounts })
     if (open && draft) {
       setPublishAccountId(metaAccounts[0]?.id ?? '')
       setPublishPlatform('instagram')
       setPublishError(null)
     }
-  }, [open, draft, metaAccounts])
+  }
 
   async function doPublish() {
     if (!draft || !publishAccountId) return

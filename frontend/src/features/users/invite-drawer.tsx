@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Drawer } from '@/components/ui/drawer'
@@ -36,12 +36,23 @@ function InviteDrawer({ open, onOpenChange, roles, tenant, onInvited }: InviteDr
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Auto-init roleId when roles load or drawer opens
-  useEffect(() => {
+  // Auto-init roleId when roles load or drawer opens (adjust state during render)
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    roles: typeof roles
+    roleId: string
+  } | null>(null)
+  if (
+    !prevSync ||
+    open !== prevSync.open ||
+    roles !== prevSync.roles ||
+    roleId !== prevSync.roleId
+  ) {
+    setPrevSync({ open, roles, roleId })
     if (open && roles.length && !roleId) {
       setRoleId(roles[0].id)
     }
-  }, [open, roles, roleId])
+  }
 
   function resetFields() {
     setName('')

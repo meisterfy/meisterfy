@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Drawer } from '@/components/ui/drawer'
@@ -36,12 +36,17 @@ function ReactivateDrawer({
   const [roleId, setRoleId] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Init roleId when drawer opens
-  useEffect(() => {
+  // Init roleId when the drawer opens / roles change (adjust state during render)
+  const [prevSync, setPrevSync] = useState<{
+    open: boolean
+    roles: typeof roles
+  } | null>(null)
+  if (!prevSync || open !== prevSync.open || roles !== prevSync.roles) {
+    setPrevSync({ open, roles })
     if (open && roles.length) {
       setRoleId(roles[0].id)
     }
-  }, [open, roles])
+  }
 
   async function handleReactivate() {
     if (!user) return

@@ -138,9 +138,18 @@ export function LiveCampaignRoute() {
     [tenant, campaign_id],
   )
 
+  // Flip to loading whenever the selected period changes (adjust during render);
+  // prev starts null so the initial mount also shows the loading state.
+  const [prevDateParams, setPrevDateParams] = useState<typeof dateParams | null>(
+    null,
+  )
+  if (dateParams !== prevDateParams) {
+    setPrevDateParams(dateParams)
+    setIsLoadingPeriod(true)
+  }
+
   useEffect(() => {
     let active = true
-    setIsLoadingPeriod(true)
     load(dateParams)
       .then((d) => {
         if (active) setData(d)

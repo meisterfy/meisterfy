@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Ensure i18n is initialised before the hook runs
 import '@/lib/i18n/index'
 import { useSearch } from '@tanstack/react-router'

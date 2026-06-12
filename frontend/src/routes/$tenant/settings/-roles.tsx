@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ShieldCheck, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -62,13 +62,17 @@ export function RolesRoute() {
     setPendingName(role.name)
   }
 
-  // Auto-select first role once data loads
-  useEffect(() => {
+  // Auto-select first role once data loads (adjust state during render)
+  const [prevAuto, setPrevAuto] = useState<{
+    isLoading: boolean
+    roles: typeof roles
+  } | null>(null)
+  if (!prevAuto || isLoading !== prevAuto.isLoading || roles !== prevAuto.roles) {
+    setPrevAuto({ isLoading, roles })
     if (!isLoading && !selectedRole && roles.length) {
       selectRole(roles[0])
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, roles])
+  }
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const hasPendingChanges = useMemo(

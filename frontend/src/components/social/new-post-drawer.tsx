@@ -44,7 +44,10 @@ export function NewPostDrawer({
   // mirrors Svelte's untrack(metaPagesLoaded) — read without re-triggering the open effect
   const metaPagesLoadedRef = useRef(false)
 
-  useEffect(() => {
+  // Reset fields when the drawer opens (adjust state during render, not an effect)
+  const [prevOpen, setPrevOpen] = useState<boolean | null>(null)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setNewTitle('')
       setNewContent('')
@@ -52,18 +55,22 @@ export function NewPostDrawer({
       setNewTime('10:00')
       setNewPlatforms(['instagram_feed'])
       setSelectedResourceId('')
-      if (!metaPagesLoadedRef.current) {
-        getConnectedMetaPages(tenant)
-          .then((pages) => {
-            setMetaPages(pages)
-            metaPagesLoadedRef.current = true
-            setMetaPagesLoaded(true)
-          })
-          .catch(() => {
-            metaPagesLoadedRef.current = true
-            setMetaPagesLoaded(true)
-          })
-      }
+    }
+  }
+
+  // Load connected Meta pages once, the first time the drawer is opened
+  useEffect(() => {
+    if (open && !metaPagesLoadedRef.current) {
+      getConnectedMetaPages(tenant)
+        .then((pages) => {
+          setMetaPages(pages)
+          metaPagesLoadedRef.current = true
+          setMetaPagesLoaded(true)
+        })
+        .catch(() => {
+          metaPagesLoadedRef.current = true
+          setMetaPagesLoaded(true)
+        })
     }
   }, [open, tenant])
 
