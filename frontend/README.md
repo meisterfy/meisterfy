@@ -1,6 +1,6 @@
 # frontend-react
 
-React rewrite of the Meisterfy frontend (migration in progress; see [`docs/adrs/001-migrate-frontend-from-svelte-to-react.md`](../docs/adrs/001-migrate-frontend-from-svelte-to-react.md)). The legacy SvelteKit app remains in `../frontend` until cutover.
+The Meisterfy frontend: a React 19 SPA (Vite, TanStack Router + Query, Tailwind v4). This is the live app — the Svelte→React migration is complete and cut over (see [`docs/adrs/001-migrate-frontend-from-svelte-to-react.md`](../docs/adrs/001-migrate-frontend-from-svelte-to-react.md)); the retired SvelteKit app has been removed.
 
 ## Scripts
 

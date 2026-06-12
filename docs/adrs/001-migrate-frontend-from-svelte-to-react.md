@@ -9,9 +9,10 @@
 > **Cutover note (2026-06-11):** Phases 0–3 delivered on `claude/react-migration`
 > (AIPIM TASK-092..167). The React app (Vite + TanStack Router/Query, React 19)
 > now lives at `frontend/`; the retired SvelteKit app was relocated to
-> `frontend-legacy/` (to be deleted in a follow-up cleanup). Build/CI/dev tooling
-> and the Go embed (`backend/cmd/server/ui/dist`) point at the React build. Full
-> parity reached: unit 693/693, e2e 26/26, tsc/build clean.
+> `frontend-legacy/` and **deleted in the follow-up cleanup (2026-06-12)** once
+> the rollback window closed. Build/CI/dev tooling and the Go embed
+> (`backend/cmd/server/ui/dist`) point at the React build. Full parity reached:
+> unit 693/693, e2e 26/26, tsc/build clean.
 
 ---
 
