@@ -1,23 +1,24 @@
-import { redirect } from '@sveltejs/kit'
-import { auth } from '$lib/stores/auth.svelte'
-import { getCachedSessionUser } from '$lib/utils/session'
-import type { AuthUser } from '$lib/stores/auth.svelte'
+import { redirect } from '@tanstack/react-router'
+import { useAuth } from '@/store/auth'
+import type { AuthUser } from '@/store/auth'
 
 export function isPlatformAdmin(user: AuthUser | null | undefined): boolean {
-	return user?.system_role === 'platform_admin'
+  return user?.system_role === 'platform_admin'
 }
 
-/** Current user from memory or session cache (loaders run before reactive auth updates). */
+/** Current user from the Zustand auth store (falls back to the store's in-memory state). */
 export function currentUser(): AuthUser | null {
-	return auth.user ?? getCachedSessionUser()
+  return useAuth.getState().user
 }
 
 /**
  * Platform-wide settings live under `/settings/*` only.
- * Call from loaders/layouts in that tree — never from `/`, `/[tenant]/*`, etc.
+ * Call from route `beforeLoad` in that tree — never from `/`, `/$tenant/*`, etc.
+ * NOTE: Svelte's `requirePlatformAdmin` threw a SvelteKit redirect(302).
+ * In React/TanStack Router we throw a typed redirect({ to: '/' }) instead.
  */
 export function requirePlatformAdmin(): void {
-	if (!isPlatformAdmin(currentUser())) {
-		throw redirect(302, '/')
-	}
+  if (!isPlatformAdmin(currentUser())) {
+    throw redirect({ to: '/' })
+  }
 }

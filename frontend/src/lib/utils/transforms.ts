@@ -1,6 +1,6 @@
-import type { Post } from '$lib/api/posts'
-import type { Campaign } from '$lib/api/campaigns'
-import type { PostShape, PostPlatform } from '$lib/social'
+import type { Post } from '@/lib/api/posts'
+import type { Campaign } from '@/lib/api/campaigns'
+import type { PostShape, PostPlatform } from '@/lib/social'
 
 type CampaignData = Record<string, string | number | boolean | null | object>
 

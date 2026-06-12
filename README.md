@@ -2,7 +2,7 @@
 
 AI-assisted marketing management platform for agencies — Social Media scheduling, Google Ads management, AI content generation, and an MCP server. Everything managed through the UI, no CLI required.
 
-**Stack:** Go 1.22+ (chi, pgx/v5, goose) · SvelteKit 5 (Svelte runes, Tailwind v4) · PostgreSQL 16 · Docker Compose
+**Stack:** Go 1.22+ (chi, pgx/v5, goose) · React 19 (Vite, TanStack Router + Query, Tailwind v4) · PostgreSQL 16 · Docker Compose
 
 ---
 
@@ -20,7 +20,7 @@ Go Backend  (port 8080 — SPA embedded in binary for production)
   ├── POST /ai/generate                     AI content (SSE stream, JWT-gated)
   └── /mcp                                  MCP endpoint (Streamable HTTP, API-key auth)
 
-SvelteKit SPA  (port 5173 in dev)
+React SPA  (Vite dev server :5174; in dev the backend at :8181 proxies non-API routes to it — access the app at :8181)
   ├── /login  /setup                        public pages
   ├── /tenants/new                          onboarding
   ├── /[tenant]/social                      post planner (calendar + drawers)
@@ -68,9 +68,9 @@ Open `http://localhost:5173` — the setup wizard creates the first admin accoun
 
 ```
 Development
-  make dev/backend         Go backend (air hot-reload)
-  make dev/frontend        SvelteKit dev server
-  make dev/bundle          All processes in parallel (recommended)
+  make dev/backend         Go backend (air hot-reload; proxies the SPA, serve at :8181)
+  make dev/frontend        React/Vite dev server (:5174)
+  make dev/bundle          All processes in parallel (recommended) — open http://localhost:8181
 
 Build
   make build               Build frontend + Go binary
@@ -134,4 +134,4 @@ To test the first-run setup flow against a fresh DB: `E2E_FRESH_DB=true make tes
 
 **`ci.yml`** — every push and PR to `main`: lint → build → unit tests → integration tests → security scan → frontend quality → frontend tests → frontend build → smoke tests → gate job.
 
-**`e2e.yml`** — push to `main` and manual dispatch only: spins up full stack (Postgres → migrations → backend → frontend build), creates a test user, runs the 10 Playwright E2E tests. Requires GitHub Secrets `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`. Playwright report uploaded as artifact on failure.
+**`e2e.yml`** — push to `main` and manual dispatch only: installs the frontend, then runs the Playwright E2E suite. The React specs are self-contained — Playwright boots the Vite dev server and each spec stubs its backend routes via `page.route`, so no Postgres/backend/test-user is needed. Playwright report uploaded as artifact on failure.

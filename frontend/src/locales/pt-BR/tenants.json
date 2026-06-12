@@ -1,0 +1,14 @@
+{
+	"empty": "Nenhum cliente encontrado",
+	"create": "Novo Cliente",
+	"create_first": "Crie seu primeiro cliente",
+	"switch": "Trocar Cliente",
+	"create_desc": "Adicione um cliente para começar a gerenciar conteúdo e campanhas.",
+	"create_field_name": "Nome do cliente",
+	"create_field_name_placeholder": "Acme Corp",
+	"create_field_id": "Identificador",
+	"create_field_id_hint": "(slug de URL, não pode ser alterado)",
+	"create_field_id_placeholder": "acme-corp",
+	"creating": "Criando…",
+	"create_error": "Falha ao criar cliente."
+}
