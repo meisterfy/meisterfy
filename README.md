@@ -2,7 +2,24 @@
 
 AI-assisted marketing management platform for agencies — Social Media scheduling, Google Ads management, AI content generation, and an MCP server. Everything managed through the UI, no CLI required.
 
-**Stack:** Go 1.22+ (chi, pgx/v5, goose) · React 19 (Vite, TanStack Router + Query, Tailwind v4) · PostgreSQL 16 · Docker Compose
+**Stack:** Go 1.25.11+ (chi, pgx/v5, goose) · React 19 (Vite, TanStack Router + Query, Tailwind v4) · PostgreSQL 16 · Docker Compose
+
+---
+
+## Status: paused
+
+> **Development is paused (since June 2026). This is alpha software and is not safe for production use.**
+
+The codebase builds and its test suites pass, but it is not ready to be deployed or to manage real client accounts. Known gaps:
+
+- **Tenant isolation is broken.** The seeded `owner` and `manager` roles carry `view-any:tenant`, which bypasses the tenant check, so a tenant user can reach other tenants' data. Several endpoints also trust IDs without scoping them to the caller's tenant.
+- **No deployable image.** There is no Dockerfile; `docker-compose.yml` only provides Postgres for local development and migrations must be run by hand.
+- **Integrations are partial.** Meta (Facebook Pages and Instagram, Graph API v18) and Google Ads are implemented. LinkedIn and X are not. Storage (S3/R2), email (Resend/Brevo) and Sentry exist only as settings forms with no backing code.
+- **Google Ads adjustments are unfinished.** Approving a suggested adjustment only changes its status and does not apply it; auto-apply mode mutates campaigns without transactions or rollback, and the scheduler can run a job twice.
+- **Credentials are encrypted only with `APP_ENV=production`**, and Meta page tokens are stored unencrypted.
+- **Frontend needs hardening.** AI-generated markdown is rendered without sanitization, there is no logout action, and PDF export calls an endpoint the backend does not provide.
+
+Issues and pull requests are welcome, but responses may be slow while the project is paused.
 
 ---
 
@@ -50,7 +67,7 @@ Credentials are stored in the `integrations` table (encrypted). Connecting in th
 
 ## Quick Start
 
-**Prerequisites:** Go 1.22+, Bun 1.x, Docker, [air](https://github.com/air-verse/air), [goose](https://github.com/pressly/goose), [golangci-lint](https://golangci-lint.run/usage/install/), sqlc
+**Prerequisites:** Go 1.25.11+, Bun 1.x, Docker, [air](https://github.com/air-verse/air), [goose](https://github.com/pressly/goose), [golangci-lint](https://golangci-lint.run/usage/install/), sqlc
 
 ```bash
 docker compose up -d
@@ -60,7 +77,7 @@ make migrate/up
 make dev/bundle
 ```
 
-Open `http://localhost:5173` — the setup wizard creates the first admin account.
+Open `http://localhost:8181` — the setup wizard creates the first admin account.
 
 ---
 
@@ -107,7 +124,7 @@ Quality
 | Layer | Command | What it covers |
 |-------|---------|----------------|
 | Unit | `make test/backend/unit` | Crypto (AES-256-GCM), JWT, password hashing, middleware, HTTP handlers |
-| Integration | `make test/backend/integration` | Repository layer against embedded Postgres — 86.5% coverage |
+| Integration | `make test/backend/integration` | Repository layer against embedded Postgres (overall backend coverage is about 27%) |
 | Smoke | `make smoke` | 7 contract tests (health, auth endpoints, protected routes, MCP) |
 
 Build tags: `//go:build integration` and `//go:build smoke`.
