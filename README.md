@@ -1,5 +1,7 @@
 # Meisterfy
 
+> This project is archived until I have time to make all the _(many)_ necessary updates 💔.
+
 AI-assisted marketing management platform for agencies — Social Media scheduling, Google Ads management, AI content generation, and an MCP server. Everything managed through the UI, no CLI required.
 
 **Stack:** Go 1.25.11+ (chi, pgx/v5, goose) · React 19 (Vite, TanStack Router + Query, Tailwind v4) · PostgreSQL 16 · Docker Compose
